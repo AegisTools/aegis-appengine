@@ -1,5 +1,8 @@
 dependencies = ['users']
 
+templates = { "{id}" : "view",
+              "{id}/edit" : None,
+              "{id}/edit/{item}" : None }
 
 def load_permission(id):
     return { 'id' : id }

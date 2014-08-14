@@ -33,7 +33,13 @@ class MainPage(webapp2.RequestHandler):
     known_modules = {}
     known_loaders = {}
 
+    cache = {}
+
     def init(self):
+        user = users.get_current_user()
+        if not user:
+            return self.redirect(users.create_login_url(self.request.uri))
+
         dependencies = set()
 
         for importer, modname, ispkg in pkgutil.iter_modules(modules.__path__):
@@ -61,6 +67,9 @@ class MainPage(webapp2.RequestHandler):
 
         log.info("Module loading complete")
 
+        JINJA_ENVIRONMENT.globals['load'] = self.load
+
+
 
     def get(self):
         self.init()
@@ -68,33 +77,75 @@ class MainPage(webapp2.RequestHandler):
 
 
     def execute(self, verb):
-        user = users.get_current_user()
-        if not user:
-            return self.redirect(users.create_login_url(self.request.uri))
+        self.render(self.request.path, "html")
 
-        JINJA_ENVIRONMENT.globals['load'] = self.load
+    def render(self, path, format):
+        path_segments = path.strip("/").split("/")
+        module_name, path_segments = path_segments[0], path_segments[1:] or ["_index_"]
+        log.info("Rendering module '%s' path: %s (%s)" % (module_name, path_segments, format))
+        module = self.known_modules[module_name]
+        base_path = "modules/%s/templates" % module_name
 
-        cache = {}
-        log.debug(self.load("permissions/permission_list", 1, cache))
-        log.debug(self.load("permissions/permission_list", 1, cache))
+        keys = {}
+        template = self.load_template("%s/%s.%s" % (base_path, "/".join(path_segments), format))
 
-        template = JINJA_ENVIRONMENT.get_template('index.html')
+        if not template and hasattr(module, "templates"):
+            for template_pattern in module.templates:
+                path, keys = self.interpret_template_pattern(path_segments, template_pattern, module.templates[template_pattern])
+                if path:
+                    log.debug("keys: %s" % keys)
+                    template = self.load_template("%s/%s.%s" % (base_path, path, format))
+                    if template:
+                        break;
+
+        if not template:
+            raise Exception("Template not found")
+
         self.response.write(template.render({}))
 
-    def load(self, type, id, cache):
+
+    def interpret_template_pattern(self, segments, pattern, template):
+        log.debug("Checking template pattern: %s" % pattern)
+        pattern_pieces = pattern.split("/")
+        keys = {}
+        path = []
+        for key, value in map(None, pattern.split("/"), segments):
+            if not (key and value):
+                # Pattern is the wrong length
+                return None, None
+            elif key.startswith("{") and key.endswith("}"):
+                keys[key[1:-1]] = value
+            elif key == value:
+                path.append(key)
+            else:
+                # Pattern doesn't match
+                return None, None
+
+        return (template or "/".join(path)), keys;
+
+
+    def load_template(self, path):
+        try:
+            log.debug("Looking for template at %s" % path)
+            return JINJA_ENVIRONMENT.get_template(path)
+        except jinja2.TemplateNotFound:
+            return None
+
+
+    def load(self, type, id):
         if type not in self.known_loaders:
             raise Exception("Loader '%s' not found" % type)
 
         key = type + "/" + str(id)
-        if key in cache:
+        if key in self.cache:
             log.debug("Cache hit for %s: %s" % (type, id))
-            return cache[key]
+            return self.cache[key]
 
         loader = self.known_loaders[type]
         log.debug("Loading %s: %s (%s)" % (type, id, loader))
-        cache[key] = loader(id)
-        return cache[key]
+        self.cache[key] = loader(id)
+        return self.cache[key]
 
 
-app = webapp2.WSGIApplication([('/', MainPage)], debug=True)
+app = webapp2.WSGIApplication([('/.*', MainPage)], debug=True)
 
