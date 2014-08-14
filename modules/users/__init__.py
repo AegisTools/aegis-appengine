@@ -1,17 +1,12 @@
-dependencies = ['users']
-
 templates = { "{id}" : "view",
               "{id}/edit" : None }
 
 
-def get_template(path):
-    return "view", None
+def load_user(user, id):
+    return { 'user': user, 'id' : id }
 
-def load_user(id):
-    return { 'id' : id }
-
-def load_user_list(user_id):
-    return { 'user' : user_id }
+def load_user_list(user, ignored):
+    return { 'user' : user }
 
 
 types = { 'user' : load_user,

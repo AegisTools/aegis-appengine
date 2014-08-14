@@ -142,7 +142,7 @@ class MainPage(webapp2.RequestHandler):
 
         loader = self.known_loaders[type]
         log.debug("Loading %s: %s (%s)" % (type, id, loader))
-        self.cache[key] = loader(id)
+        self.cache[key] = loader(users.get_current_user(), id)
         return self.cache[key]
 
 

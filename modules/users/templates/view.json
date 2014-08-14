@@ -1,1 +1,1 @@
-{{ load("users/user", 1) }}
+{{ load("users/user", id) }}
