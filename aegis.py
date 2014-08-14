@@ -74,18 +74,26 @@ class MainPage(webapp2.RequestHandler):
 
         JINJA_ENVIRONMENT.globals['load'] = self.load
 
-        log.debug(self.load("permissions/permission_list", 1))
+        cache = {}
+        log.debug(self.load("permissions/permission_list", 1, cache))
+        log.debug(self.load("permissions/permission_list", 1, cache))
 
         template = JINJA_ENVIRONMENT.get_template('index.html')
         self.response.write(template.render({}))
 
-    def load(self, type, id):
+    def load(self, type, id, cache):
         if type not in self.known_loaders:
             raise Exception("Loader '%s' not found" % type)
 
+        key = type + "/" + str(id)
+        if key in cache:
+            log.debug("Cache hit for %s: %s" % (type, id))
+            return cache[key]
+
         loader = self.known_loaders[type]
         log.debug("Loading %s: %s (%s)" % (type, id, loader))
-        return loader(id)
+        cache[key] = loader(id)
+        return cache[key]
 
 
 app = webapp2.WSGIApplication([('/', MainPage)], debug=True)
