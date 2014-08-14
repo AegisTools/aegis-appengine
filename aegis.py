@@ -19,15 +19,6 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape=True)
 
 
-RESPONSE_TYPE_HTML = 1
-RESPONSE_TYPE_JSON = 2
-RESPONSE_TYPE_XML  = 3
-
-
-DATA_TYPE_USER = 1
-DATA_TYPE_PERMISSION = 2
-
-
 class MainPage(webapp2.RequestHandler):
 
     known_modules = {}
@@ -77,14 +68,17 @@ class MainPage(webapp2.RequestHandler):
 
 
     def execute(self, verb):
-        self.render(self.request.path, "html")
+        self.render(self.request.path)
 
-    def render(self, path, format):
+    def render(self, path):
+        format = "html"
+        if "format" in self.request.GET: format = self.request.GET["format"]
         path_segments = path.strip("/").split("/")
         module_name, path_segments = path_segments[0], path_segments[1:] or ["_index_"]
-        log.info("Rendering module '%s' path: %s (%s)" % (module_name, path_segments, format))
         module = self.known_modules[module_name]
         base_path = "modules/%s/templates" % module_name
+
+        log.info("Rendering module '%s' path: %s (%s)" % (module_name, path_segments, format))
 
         keys = {}
         template = self.load_template("%s/%s.%s" % (base_path, "/".join(path_segments), format))
