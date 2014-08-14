@@ -131,7 +131,7 @@ class MainPage(webapp2.RequestHandler):
             return None
 
 
-    def load(self, type, id):
+    def load(self, type, id=None):
         if type not in self.known_loaders:
             raise Exception("Loader '%s' not found" % type)
 
