@@ -1,2 +1,4 @@
-aegis-appengine
-===============
+Aegis - AppEngine Core
+=====
+
+App Engine Enterprise Workflow Tools
