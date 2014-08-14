@@ -14,18 +14,63 @@ import modules
 
 log = logging.getLogger("engine")
 
-JINJA_ENVIRONMENT = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
-    extensions=['jinja2.ext.autoescape'],
-    autoescape=True)
 
+class RequestData:
+    def __init__(self):
+        self.user = None
+        self.cache = {}
+        self.known_loaders = {}
+        self.jinja = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
+    def load(self, type, id=None):
+        if type not in self.known_loaders:
+            raise Exception("Loader '%s' not found" % type)
+
+        key = type + "/" + str(id)
+        if key in self.cache:
+            log.debug("Cache hit for %s: %s" % (type, id))
+            return self.cache[key]
+
+        loader = self.known_loaders[type]
+        log.debug("Loading %s: %s (%s)" % (type, id, loader))
+        self.cache[key] = loader(self.user, id)
+        return self.cache[key]
+
+    
 class MainPage(webapp2.RequestHandler):
 
     known_modules = {}
     known_loaders = {}
 
-    cache = {}
+    def put(self):
+        self.execute()
+
+    def post(self):
+        self.execute()
+
+    def delete(self):
+        self.execute()
+
+    def get(self):
+        self.execute()
+
+
+    def execute(self):
+        request = RequestData()
+        request.user = users.get_current_user()
+        request.known_loaders = self.known_loaders
+
+        if not request.user:
+            request.user = users.User("test@test.com")
+            # return self.redirect(users.create_login_url(self.request.uri))
+
+        self.init()
+        path = self.request.path
+        if self.request.method != "GET":
+            path = self.action(request) or path
+
+        self.render(request, path)
+
 
     def init(self):
         dependencies = set()
@@ -55,22 +100,30 @@ class MainPage(webapp2.RequestHandler):
 
         log.info("Module loading complete")
 
-        JINJA_ENVIRONMENT.globals['load'] = self.load
-        JINJA_ENVIRONMENT.globals['json'] = self.json
+
+    def action(self, request):
+        path_segments = self.request.path.strip("/").split("/")
+        module_name, path_segments = path_segments[0], path_segments[1:] or ["_index_"]
+        module = self.known_modules[module_name]
+
+        data = {}
+
+        if hasattr(module, "actions") and self.request.method in module.actions:
+            for pattern in module.actions[self.request.method]:
+                action = module.actions[self.request.method][pattern]
+                impl, keys = self.interpret_pattern(path_segments, pattern, action)
+                if impl:
+                    return impl(request.user, keys, data)
+
+        raise Exception("action not found")
 
 
+    def render(self, request, path):
+        jinja = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
+        jinja.globals['load'] = request.load
+        jinja.globals['json'] = self.json
 
-    def get(self):
-        user = users.get_current_user()
-        if not user:
-            return self.redirect(users.create_login_url(self.request.uri))
-
-        self.init()
-        self.render(self.request.path)
-
-
-    def render(self, path):
         format = "html"
         if "format" in self.request.GET: format = self.request.GET["format"]
         path_segments = path.strip("/").split("/")
@@ -81,13 +134,13 @@ class MainPage(webapp2.RequestHandler):
         log.info("Rendering module '%s' path: %s (%s)" % (module_name, path_segments, format))
 
         keys = {}
-        template = self.load_template("%s/%s.%s" % (base_path, "/".join(path_segments), format))
+        template = self.load_template(jinja, "%s/%s.%s" % (base_path, "/".join(path_segments), format))
 
         if not template and hasattr(module, "templates"):
             for template_pattern in module.templates:
-                path, keys = self.interpret_template_pattern(path_segments, template_pattern, module.templates[template_pattern])
+                path, keys = self.interpret_pattern(path_segments, template_pattern, module.templates[template_pattern])
                 if path:
-                    template = self.load_template("%s/%s.%s" % (base_path, path, format))
+                    template = self.load_template(jinja, "%s/%s.%s" % (base_path, path, format))
                     if template:
                         log.debug("keys: %s" % keys)
                         break;
@@ -95,18 +148,18 @@ class MainPage(webapp2.RequestHandler):
         if not template and hasattr(module, "get_template"):
             path, keys = module.get_template(path_segments)
             if path:
-                template = self.load_template("%s/%s.%s" % (base_path, path, format))
+                template = self.load_template(jinja, "%s/%s.%s" % (base_path, path, format))
 
         if not template:
             raise Exception("Template not found")
 
         self.response.write(template.render({
             'keys' : keys,
-            'user' : users.get_current_user(),
+            'user' : request.user,
             'sign_out_url' : users.create_logout_url(self.request.uri) }))
 
 
-    def interpret_template_pattern(self, segments, pattern, template):
+    def interpret_pattern(self, segments, pattern, template):
         log.debug("Checking template pattern: %s" % pattern)
         pattern_pieces = pattern.split("/")
         keys = {}
@@ -126,27 +179,12 @@ class MainPage(webapp2.RequestHandler):
         return (template or "/".join(path)), keys;
 
 
-    def load_template(self, path):
+    def load_template(self, jinja, path):
         try:
             log.debug("Looking for template at %s" % path)
-            return JINJA_ENVIRONMENT.get_template(path)
+            return jinja.get_template(path)
         except jinja2.TemplateNotFound:
             return None
-
-
-    def load(self, type, id=None):
-        if type not in self.known_loaders:
-            raise Exception("Loader '%s' not found" % type)
-
-        key = type + "/" + str(id)
-        if key in self.cache:
-            log.debug("Cache hit for %s: %s" % (type, id))
-            return self.cache[key]
-
-        loader = self.known_loaders[type]
-        log.debug("Loading %s: %s (%s)" % (type, id, loader))
-        self.cache[key] = loader(users.get_current_user(), id)
-        return self.cache[key]
 
 
     def json(self, obj):

@@ -7,7 +7,9 @@ from google.appengine.api import users
 log = logging.getLogger("users")
 
 
-templates = { "{id}" : "view",
+dependencies = ["permissions"]
+
+templates = { "{id}"      : "view",
               "{id}/edit" : None }
 
 
@@ -18,39 +20,44 @@ def user_key(user):
         return ndb.Key("User", user)
 
 
-def load_user(viewer, id):
-    key = user_key(id)
-    user = key.get()
+class UserActions:
+    @staticmethod
+    def create_user(viewer, keys, data):
+        new_user = User(key=user_key(keys["id"]))
+        new_user.user = users.User(keys["id"])
+        new_user.created_by = user_key(viewer)
+        new_user.active = True
+        new_user.put()
 
-    if not user:
-        log.warn("Creating user");
-        key, user = create_user(viewer, viewer)
+        return None
 
-    return {
-        'id' : key.id(),
-        'email' : user.user.email(),
-        'created_by' : user.created_by.id(),
-        'active' : user.active,
-        'notes' : user.notes
-        }
+    @staticmethod
+    def delete_user(viewer, keys, data):
+        user_key(keys["id"]).delete()
 
-
-def load_user_list(user, ignored):
-    return { 'user' : user.email() }
+        return "/users"
 
 
-def create_user(user, creator):
-    new_user = User(key=user_key(user))
-    new_user.user = user
-    new_user.created_by = user_key(creator)
-    new_user.active = True
-    new_user.notes = "Created automatically for testing."
+class UserLookups:
+    @staticmethod
+    def load_user(viewer, id):
+        key = user_key(id)
+        user = key.get()
 
-    return new_user.put(), new_user
+        if not user:
+            return None
 
+        return { 'id' : key.id(),
+                 'email' : user.user.email(),
+                 'created_by' : user.created_by.id(),
+                 'active' : user.active,
+                 'notes' : user.notes
+               }
 
-types = { 'user' : load_user,
-          'user_list' : load_user_list }
+    @staticmethod
+    def load_user_list(user, ignored):
+        return { 'user' : user.email() }
+
 
 class User(ndb.Model):
     user = ndb.UserProperty()
@@ -59,3 +66,15 @@ class User(ndb.Model):
     updated = ndb.DateTimeProperty(auto_now=True)
     active = ndb.BooleanProperty()
     notes = ndb.TextProperty()
+
+
+types = { 'user'      : UserLookups.load_user,
+          'user_list' : UserLookups.load_user_list }
+
+actions = { "PUT"    : { "{id}" : UserActions.create_user },
+            "DELETE" : { "{id}" : UserActions.delete_user } }
+
+
+
+
+
