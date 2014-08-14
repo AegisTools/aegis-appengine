@@ -2,6 +2,7 @@ import os
 import urllib
 import pkgutil
 import logging
+import json
 
 from google.appengine.api import users
 from google.appengine.ext import ndb
@@ -27,10 +28,6 @@ class MainPage(webapp2.RequestHandler):
     cache = {}
 
     def init(self):
-        user = users.get_current_user()
-        if not user:
-            return self.redirect(users.create_login_url(self.request.uri))
-
         dependencies = set()
 
         for importer, modname, ispkg in pkgutil.iter_modules(modules.__path__):
@@ -59,16 +56,19 @@ class MainPage(webapp2.RequestHandler):
         log.info("Module loading complete")
 
         JINJA_ENVIRONMENT.globals['load'] = self.load
+        JINJA_ENVIRONMENT.globals['json'] = self.json
+
 
 
 
     def get(self):
+        user = users.get_current_user()
+        if not user:
+            return self.redirect(users.create_login_url(self.request.uri))
+
         self.init()
-        self.execute("get")
-
-
-    def execute(self, verb):
         self.render(self.request.path)
+
 
     def render(self, path):
         format = "html"
@@ -100,7 +100,10 @@ class MainPage(webapp2.RequestHandler):
         if not template:
             raise Exception("Template not found")
 
-        self.response.write(template.render(keys or {}))
+        self.response.write(template.render({
+            'keys' : keys,
+            'user' : users.get_current_user(),
+            'sign_out_url' : users.create_logout_url(self.request.uri) }))
 
 
     def interpret_template_pattern(self, segments, pattern, template):
@@ -144,6 +147,10 @@ class MainPage(webapp2.RequestHandler):
         log.debug("Loading %s: %s (%s)" % (type, id, loader))
         self.cache[key] = loader(users.get_current_user(), id)
         return self.cache[key]
+
+
+    def json(self, obj):
+        return json.dumps(obj)
 
 
 app = webapp2.WSGIApplication([('/.*', MainPage)], debug=True)

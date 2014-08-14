@@ -1,1 +1,1 @@
-{{ load("users/user_list") }}
+{{ json(load("users/user_list")) }}
