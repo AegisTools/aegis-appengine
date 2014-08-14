@@ -93,15 +93,20 @@ class MainPage(webapp2.RequestHandler):
             for template_pattern in module.templates:
                 path, keys = self.interpret_template_pattern(path_segments, template_pattern, module.templates[template_pattern])
                 if path:
-                    log.debug("keys: %s" % keys)
                     template = self.load_template("%s/%s.%s" % (base_path, path, format))
                     if template:
+                        log.debug("keys: %s" % keys)
                         break;
+
+        if not template and hasattr(module, "get_template"):
+            path, keys = module.get_template(path_segments)
+            if path:
+                template = self.load_template("%s/%s.%s" % (base_path, path, format))
 
         if not template:
             raise Exception("Template not found")
 
-        self.response.write(template.render({}))
+        self.response.write(template.render(keys or {}))
 
 
     def interpret_template_pattern(self, segments, pattern, template):
