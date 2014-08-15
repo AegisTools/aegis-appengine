@@ -1,2 +1,1 @@
-{{ json(load("permissions/permission_list", keys.user)) }}
-
+{{ json(load("users/permission_list", keys.user)) }}

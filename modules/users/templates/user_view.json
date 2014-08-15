@@ -1,1 +1,1 @@
-{{ json(load("users/user", id)) }}
+{{ json(load("users/user", keys.user)) }}
