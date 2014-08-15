@@ -6,7 +6,6 @@ import json
 import datetime
 
 from google.appengine.api import users
-from google.appengine.ext import ndb
 
 import jinja2
 import webapp2
@@ -112,10 +111,14 @@ class MainPage(webapp2.RequestHandler):
 
         if hasattr(module, "actions") and self.request.method in module.actions:
             for pattern in module.actions[self.request.method]:
-                action = module.actions[self.request.method][pattern]
-                impl, keys = self.interpret_pattern(path_segments, pattern, action)
-                if impl:
-                    return impl(request.user, keys, data)
+                if pattern:
+                    action = module.actions[self.request.method][pattern]
+                    impl, keys = self.interpret_pattern(path_segments, pattern, action)
+                    if impl:
+                        return impl(request.user, keys, data)
+
+            if None in module.actions[self.request.method]:
+                return module.actions[self.request.method][None](request.user, {}, data)
 
         raise Exception("action not found")
 

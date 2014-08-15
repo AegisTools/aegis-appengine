@@ -14,8 +14,8 @@ log = logging.getLogger("users")
 
 def create_user(viewer, keys, data):
     if permission_check(viewer, "user", "create") or permission_is_root(viewer):
-        new_user = User(key=user_key(keys["id"]))
-        new_user.user = users.User(keys["id"])
+        new_user = User(key=user_key(keys["user"]))
+        new_user.user = users.User(keys["user"])
         new_user.created_by = user_key(viewer)
         new_user.active = True
         new_user.put()
