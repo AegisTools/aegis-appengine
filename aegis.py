@@ -123,14 +123,23 @@ class MainPage(webapp2.RequestHandler):
         raise Exception("action not found")
 
 
+    def get_data_type(self, header):
+        type = "html"
+        if header in self.request.headers and self.request.headers[header].startswith("application/"):
+            type = self.request.headers[header][len("application/"):]
+        if "format" in self.request.GET:
+            type = self.request.GET["format"]
+        return type
+
+
+
     def render(self, request, path):
         jinja = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
         jinja.globals['load'] = request.load
         jinja.globals['json'] = self.json
 
-        format = "html"
-        if "format" in self.request.GET: format = self.request.GET["format"]
+        format = self.get_data_type("Accept")
         path_segments = path.strip("/").split("/")
         module_name, path_segments = path_segments[0], path_segments[1:] or ["_index_"]
         module = self.known_modules[module_name]
