@@ -1,27 +1,45 @@
-import logging
 import sys
 import os
+import logging
 
 from google.appengine.ext import ndb
-from google.appengine.api import users
 
-from public import *
-from private import *
-
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
-from users.public import *
+from common import *
 
 
 log = logging.getLogger("permissions")
 
-dependencies = ["users"]
-
-templates = { "{user}" : "list" }
-
 
 def permission_key(user, id):
     return ndb.Key("Permissions", parent=user_key(user))
+
+
+def permission_check(user, type, action, id=None):
+    result = permission_get(user, type, action, id)
+
+    id_str = ""
+    if id: id_str = ":" + str(id)
+
+    if result:
+        log.debug("Permission: %s %s%s (%s) - Allowed" % (user, type, id_str, action))
+    else:
+        log.debug("Permission: %s %s%s (%s) - Not Allowed" % (user, type, id_str, action))
+
+    return result
+
+
+def permission_is_root(user):
+    return permission_check(user, "root", "root") or users.is_current_user_admin()
+
+
+def permission_get(user, type, action, id=None):
+    query = Permission.query(
+        Permission.type == type,
+        Permission.action == action,
+        ancestor=user_key(user))
+    if id:
+        query.filter(Permission.id == id)
+    return query.get()
 
 
 def permission_grant(viewer, keys, data):
@@ -69,21 +87,18 @@ def permission_list(viewer, user):
     if permission_check(viewer, "permissions", "view"):
         result = []
         for permission in Permission.query(ancestor=user_key(user)).fetch():
-            result.append({ 'user' : permission.key.parent().id(),
-                            'type' : permission.type,
-                            'id' : permission.id,
+            result.append({ 'user'   : permission.key.parent().id(),
+                            'type'   : permission.type,
+                            'id'     : permission.id,
                             'action' : permission.action })
         return result
 
 
-types = { 'permission_list'      : permission_list }
-
-actions = { "PUT"    : { "{user}/{type}/{action}"      : permission_grant,
-                         "{user}/{type}/{action}/{id}" : permission_grant },
-            "DELETE" : { "{user}/{type}/{action}"      : permission_revoke,
-                         "{user}/{type}/{action}/{id}" : permission_revoke } }
-
-
+class Permission(ndb.Model):
+    type = ndb.StringProperty()
+    id = ndb.StringProperty()
+    action = ndb.StringProperty()
+    created = ndb.DateTimeProperty(auto_now_add=True)
 
 
 

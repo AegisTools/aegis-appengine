@@ -8,3 +8,4 @@ def user_key(user):
     else:
         return ndb.Key("User", user)
 
+

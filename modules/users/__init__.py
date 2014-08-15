@@ -1,97 +1,25 @@
-import sys
-import os
-import logging
-
-from public import *
-
-from google.appengine.ext import ndb
-from google.appengine.api import users
-
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from permissions.public import *
-
-log = logging.getLogger("users")
+from users import *
+from permissions import *
 
 
-dependencies = ["permissions"]
+dependencies = []
 
-templates = { "{id}"      : "view",
-              "{id}/edit" : None }
-
-
-def create_user(viewer, keys, data):
-    if permission_check(viewer, "user", "create") or permission_is_root(viewer):
-        new_user = User(key=user_key(keys["id"]))
-        new_user.user = users.User(keys["id"])
-        new_user.created_by = user_key(viewer)
-        new_user.active = True
-        new_user.put()
-    else:
-        log.debug("Not allowed")
-
-    return None
+templates = { "{user}"             : "user_view",
+              "{user}/edit"        : "user_edit",
+              "{user}/permissions" : "permission_list" }
 
 
-def delete_user(viewer, keys, data):
-    if permission_check(viewer, "user", "create") or permission_is_root(viewer):
-        user_key(keys["id"]).delete()
-    else:
-        log.debug("Not allowed")
-
-    return "/users"
+types = { "user"            : load_user,
+          "user_list"       : load_user_list,
+          "permission_list" : permission_list }
 
 
-def load_user(viewer, id):
-    if permission_check(viewer, "user", "read") or permission_is_root(viewer):
-        key = user_key(id)
-        user = key.get()
-
-        if not user:
-            return None
-
-        return { 'id' : key.id(),
-                 'email' : user.user.email(),
-                 'created_by' : user.created_by.id(),
-                 'active' : user.active,
-                 'notes' : user.notes
-               }
-    else:
-        log.debug("Not allowed")
-
-
-def load_user_list(viewer, ignored):
-    if permission_check(viewer, "user", "read") or permission_is_root(viewer):
-        result = []
-        for user in User.query().fetch():
-            result.append(user_to_model(user))
-        return result
-
-
-def user_to_model(user):
-    return { 'user'       : user.user.email(),
-             'created_by' : user.created_by.id(),
-             'created'    : user.created,
-             'updated'    : user.updated,
-             'active'     : user.active,
-             'notes'      : user.notes }
-
-
-class User(ndb.Model):
-    user = ndb.UserProperty()
-    created_by = ndb.KeyProperty(kind='User')
-    created = ndb.DateTimeProperty(auto_now_add=True)
-    updated = ndb.DateTimeProperty(auto_now=True)
-    active = ndb.BooleanProperty()
-    notes = ndb.TextProperty()
-
-
-types = { 'user'      : load_user,
-          'user_list' : load_user_list }
-
-actions = { "PUT"    : { "{id}" : create_user },
-            "DELETE" : { "{id}" : delete_user } }
-
-
+actions = { "PUT"    : { "{user}"                                 : create_user,
+                         "{user}/permission/{type}/{action}"      : permission_grant,
+                         "{user}/permission/{type}/{action}/{id}" : permission_grant },
+            "DELETE" : { "{user}"                                 : delete_user,
+                         "{user}/permission/{type}/{action}"      : permission_revoke,
+                         "{user}/permission/{type}/{action}/{id}" : permission_revoke } }
 
 
 
