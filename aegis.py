@@ -3,6 +3,7 @@ import urllib
 import pkgutil
 import logging
 import json
+import datetime
 
 from google.appengine.api import users
 from google.appengine.ext import ndb
@@ -189,7 +190,13 @@ class MainPage(webapp2.RequestHandler):
 
 
     def json(self, obj):
-        return json.dumps(obj)
+        date_handler = lambda obj: (
+            obj.isoformat()
+            if isinstance(obj, datetime.datetime)
+            or isinstance(obj, datetime.date)
+            else None)
+
+        return json.dumps(obj, default=date_handler)
 
 
 app = webapp2.WSGIApplication([('/.*', MainPage)], debug=True)

@@ -2,12 +2,15 @@ import logging
 import sys
 import os
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
-from users import user_key
-
 from google.appengine.ext import ndb
 from google.appengine.api import users
+
+from public import *
+from private import *
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+from users.public import *
 
 
 log = logging.getLogger("permissions")
@@ -23,8 +26,7 @@ def permission_key(user, id):
 
 def permission_grant(viewer, keys, data):
     if (permission_check(viewer, "permissions", "grant")
-            or permission_is_root(viewer)
-            or viewer.is_current_user_admin()):
+            or permission_is_root(viewer)):
         id = None
         if "id" in keys:
             id = keys["id"]
@@ -63,29 +65,6 @@ def permission_revoke(viewer, keys, data):
     return "/permissions/%s" % keys["user"]
 
 
-def permission_is_root(user):
-    return permission_check(user, "root", "root")
-
-
-def permission_check(user, type, action, id=None):
-    result = permission_get(user, type, action, id)
-
-    if result:
-        log.debug("Permission: %s %s:%s (%s) - Allowed" % (user, type, id, action))
-    else:
-        log.debug("Permission: %s %s:%s (%s) - Not Allowed" % (user, type, id, action))
-
-    return result
-
-
-def permission_get(user, type, action, id=None):
-    return Permission.query(
-        Permission.type == type,
-        Permission.id == id,
-        Permission.action == action,
-        ancestor=user_key(user)).get()
-
-
 def permission_list(viewer, user):
     if permission_check(viewer, "permissions", "view"):
         result = []
@@ -95,13 +74,6 @@ def permission_list(viewer, user):
                             'id' : permission.id,
                             'action' : permission.action })
         return result
-
-
-class Permission(ndb.Model):
-    type = ndb.StringProperty()
-    id = ndb.StringProperty()
-    action = ndb.StringProperty()
-    created = ndb.DateTimeProperty(auto_now_add=True)
 
 
 types = { 'permission_list'      : permission_list }

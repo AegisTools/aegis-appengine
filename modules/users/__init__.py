@@ -1,8 +1,14 @@
+import sys
+import os
 import logging
+
+from public import *
 
 from google.appengine.ext import ndb
 from google.appengine.api import users
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from permissions.public import *
 
 log = logging.getLogger("users")
 
@@ -13,34 +19,30 @@ templates = { "{id}"      : "view",
               "{id}/edit" : None }
 
 
-def user_key(user):
-    if isinstance(user, users.User):
-        return ndb.Key("User", user.email())
-    else:
-        return ndb.Key("User", user)
-
-
-class UserActions:
-    @staticmethod
-    def create_user(viewer, keys, data):
+def create_user(viewer, keys, data):
+    if permission_check(viewer, "user", "create") or permission_is_root(viewer):
         new_user = User(key=user_key(keys["id"]))
         new_user.user = users.User(keys["id"])
         new_user.created_by = user_key(viewer)
         new_user.active = True
         new_user.put()
+    else:
+        log.debug("Not allowed")
 
-        return None
+    return None
 
-    @staticmethod
-    def delete_user(viewer, keys, data):
+
+def delete_user(viewer, keys, data):
+    if permission_check(viewer, "user", "create") or permission_is_root(viewer):
         user_key(keys["id"]).delete()
+    else:
+        log.debug("Not allowed")
 
-        return "/users"
+    return "/users"
 
 
-class UserLookups:
-    @staticmethod
-    def load_user(viewer, id):
+def load_user(viewer, id):
+    if permission_check(viewer, "user", "read") or permission_is_root(viewer):
         key = user_key(id)
         user = key.get()
 
@@ -53,10 +55,25 @@ class UserLookups:
                  'active' : user.active,
                  'notes' : user.notes
                }
+    else:
+        log.debug("Not allowed")
 
-    @staticmethod
-    def load_user_list(user, ignored):
-        return { 'user' : user.email() }
+
+def load_user_list(viewer, ignored):
+    if permission_check(viewer, "user", "read") or permission_is_root(viewer):
+        result = []
+        for user in User.query().fetch():
+            result.append(user_to_model(user))
+        return result
+
+
+def user_to_model(user):
+    return { 'user'       : user.user.email(),
+             'created_by' : user.created_by.id(),
+             'created'    : user.created,
+             'updated'    : user.updated,
+             'active'     : user.active,
+             'notes'      : user.notes }
 
 
 class User(ndb.Model):
@@ -68,11 +85,11 @@ class User(ndb.Model):
     notes = ndb.TextProperty()
 
 
-types = { 'user'      : UserLookups.load_user,
-          'user_list' : UserLookups.load_user_list }
+types = { 'user'      : load_user,
+          'user_list' : load_user_list }
 
-actions = { "PUT"    : { "{id}" : UserActions.create_user },
-            "DELETE" : { "{id}" : UserActions.delete_user } }
+actions = { "PUT"    : { "{id}" : create_user },
+            "DELETE" : { "{id}" : delete_user } }
 
 
 
