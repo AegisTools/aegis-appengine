@@ -102,6 +102,7 @@ class MainPage(webapp2.RequestHandler):
 
 
     def action(self, request):
+        log.info("%s %s" % (self.request.method, self.request.path.strip("/")))
         path_segments = self.request.path.strip("/").split("/")
         module_name, path_segments = path_segments[0], path_segments[1:] or ["_index_"]
         module = self.known_modules[module_name]
@@ -160,7 +161,7 @@ class MainPage(webapp2.RequestHandler):
 
 
     def interpret_pattern(self, segments, pattern, template):
-        log.debug("Checking template pattern: %s" % pattern)
+        log.debug("Checking template '%s' against '%s'" % (pattern, "/".join(segments)))
         pattern_pieces = pattern.split("/")
         keys = {}
         path = []
