@@ -27,7 +27,7 @@ def create_user(viewer, keys, data):
 
 def delete_user(viewer, keys, data):
     if permission_check(viewer, "user", "create") or permission_is_root(viewer):
-        user_key(keys["id"]).delete()
+        user_key(keys["user"]).delete()
     else:
         log.debug("Not allowed")
 

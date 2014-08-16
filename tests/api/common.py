@@ -20,7 +20,8 @@ class AegisTestCase(unittest.TestCase):
         self.wipe()
 
     def tearDown(self):
-        self.wipe()
+        # self.wipe()
+        pass
 
     def get(self, fragment, auth=None):
         return requests.get(URL + fragment, auth=auth, headers=HEADERS)
@@ -30,4 +31,7 @@ class AegisTestCase(unittest.TestCase):
 
     def post(self, fragment, payload=None, auth=None):
         return requests.post(URL + fragment, auth=auth, headers=HEADERS)
+
+    def delete(self, fragment, auth=None):
+        return requests.delete(URL + fragment, auth=auth, headers=HEADERS)
 
