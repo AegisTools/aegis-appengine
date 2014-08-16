@@ -14,12 +14,12 @@ types = { "user"            : load_user,
           "permission_list" : permission_list }
 
 
-actions = { "PUT"    : { "{user}"                                 : create_user,
-                         "{user}/permission/{type}/{action}"      : permission_grant,
-                         "{user}/permission/{type}/{action}/{id}" : permission_grant },
-            "DELETE" : { "{user}"                                 : delete_user,
-                         "{user}/permission/{type}/{action}"      : permission_revoke,
-                         "{user}/permission/{type}/{action}/{id}" : permission_revoke } }
+actions = { "PUT"    : { "{user}"                                  : create_user,
+                         "{user}/permissions/{type}/{action}"      : permission_grant,
+                         "{user}/permissions/{type}/{action}/{id}" : permission_grant },
+            "DELETE" : { "{user}"                                  : delete_user,
+                         "{user}/permissions/{type}/{action}"      : permission_revoke,
+                         "{user}/permissions/{type}/{action}/{id}" : permission_revoke } }
 
 
 

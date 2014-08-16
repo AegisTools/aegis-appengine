@@ -142,11 +142,11 @@ class MainPage(webapp2.RequestHandler):
         format = self.get_data_type("Accept")
         path_segments = path.strip("/").split("/")
         module_name, path_segments = path_segments[0], path_segments[1:] or ["_index_"]
-        module = self.known_modules[module_name]
-        base_path = "modules/%s/templates" % module_name
 
         log.info("Rendering module '%s' path: %s (%s)" % (module_name, path_segments, format))
 
+        module = self.known_modules[module_name]
+        base_path = "modules/%s/templates" % module_name
         keys = {}
         template = self.load_template(jinja, "%s/%s.%s" % (base_path, "/".join(path_segments), format))
 

@@ -10,8 +10,13 @@ from common import *
 log = logging.getLogger("permissions")
 
 
-def permission_key(user, id):
-    return ndb.Key("Permissions", parent=user_key(user))
+def permission_key(user, type, action, id=None):
+    type_key = ndb.Key("Permission_Type", type, parent=user_key(user))
+    key = ndb.Key("Permission_Action", action, parent=ndb.Key("Permission_Type", type, parent=user_key(user)))
+    if id:
+        return ndb.Key("Permission", id, parent=ndb.Key("Permission_Action", action, parent=type_key))
+    else:
+        return ndb.Key("Permission", action, parent=type_key)
 
 
 def permission_check(user, type, action, id=None):
@@ -37,24 +42,19 @@ def permission_is_root(user):
 
 
 def permission_get(user, type, action, id=None):
-    query = Permission.query(
-        Permission.type == type,
-        Permission.action == action,
-        ancestor=user_key(user))
-    if id:
-        query.filter(Permission.id == id)
-    return query.get()
+    return permission_key(user, type, action, id).get()
 
 
 def permission_grant(viewer, keys, data):
-    if (permission_check(viewer, "permissions", "grant")
-            or permission_is_root(viewer)):
+    if permission_check(viewer, "permissions", "grant") or permission_is_root(viewer):
         id = None
         if "id" in keys:
             id = keys["id"]
 
-        if not permission_get(keys["user"], keys["type"], keys["action"], id):
-            permission = Permission(parent=user_key(keys["user"]))
+        key = permission_key(keys["user"], keys["type"], keys["action"], id)
+        if not key.get():
+            permission = Permission(key=key)
+            permission.user = users.User(keys["user"])
             permission.type = keys["type"]
             permission.id = id
             permission.action = keys["action"]
@@ -66,32 +66,29 @@ def permission_grant(viewer, keys, data):
     else:
         log.debug("Not allowed")
 
-    return "/permissions/%s" % keys["user"]
+    return "/users/%s/permissions/" % keys["user"]
 
 
 def permission_revoke(viewer, keys, data):
-    if permission_check(viewer, "permissions", "revoke"):
+    if permission_check(viewer, "permissions", "revoke") or permission_is_root(viewer):
         id = None
         if "id" in keys:
             id = keys["id"]
 
-        permission = permission_get(keys["user"], keys["type"], keys["action"], id)
-        if (permission):
-            permission.key.delete()
-            log.debug("Permission revoked")
-        else:
-            log.debug("Permission not granted")
+        key = permission_key(keys["user"], keys["type"], keys["action"], id)
+        key.delete()
+        log.debug("Permission revoked")
     else:
         log.debug("Not allowed")
 
-    return "/permissions/%s" % keys["user"]
+    return "/users/%s/permissions/" % keys["user"]
 
 
 def permission_list(viewer, user):
-    if permission_check(viewer, "permissions", "view"):
+    if permission_check(viewer, "permissions", "view") or permission_is_root(viewer):
         result = []
         for permission in Permission.query(ancestor=user_key(user)).fetch():
-            result.append({ 'user'   : permission.key.parent().id(),
+            result.append({ 'user'   : permission.user.email(),
                             'type'   : permission.type,
                             'id'     : permission.id,
                             'action' : permission.action })
@@ -99,6 +96,7 @@ def permission_list(viewer, user):
 
 
 class Permission(ndb.Model):
+    user = ndb.UserProperty()
     type = ndb.StringProperty()
     id = ndb.StringProperty()
     action = ndb.StringProperty()
