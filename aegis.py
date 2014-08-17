@@ -178,19 +178,25 @@ class MainPage(webapp2.RequestHandler):
         pattern_pieces = pattern.split("/")
         keys = {}
         path = []
-        for key, value in map(None, pattern.split("/"), segments):
-            if not (key and value):
-                # Pattern is the wrong length
-                return None, None
-            elif key.startswith("{") and key.endswith("}"):
-                keys[key[1:-1]] = value
-            elif key == value:
-                path.append(key)
-            else:
+        last_key = None
+        for i in range(len(pattern_pieces)):
+            key = pattern_pieces[i]
+            if key == "*":
+                keys[last_key] = segments[i-1:]
+                return (template or "/".join(path)), keys
+            elif len(segments) <= i:
                 # Pattern doesn't match
                 return None, None
+            elif key.startswith("{") and key.endswith("}"):
+                last_key = key[1:-1]
+                keys[last_key] = segments[i]
+            else:
+                path.append(key)
 
-        return (template or "/".join(path)), keys;
+        if len(segments) != len(pattern_pieces):
+            return None, None
+
+        return (template or "/".join(path)), keys
 
 
     def load_template(self, jinja, path):
