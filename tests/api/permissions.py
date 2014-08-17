@@ -4,7 +4,7 @@ import common
 
 from common import USER_ROOT
 
-class TestUsers(common.AegisTestCase):
+class PermissionTests(common.AegisTestCase):
 
     def test_root_grant_permission(self):
         self.assertEqual(200, self.put("users/a", USER_ROOT).status_code)

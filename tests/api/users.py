@@ -4,7 +4,7 @@ import common
 
 from common import USER_ROOT
 
-class TestUsers(common.AegisTestCase):
+class UserTests(common.AegisTestCase):
 
     def test_wipe_cleared_data(self):
         self.assertIsNone(self.get("users/a", USER_ROOT).json())
