@@ -18,8 +18,7 @@ Permission
 
 Describes a single permission granted to a user, possibly for a specific item.
 
-**TODO:** Should user by a (Key: User)?  Should we add created_by?  Should id be a (Key: *)?
-Should parent be (Key: User)?
+**TODO:** Add created_by (Key: User)  Make id be a (Key: *)  Make parent be (Key: User)?
 
 * user (User)
 * type (String)
