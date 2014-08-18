@@ -24,7 +24,6 @@ def permission_check(user, type, action, key=None):
     if not type:
         type = key.kind()
 
-    log.debug(key)
     result = permission_key(user, type, action, key).get()
 
     key_str = ""

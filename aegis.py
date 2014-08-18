@@ -115,6 +115,7 @@ class MainPage(webapp2.RequestHandler):
                     action = module.actions[self.request.method][pattern]
                     impl, keys = self.interpret_pattern(path_segments, pattern, action)
                     if impl:
+                        log.debug("Performing action: %s" % impl)
                         return impl(request.user, keys, data)
 
             if None in module.actions[self.request.method]:
@@ -190,8 +191,10 @@ class MainPage(webapp2.RequestHandler):
             elif key.startswith("{") and key.endswith("}"):
                 last_key = key[1:-1]
                 keys[last_key] = segments[i]
-            else:
+            elif key == segments[i]:
                 path.append(key)
+            else:
+                return None, None
 
         if len(segments) != len(pattern_pieces):
             return None, None
