@@ -28,6 +28,15 @@ class PermissionTests(common.AegisTestCase):
         self.assertFalse(self.get("test_harness/permissions/user/action/kind/a/b/d", USER_ROOT).json()["allowed"])
 
 
+    def test_root_grant_permission_with_multipart_key_chaining(self):
+        self.assertEqual(200, self.put("test_harness/permissions/user/action/kind/a/b", USER_ROOT).status_code)
+        self.assertTrue(self.get("test_harness/permissions/user/action/kind/a/b/c/d/e", USER_ROOT).json()["allowed"])
+        self.assertFalse(self.get("test_harness/permissions/user/action/kind/a/c/d/e", USER_ROOT).json()["allowed"])
+
+
+    def test_root_grant_permission_chaining(self):
+        self.assertEqual(200, self.put("test_harness/permissions/user/action/kind", USER_ROOT).status_code)
+        self.assertTrue(self.get("test_harness/permissions/user/action/kind/a/b/c", USER_ROOT).json()["allowed"])
 
 
 #     def test_root_grant_permission_with_id(self):
