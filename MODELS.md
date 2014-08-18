@@ -1,8 +1,8 @@
 Data Models
 ===========
 
-User
-----
+users/User
+----------
 
 Describes a particular user in the system.
 
@@ -13,8 +13,8 @@ Describes a particular user in the system.
 * active (Boolean)
 * notes (Text)
 
-Permission
-----------
+users/Permission
+----------------
 
 Describes a single permission granted to a user, possibly for a specific item.
 
@@ -26,8 +26,8 @@ Describes a single permission granted to a user, possibly for a specific item.
 * action (String)
 * created (DateTime)
 
-Tag
----
+tags/Tag
+--------
 
 Describes a particular tag.
 
@@ -35,8 +35,8 @@ Describes a particular tag.
 * created_by (Key: User)
 * created (DateTime)
 
-AppliedTag
-----------
+tags/AppliedTag
+---------------
 
 Indicates that a tag has actually been applied to an object.
 
