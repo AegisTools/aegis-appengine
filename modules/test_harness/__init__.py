@@ -7,6 +7,7 @@ from google.appengine.ext import ndb
 from google.appengine.api import memcache
 
 from users.permissions import permission_check, permission_grant, permission_revoke
+from tags.tags import tag_apply, tag_remove, tag_list
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common import wipe
@@ -17,6 +18,9 @@ log = logging.getLogger("test_harness")
 
 dependencies = ["users"]
 
+"""
+GENERAL PURPOSE STUBS
+"""
 
 def wipe(viewer, keys, data):
     log.error("Wiping entire database")
@@ -24,6 +28,9 @@ def wipe(viewer, keys, data):
     # db.delete(db.Query(keys_only=True))
     memcache.flush_all()
 
+"""
+PERMISSION STUBS
+"""
 
 def grant_permission(viewer, keys, data):
     key = build_thing_key(keys)
@@ -42,6 +49,26 @@ def check_permission(viewer, keys):
     else:
         return { "allowed": False }
 
+"""
+TAG STUBS
+"""
+
+def apply_tag(viewer, keys, data):
+    tag_apply(viewer, ndb.Key('Thing', keys["thing"]), keys["tag"])
+
+
+def remove_tag(viewer, keys, data):
+    tag_remove(viewer, ndb.Key('Thing', keys["thing"]), keys["tag"])
+
+
+def get_tags(viewer, target):
+    log.debug("get_tags(%s)" % target)
+    return tag_list(viewer, ndb.Key('Thing', target))
+
+
+"""
+HELPER METHODS
+"""
 
 def build_thing_key(keys):
     key = None
@@ -52,18 +79,24 @@ def build_thing_key(keys):
     return key
 
 
-templates = { "permission/{user}/{action}/{kind}"           : "permission_view",
-              "permission/{user}/{action}/{kind}/{thing}/*" : "permission_view" }
 
 
-types = { "permission" : check_permission }
+templates = { "tag/{thing}"                                  : "tag_list",
+              "permissions/{user}/{action}/{kind}"           : "permission_view",
+              "permissions/{user}/{action}/{kind}/{thing}/*" : "permission_view" }
 
 
-actions = { "POST"   : { "wipe"                                        : wipe },
-            "PUT"    : { "permission/{user}/{action}/{kind}"           : grant_permission,
-                         "permission/{user}/{action}/{kind}/{thing}/*" : grant_permission },
-            "DELETE" : { "permission/{user}/{action}/{kind}"           : revoke_permission,
-                         "permission/{user}/{action}/{kind}/{thing}/*" : revoke_permission } }
+types = { "permission" : check_permission,
+          "tags"       : get_tags }
+
+
+actions = { "POST"   : { "wipe"                                         : wipe },
+            "PUT"    : { "tag/{thing}/{tag}/*"                          : apply_tag,
+                         "permissions/{user}/{action}/{kind}"           : grant_permission,
+                         "permissions/{user}/{action}/{kind}/{thing}/*" : grant_permission },
+            "DELETE" : { "tag/{thing}/{tag}/*"                          : remove_tag,
+                         "permissions/{user}/{action}/{kind}"           : revoke_permission,
+                         "permissions/{user}/{action}/{kind}/{thing}/*" : revoke_permission } }
 
 
 log.warn("Test harness is enabled")
