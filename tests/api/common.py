@@ -14,7 +14,7 @@ HEADERS = { "Content-Type" : "application/json",
 class AegisTestCase(unittest.TestCase):
 
     def wipe(self):
-        self.post("wipe", USER_ROOT)
+        self.post("test_harness/wipe", USER_ROOT)
 
     def setUp(self):
         self.wipe()

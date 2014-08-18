@@ -20,11 +20,12 @@ Describes a single permission granted to a user, possibly for a specific item.
 
 **TODO:** Add created_by (Key: User)  Make id be a (Key: *)  Make parent be (Key: User)?
 
-* user (User)
+* parent (Key: User, type, action, id)
 * type (String)
-* id (String, optional)
+* id (Key: *)
 * action (String)
-* created (DateTime)
+* granted (DateTime)
+* granted_by (Key: User)
 
 tags/Tag
 --------
@@ -32,6 +33,7 @@ tags/Tag
 Describes a particular tag.
 
 * parent (Key: Tag, None)
+* name (String)
 * created_by (Key: User)
 * created (DateTime)
 

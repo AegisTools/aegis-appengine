@@ -1,5 +1,3 @@
-import sys
-import os
 import logging
 
 from google.appengine.ext import ndb
@@ -10,25 +8,34 @@ from shared import *
 log = logging.getLogger("permissions")
 
 
-def permission_key(user, type, action, id=None):
+def permission_key(user, type, action, key=None):
+    if not type:
+        type = key.kind()
+
     type_key = ndb.Key("Permission_Type", type, parent=user_key(user))
-    key = ndb.Key("Permission_Action", action, parent=ndb.Key("Permission_Type", type, parent=user_key(user)))
-    if id:
-        return ndb.Key("Permission", id, parent=ndb.Key("Permission_Action", action, parent=type_key))
+    if key:
+        return ndb.Key("Permission", key.urlsafe(), 
+                       parent=ndb.Key("Permission_Action", action, parent=type_key))
     else:
         return ndb.Key("Permission", action, parent=type_key)
 
 
-def permission_check(user, type, action, id=None):
-    result = permission_get(user, type, action, id)
+def permission_check(user, type, action, key=None):
+    if not type:
+        type = key.kind()
 
-    id_str = ""
-    if id: id_str = ":" + str(id)
+    log.debug(key)
+    result = permission_key(user, type, action, key).get()
+
+    key_str = ""
+    if key: key_str = ":" + key.urlsafe()
 
     if result:
-        log.debug("Permission: %s %s%s (%s) - Allowed" % (user, type, id_str, action))
+        log.debug("Permission: %s %s%s (%s) - Allowed" % (user, type, key_str, action))
     else:
-        log.debug("Permission: %s %s%s (%s) - Not Allowed" % (user, type, id_str, action))
+        log.debug("Permission: %s %s%s (%s) - Not Allowed" % (user, type, key_str, action))
+        if key:
+            return permission_check(user, type, action, key.parent())
 
     return result
 
@@ -41,23 +48,15 @@ def permission_is_root(user):
         return False
 
 
-def permission_get(user, type, action, id=None):
-    return permission_key(user, type, action, id).get()
-
-
-def permission_grant(viewer, keys, data):
+def permission_grant(viewer, user, type, action, target=None):
     if permission_check(viewer, "permissions", "grant") or permission_is_root(viewer):
-        id = None
-        if "id" in keys:
-            id = keys["id"]
-
-        key = permission_key(keys["user"], keys["type"], keys["action"], id)
-        if not key.get():
-            permission = Permission(key=key)
-            permission.user = users.User(keys["user"])
-            permission.type = keys["type"]
-            permission.id = id
-            permission.action = keys["action"]
+        if not permission_key(user, type, action, target).get():
+            permission = Permission(key=permission_key(user, type, action, target))
+            permission.user = user_key(user)
+            permission.type = type or target.kind()
+            permission.action = action
+            permission.target = target
+            permission.granted_by = user_key(viewer)
             permission.put()
 
             log.debug("Permission granted")
@@ -66,22 +65,13 @@ def permission_grant(viewer, keys, data):
     else:
         log.debug("Not allowed")
 
-    return "/users/%s/permissions/" % keys["user"]
 
-
-def permission_revoke(viewer, keys, data):
+def permission_revoke(viewer, user, type, action, target=None):
     if permission_check(viewer, "permissions", "revoke") or permission_is_root(viewer):
-        id = None
-        if "id" in keys:
-            id = keys["id"]
-
-        key = permission_key(keys["user"], keys["type"], keys["action"], id)
-        key.delete()
+        permission_key(user, type, action, target).delete()
         log.debug("Permission revoked")
     else:
         log.debug("Not allowed")
-
-    return "/users/%s/permissions/" % keys["user"]
 
 
 def permission_list(viewer, user):
@@ -96,11 +86,12 @@ def permission_list(viewer, user):
 
 
 class Permission(ndb.Model):
-    user = ndb.UserProperty()
+    user = ndb.KeyProperty(kind='User')
     type = ndb.StringProperty()
-    id = ndb.StringProperty()
     action = ndb.StringProperty()
-    created = ndb.DateTimeProperty(auto_now_add=True)
+    target = ndb.KeyProperty()
+    granted = ndb.DateTimeProperty(auto_now_add=True)
+    granted_by = ndb.KeyProperty(kind='User')
 
 
 

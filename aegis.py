@@ -165,12 +165,12 @@ class MainPage(webapp2.RequestHandler):
                 template = self.load_template(jinja, "%s/%s.%s" % (base_path, path, format))
 
         if not template:
-            raise Exception("Template not found")
-
-        self.response.write(template.render({
-            'keys' : keys,
-            'user' : request.user,
-            'sign_out_url' : users.create_logout_url(self.request.uri) }))
+            log.error("Template not found")
+        else:
+            self.response.write(template.render({
+                'keys' : keys,
+                'user' : request.user,
+                'sign_out_url' : users.create_logout_url(self.request.uri) }))
 
 
     def interpret_pattern(self, segments, pattern, template):
