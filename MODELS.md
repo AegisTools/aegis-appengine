@@ -18,11 +18,9 @@ users/Permission
 
 Describes a single permission granted to a user, possibly for a specific item.
 
-**TODO:** Add created_by (Key: User)  Make id be a (Key: *)  Make parent be (Key: User)?
-
-* parent (Key: User, type, action, id)
+* parent (Key: User, type, action, id.url_safe())
 * type (String)
-* id (Key: *)
+* target (Key: *)
 * action (String)
 * granted (DateTime)
 * granted_by (Key: User)
