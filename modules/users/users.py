@@ -5,9 +5,11 @@ import logging
 from google.appengine.ext import ndb
 from google.appengine.api import users
 
-from common import *
+from shared import *
 from permissions import permission_check, permission_is_root
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from common import wipe
 
 log = logging.getLogger("users")
 
@@ -27,7 +29,7 @@ def create_user(viewer, keys, data):
 
 def delete_user(viewer, keys, data):
     if permission_check(viewer, "user", "create") or permission_is_root(viewer):
-        user_key(keys["user"]).delete()
+        wipe(user_key(keys["user"]))
     else:
         log.debug("Not allowed")
 

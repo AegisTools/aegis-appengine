@@ -4,7 +4,7 @@ import logging
 
 from google.appengine.ext import ndb
 
-from common import *
+from shared import *
 
 
 log = logging.getLogger("permissions")
