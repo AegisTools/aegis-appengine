@@ -13,7 +13,7 @@ class UserTests(common.AegisTestCase):
 
     def test_root_create_user(self):
         self.assertEqual(200, self.put("users/a", USER_ROOT).status_code)
-        self.assertEqual("a", self.get("users/a", USER_ROOT).json()["id"])
+        self.assertEqual("a", self.get("users/a", USER_ROOT).json()["user"])
 
         list = self.get("users", USER_ROOT).json()
         self.assertEqual(1, len(list))
@@ -22,7 +22,7 @@ class UserTests(common.AegisTestCase):
 
     def test_root_delete_user(self):
         self.assertEqual(200, self.put("users/a", USER_ROOT).status_code)
-        self.assertEqual("a", self.get("users/a", USER_ROOT).json()["id"])
+        self.assertEqual("a", self.get("users/a", USER_ROOT).json()["user"])
         self.assertEqual(200, self.delete("users/a", USER_ROOT).status_code)
         self.assertIsNone(self.get("users/a", USER_ROOT).json())
         self.assertEqual(0, len(self.get("users", USER_ROOT).json()))
@@ -31,8 +31,8 @@ class UserTests(common.AegisTestCase):
     def test_root_create_2_users(self):
         self.assertEqual(200, self.put("users/a", USER_ROOT).status_code)
         self.assertEqual(200, self.put("users/b", USER_ROOT).status_code)
-        self.assertEqual("a", self.get("users/a", USER_ROOT).json()["id"])
-        self.assertEqual("b", self.get("users/b", USER_ROOT).json()["id"])
+        self.assertEqual("a", self.get("users/a", USER_ROOT).json()["user"])
+        self.assertEqual("b", self.get("users/b", USER_ROOT).json()["user"])
 
         list = self.get("users", USER_ROOT).json()
         self.assertEqual(2, len(list))
@@ -42,12 +42,12 @@ class UserTests(common.AegisTestCase):
     def test_root_delete_1_of_2_users(self):
         self.assertEqual(200, self.put("users/a", USER_ROOT).status_code)
         self.assertEqual(200, self.put("users/b", USER_ROOT).status_code)
-        self.assertEqual("a", self.get("users/a", USER_ROOT).json()["id"])
-        self.assertEqual("b", self.get("users/b", USER_ROOT).json()["id"])
+        self.assertEqual("a", self.get("users/a", USER_ROOT).json()["user"])
+        self.assertEqual("b", self.get("users/b", USER_ROOT).json()["user"])
 
         self.assertEqual(200, self.delete("users/a", USER_ROOT).status_code)
         self.assertIsNone(self.get("users/a", USER_ROOT).json())
-        self.assertEqual("b", self.get("users/b", USER_ROOT).json()["id"])
+        self.assertEqual("b", self.get("users/b", USER_ROOT).json()["user"])
 
 
 if __name__ == "__main__":

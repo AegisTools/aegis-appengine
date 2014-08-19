@@ -70,7 +70,7 @@ class MainPage(webapp2.RequestHandler):
         if self.request.method != "GET":
             path = self.action(request) or path
 
-        self.render(request, path)
+        self.render(request, path.strip("/"))
 
 
     def init(self):
@@ -105,7 +105,7 @@ class MainPage(webapp2.RequestHandler):
     def action(self, request):
         log.info("%s %s" % (self.request.method, self.request.path.strip("/")))
         path_segments = self.request.path.strip("/").split("/")
-        module_name, path_segments = path_segments[0], path_segments[1:] or ["_index_"]
+        module_name, path_segments = path_segments[0], path_segments[1:]
         module = self.known_modules[module_name]
 
         data = {}
@@ -162,9 +162,9 @@ class MainPage(webapp2.RequestHandler):
             log.error("Template not found")
 
 
-    def find_template(self, format, path, jinja):
-        path_segments = path.strip("/").split("/")
-        module_name, path_segments = path_segments[0], path_segments[1:] or ["_index_"]
+    def find_template(self, format, original_path, jinja):
+        path_segments = original_path.split("/")
+        module_name, path_segments = path_segments[0], path_segments[1:]
         template = None
 
         log.info("Rendering module '%s' path: %s (%s)" % (module_name, path_segments, format))
@@ -173,12 +173,18 @@ class MainPage(webapp2.RequestHandler):
             module = self.known_modules[module_name]
             base_path = "modules/%s/templates" % module_name
             keys = {}
-            template = self.load_template(jinja, "%s/%s.%s" % (base_path, "/".join(path_segments), format))
+
+            if path_segments:
+                template = self.load_template(jinja, "%s/%s.%s" % (base_path, "/".join(path_segments), format))
+            else:
+                template = self.load_template(jinja, "%s/_index_.%s" % (base_path, format))
 
             if not template and hasattr(module, "templates"):
                for template_pattern in module.templates:
                     path, keys = self.interpret_pattern(path_segments, template_pattern, module.templates[template_pattern])
                     if path:
+                        log.debug("a")
+                        if path == "": path = "_index_"
                         template = self.load_template(jinja, "%s/%s.%s" % (base_path, path, format))
                         if template:
                             log.debug("keys: %s" % keys)
@@ -187,13 +193,16 @@ class MainPage(webapp2.RequestHandler):
             if not template and hasattr(module, "get_template"):
                 path, keys = module.get_template(path_segments)
                 if path:
+                    log.debug("b")
+                    if path == "": path = "_index_"
                     template = self.load_template(jinja, "%s/%s.%s" % (base_path, path, format))
 
         if not template:
             keys = {}
-            template = self.load_template(jinja, "templates/%s.%s" % ("/".join(path_segments), format))
-
-
+            if original_path == "":
+                template = self.load_template(jinja, "templates/_index_.%s" % format)
+            else:
+                template = self.load_template(jinja, "templates/%s.%s" % (original_path.strip("/"), format))
 
         if template:
             return template, keys
@@ -244,7 +253,10 @@ class MainPage(webapp2.RequestHandler):
             or isinstance(obj, datetime.date)
             else None)
 
-        return json.dumps(obj, default=date_handler)
+        return json.dumps(obj, 
+                          default=date_handler, 
+                          sort_keys=True,
+                          indent=4)
 
 
 app = webapp2.WSGIApplication([('/.*', MainPage)], debug=True)

@@ -38,18 +38,7 @@ def delete_user(viewer, user):
 
 def load_user(viewer, id):
     if permission_check(viewer, "user", "read") or permission_is_root(viewer):
-        key = user_key(id)
-        user = key.get()
-
-        if not user:
-            return None
-
-        return { 'id' : key.id(),
-                 'email' : user.user.email(),
-                 'created_by' : user.created_by.id(),
-                 'active' : user.active,
-                 'notes' : user.notes
-               }
+        return user_to_model(user_key(id).get())
     else:
         log.debug("Not allowed")
 
@@ -63,6 +52,9 @@ def load_user_list(viewer, ignored):
 
 
 def user_to_model(user):
+    if not user:
+        return None
+
     return { 'user'       : user.user.email(),
              'created_by' : user.created_by.id(),
              'created'    : user.created,
