@@ -115,8 +115,9 @@ class MainPage(webapp2.RequestHandler):
                     action = module.actions[self.request.method][pattern]
                     impl, keys = self.interpret_pattern(path_segments, pattern, action)
                     if impl:
-                        log.debug("Performing action: %s" % impl)
-                        return impl(request.user, keys, data)
+                        args = dict(keys.items() + data.items())
+                        log.debug("Performing action: %s(%s)" % (impl, args))
+                        return impl(request.user, **args)
 
             if None in module.actions[self.request.method]:
                 return module.actions[self.request.method][None](request.user, {}, data)

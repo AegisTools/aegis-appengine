@@ -25,9 +25,9 @@ def tag_key(tag_names):
     return key
 
 
-def tag_create(viewer, keys, data):
+def tag_create(viewer, tag):
     if permission_check(viewer, "tag", "create") or permission_is_root(viewer):
-        key = tag_key(keys["tag"])
+        key = tag_key(tag)
         if not key.get():
             new_tag = Tag(key=key)
             new_tag.name = key.id()
@@ -41,9 +41,9 @@ def tag_create(viewer, keys, data):
     return None
 
 
-def tag_delete(viewer, keys, data):
+def tag_delete(viewer, tag):
     if permission_check(viewer, "tag", "delete") or permission_is_root(viewer):
-        wipe(tag_key(keys["tag"]))
+        wipe(tag_key(tag))
     else:
         log.debug("Not allowed")
 

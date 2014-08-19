@@ -14,10 +14,10 @@ from common import wipe
 log = logging.getLogger("users")
 
 
-def create_user(viewer, keys, data):
+def create_user(viewer, user):
     if permission_check(viewer, "user", "create") or permission_is_root(viewer):
-        new_user = User(key=user_key(keys["user"]))
-        new_user.user = users.User(keys["user"])
+        new_user = User(key=user_key(user))
+        new_user.user = users.User(user)
         new_user.created_by = user_key(viewer)
         new_user.active = True
         new_user.put()
@@ -27,9 +27,9 @@ def create_user(viewer, keys, data):
     return None
 
 
-def delete_user(viewer, keys, data):
+def delete_user(viewer, user):
     if permission_check(viewer, "user", "create") or permission_is_root(viewer):
-        wipe(user_key(keys["user"]))
+        wipe(user_key(user))
     else:
         log.debug("Not allowed")
 
