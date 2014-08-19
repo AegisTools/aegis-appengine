@@ -142,6 +142,20 @@ class MainPage(webapp2.RequestHandler):
         jinja.globals['json'] = self.json
 
         format = self.get_data_type("Accept")
+        template, keys = self.find_template(format, path, jinja)
+        if format == "html" and not template:
+            template, keys = self.find_template("md", path, jinja)
+
+        if template:
+            self.response.write(template.render({
+                'keys' : keys,
+                'user' : request.user,
+                'sign_out_url' : users.create_logout_url(self.request.uri) }))
+        else:
+            log.error("Template not found")
+
+
+    def find_template(self, format, path, jinja):
         path_segments = path.strip("/").split("/")
         module_name, path_segments = path_segments[0], path_segments[1:] or ["_index_"]
 
@@ -166,13 +180,10 @@ class MainPage(webapp2.RequestHandler):
             if path:
                 template = self.load_template(jinja, "%s/%s.%s" % (base_path, path, format))
 
-        if not template:
-            log.error("Template not found")
+        if template:
+            return template, keys
         else:
-            self.response.write(template.render({
-                'keys' : keys,
-                'user' : request.user,
-                'sign_out_url' : users.create_logout_url(self.request.uri) }))
+            return None, None
 
 
     def interpret_pattern(self, segments, pattern, template):
