@@ -144,13 +144,19 @@ class MainPage(webapp2.RequestHandler):
         format = self.get_data_type("Accept")
         template, keys = self.find_template(format, path, jinja)
         if format == "html" and not template:
+            format = "md"
             template, keys = self.find_template("md", path, jinja)
 
         if template:
-            self.response.write(template.render({
+            content = template.render({
                 'keys' : keys,
                 'user' : request.user,
-                'sign_out_url' : users.create_logout_url(self.request.uri) }))
+                'sign_out_url' : users.create_logout_url(path) })
+
+            if format == "md":
+                pass
+
+            self.response.write(content)
         else:
             log.error("Template not found")
 
