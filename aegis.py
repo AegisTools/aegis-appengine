@@ -4,6 +4,7 @@ import pkgutil
 import logging
 import json
 import datetime
+import markdown
 
 from google.appengine.api import users
 
@@ -154,7 +155,7 @@ class MainPage(webapp2.RequestHandler):
                 'sign_out_url' : users.create_logout_url(path) })
 
             if format == "md":
-                pass
+                content = markdown.markdown(content)
 
             self.response.write(content)
         else:
@@ -164,27 +165,35 @@ class MainPage(webapp2.RequestHandler):
     def find_template(self, format, path, jinja):
         path_segments = path.strip("/").split("/")
         module_name, path_segments = path_segments[0], path_segments[1:] or ["_index_"]
+        template = None
 
         log.info("Rendering module '%s' path: %s (%s)" % (module_name, path_segments, format))
 
-        module = self.known_modules[module_name]
-        base_path = "modules/%s/templates" % module_name
-        keys = {}
-        template = self.load_template(jinja, "%s/%s.%s" % (base_path, "/".join(path_segments), format))
+        if module_name != "":
+            module = self.known_modules[module_name]
+            base_path = "modules/%s/templates" % module_name
+            keys = {}
+            template = self.load_template(jinja, "%s/%s.%s" % (base_path, "/".join(path_segments), format))
 
-        if not template and hasattr(module, "templates"):
-            for template_pattern in module.templates:
-                path, keys = self.interpret_pattern(path_segments, template_pattern, module.templates[template_pattern])
+            if not template and hasattr(module, "templates"):
+               for template_pattern in module.templates:
+                    path, keys = self.interpret_pattern(path_segments, template_pattern, module.templates[template_pattern])
+                    if path:
+                        template = self.load_template(jinja, "%s/%s.%s" % (base_path, path, format))
+                        if template:
+                            log.debug("keys: %s" % keys)
+                            break;
+
+            if not template and hasattr(module, "get_template"):
+                path, keys = module.get_template(path_segments)
                 if path:
                     template = self.load_template(jinja, "%s/%s.%s" % (base_path, path, format))
-                    if template:
-                        log.debug("keys: %s" % keys)
-                        break;
 
-        if not template and hasattr(module, "get_template"):
-            path, keys = module.get_template(path_segments)
-            if path:
-                template = self.load_template(jinja, "%s/%s.%s" % (base_path, path, format))
+        if not template:
+            keys = {}
+            template = self.load_template(jinja, "templates/%s.%s" % ("/".join(path_segments), format))
+
+
 
         if template:
             return template, keys
