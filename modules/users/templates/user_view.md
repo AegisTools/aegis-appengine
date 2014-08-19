@@ -8,6 +8,8 @@
 * **created:** {{user.created}}
 * **updated:** {{ user.updated}}
 
+[All Users](/users)
+
 [Sign Out]({{ sign_out_url }})
 
 ----

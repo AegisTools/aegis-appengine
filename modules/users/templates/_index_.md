@@ -1,3 +1,5 @@
+{% import 'templates/macros/forms.md' as forms %}
+
 User List
 =========
 
@@ -10,9 +12,18 @@ User List
     * **updated:** {{ user.updated}}
 {% endfor %}
 
-[Sign Out]({{ sign_out_url }})
+Create New User
+---------------
+
+{{ forms.form("/users/{user}", 
+    [ { "id": "user",       "name": "Username" },
+      { "id": "first_name", "name": "First Name" },
+      { "id": "last_name",  "name": "Last Name" } ], 
+    "PUT") }}
 
 ----
+
+[Sign Out]({{ sign_out_url }})
 
 Raw Data
 --------

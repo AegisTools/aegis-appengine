@@ -67,8 +67,12 @@ class MainPage(webapp2.RequestHandler):
 
         self.init()
         path = self.request.path
-        if self.request.method != "GET":
-            path = self.action(request) or path
+        method = self.request.method
+        if "_method_" in self.request.POST:
+            method = self.request.POST["_method_"]
+
+        if method != "GET":
+            path = self.action(method, request) or path
 
         self.render(request, path.strip("/"))
 
@@ -102,26 +106,26 @@ class MainPage(webapp2.RequestHandler):
         log.info("Module loading complete")
 
 
-    def action(self, request):
-        log.info("%s %s" % (self.request.method, self.request.path.strip("/")))
+    def action(self, method, request):
+        log.info("%s %s" % (method, self.request.path.strip("/")))
         path_segments = self.request.path.strip("/").split("/")
         module_name, path_segments = path_segments[0], path_segments[1:]
         module = self.known_modules[module_name]
 
         data = {}
 
-        if hasattr(module, "actions") and self.request.method in module.actions:
-            for pattern in module.actions[self.request.method]:
+        if hasattr(module, "actions") and method in module.actions:
+            for pattern in module.actions[method]:
                 if pattern:
-                    action = module.actions[self.request.method][pattern]
+                    action = module.actions[method][pattern]
                     impl, keys = self.interpret_pattern(path_segments, pattern, action)
                     if impl:
                         args = dict(keys.items() + data.items())
                         log.debug("Performing action: %s(%s)" % (impl, args))
                         return impl(request.user, **args)
 
-            if None in module.actions[self.request.method]:
-                return module.actions[self.request.method][None](request.user, {}, data)
+            if None in module.actions[method]:
+                return module.actions[method][None](request.user, {}, data)
 
         raise Exception("action not found")
 
