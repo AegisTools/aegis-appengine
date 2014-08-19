@@ -30,6 +30,7 @@ def tag_create(viewer, tag):
         key = tag_key(tag)
         if not key.get():
             new_tag = Tag(key=key)
+            new_tag.parent = key.parent()
             new_tag.name = key.id()
             new_tag.created_by = user_key(viewer)
             new_tag.put()
@@ -52,13 +53,18 @@ def tag_delete(viewer, tag):
 
 def load_tag(viewer, id):
     if permission_check(viewer, "tag", "read") or permission_is_root(viewer):
+        key = tag_key(id)
+        parent = None
         children = []
-        for child in Tag.query(ancestor=tag_key(id)):
+        for child in Tag.query(Tag.parent == key, ancestor=key):
             children.append(tag_to_model(child))
 
         if id:
-            tag = tag_to_model(tag_key(id).get())
+            tag = tag_to_model(key.get())
             if tag:
+                if key.parent():
+                    parent = tag_to_model(key.parent().get())
+                tag["parent"] = parent
                 tag["children"] = children
             return tag
         else:
@@ -120,7 +126,8 @@ def tag_to_model(tag):
         path.insert(0, key.id())
         key = key.parent()
 
-    return { 'path'       : path,
+    return { 'key'        : path,
+             'path'       : "/".join(path),
              'name'       : tag.name,
              'created_by' : tag.created_by.id(),
              'created'    : tag.created }
@@ -136,6 +143,7 @@ def tag_key_to_path(key):
 
 
 class Tag(ndb.Model):
+    parent = ndb.KeyProperty(kind='Tag')
     name = ndb.StringProperty()
     created_by = ndb.KeyProperty(kind='User')
     created = ndb.DateTimeProperty(auto_now_add=True)
