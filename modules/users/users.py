@@ -14,7 +14,7 @@ from common import wipe
 log = logging.getLogger("users")
 
 
-def create_user(viewer, user):
+def create_user(viewer, user, **ignored):
     if permission_check(viewer, "user", "create") or permission_is_root(viewer):
         new_user = User(key=user_key(user))
         new_user.user = users.User(user)
@@ -27,7 +27,7 @@ def create_user(viewer, user):
     return None
 
 
-def delete_user(viewer, user):
+def delete_user(viewer, user, **ignored):
     if permission_check(viewer, "user", "create") or permission_is_root(viewer):
         wipe(user_key(user))
     else:

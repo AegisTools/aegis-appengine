@@ -25,13 +25,13 @@ def tag_key(tag_names):
     return key
 
 
-def tag_create(viewer, tag):
+def tag_create(viewer, tag, name=None, **ignored):
     if permission_check(viewer, "tag", "create") or permission_is_root(viewer):
         key = tag_key(tag)
         if not key.get():
             new_tag = Tag(key=key)
             new_tag.parent = key.parent()
-            new_tag.name = key.id()
+            new_tag.name = name or key.id()
             new_tag.created_by = user_key(viewer)
             new_tag.put()
         else:
@@ -42,7 +42,7 @@ def tag_create(viewer, tag):
     return None
 
 
-def tag_delete(viewer, tag):
+def tag_delete(viewer, tag, **ignored):
     if permission_check(viewer, "tag", "delete") or permission_is_root(viewer):
         wipe(tag_key(tag))
     else:
@@ -73,7 +73,7 @@ def load_tag(viewer, id):
         log.debug("Not allowed")
 
 
-def tag_apply(viewer, target, tag):
+def tag_apply(viewer, target, tag, **ignored):
     if permission_check(viewer, "tag", "apply") or permission_is_root(viewer):
         key = tag_key(tag)
         if not AppliedTag.query(AppliedTag.tag == key, AppliedTag.target == target, ancestor=target).get():
@@ -90,7 +90,7 @@ def tag_apply(viewer, target, tag):
         log.debug("Not allowed")
 
 
-def tag_remove(viewer, target, tag):
+def tag_remove(viewer, target, tag, **ignored):
     if permission_check(viewer, "tag", "remove") or permission_is_root(viewer):
         key = tag_key(tag)
         applied = AppliedTag.query(AppliedTag.tag == key, AppliedTag.target == target, ancestor=target).get(keys_only=True)

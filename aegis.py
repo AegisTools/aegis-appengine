@@ -112,7 +112,7 @@ class MainPage(webapp2.RequestHandler):
         module_name, path_segments = path_segments[0], path_segments[1:]
         module = self.known_modules[module_name]
 
-        data = {}
+        data = self.request.POST
 
         if hasattr(module, "actions") and method in module.actions:
             for pattern in module.actions[method]:

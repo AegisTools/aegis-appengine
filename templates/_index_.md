@@ -1,5 +1,6 @@
 Aegis
 =====
 
-[Users](/users)
+[Users](/users)  
+[Tags](/tags)
 

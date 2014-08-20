@@ -22,7 +22,7 @@ dependencies = ["users"]
 GENERAL PURPOSE STUBS
 """
 
-def wipe(viewer):
+def wipe(viewer, **ignored):
     log.error("Wiping entire database")
     ndb.delete_multi(ndb.Query().iter(keys_only = True))
     # db.delete(db.Query(keys_only=True))
@@ -32,12 +32,12 @@ def wipe(viewer):
 PERMISSION STUBS
 """
 
-def grant_permission(viewer, user, kind, action, thing=[]):
+def grant_permission(viewer, user, kind, action, thing=[], **ignored):
     key = build_thing_key(kind, thing)
     permission_grant(viewer, user, kind, action, key)
 
 
-def revoke_permission(viewer, user, kind, action, thing=[]):
+def revoke_permission(viewer, user, kind, action, thing=[], **ignored):
     key = build_thing_key(kind, thing)
     permission_revoke(viewer, user, kind, action, key)
 
@@ -58,11 +58,11 @@ def check_permission(viewer, keys):
 TAG STUBS
 """
 
-def apply_tag(viewer, thing, tag):
+def apply_tag(viewer, thing, tag, **ignored):
     tag_apply(viewer, ndb.Key('Thing', thing), tag)
 
 
-def remove_tag(viewer, thing, tag):
+def remove_tag(viewer, thing, tag, **ignored):
     tag_remove(viewer, ndb.Key('Thing', thing), tag)
 
 
