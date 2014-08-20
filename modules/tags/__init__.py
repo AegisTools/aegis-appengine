@@ -1,7 +1,7 @@
 from tags import *
 
 
-dependencies = []
+dependencies = [ "users" ]
 
 templates = { "{tag}/*"      : "tag_view" }
 
