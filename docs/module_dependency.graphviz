@@ -1,0 +1,20 @@
+digraph G {
+  subgraph cluster_users {
+    "users/users" -> "users/permissions";
+    "users/permissions" -> "users/users";
+  }
+
+  tags -> "users/permissions";
+
+  projects -> "users/permissions";
+  projects -> tags;
+
+  tasks -> "users/permissions";
+  tasks -> tags;
+
+  timesheets -> projects;
+  timesheets -> tasks;
+  timesheets -> tags;
+  timesheets -> "users/users";
+  timesheets -> "users/permissions";
+}
