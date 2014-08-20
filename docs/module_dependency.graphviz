@@ -16,4 +16,7 @@ digraph G {
   timesheets -> users;
   timesheets -> tags;
   timesheets -> assignments;
+
+  issues -> users;
+  issues -> tags;
 }
