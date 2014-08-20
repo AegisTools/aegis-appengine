@@ -24,7 +24,7 @@ class UserTests(common.AegisTestCase):
         self.assertEqual(200, self.put("users/a", USER_ROOT).status_code)
         self.assertEqual("a", self.get("users/a", USER_ROOT).json()["user"])
         self.assertEqual(200, self.delete("users/a", USER_ROOT).status_code)
-        self.assertIsNone(self.get("users/a", USER_ROOT).json())
+        self.assertEqual("a", self.get("users/a", USER_ROOT).json()["user"])
         self.assertEqual(0, len(self.get("users", USER_ROOT).json()))
 
 
@@ -46,8 +46,12 @@ class UserTests(common.AegisTestCase):
         self.assertEqual("b", self.get("users/b", USER_ROOT).json()["user"])
 
         self.assertEqual(200, self.delete("users/a", USER_ROOT).status_code)
-        self.assertIsNone(self.get("users/a", USER_ROOT).json())
+        self.assertEqual("a", self.get("users/a", USER_ROOT).json()["user"])
         self.assertEqual("b", self.get("users/b", USER_ROOT).json()["user"])
+
+        list = self.get("users", USER_ROOT).json()
+        self.assertEqual(1, len(list))
+        self.assertEqual("b", list[0]["user"])
 
 
 if __name__ == "__main__":
