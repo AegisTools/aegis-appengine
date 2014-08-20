@@ -19,4 +19,5 @@ digraph G {
 
   issues -> users;
   issues -> tags;
+  issues -> projects;
 }
