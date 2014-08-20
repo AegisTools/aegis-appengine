@@ -187,7 +187,6 @@ class MainPage(webapp2.RequestHandler):
                for template_pattern in module.templates:
                     path, keys = self.interpret_pattern(path_segments, template_pattern, module.templates[template_pattern])
                     if path:
-                        log.debug("a")
                         if path == "": path = "_index_"
                         template = self.load_template(jinja, "%s/%s.%s" % (base_path, path, format))
                         if template:
@@ -197,7 +196,6 @@ class MainPage(webapp2.RequestHandler):
             if not template and hasattr(module, "get_template"):
                 path, keys = module.get_template(path_segments)
                 if path:
-                    log.debug("b")
                     if path == "": path = "_index_"
                     template = self.load_template(jinja, "%s/%s.%s" % (base_path, path, format))
 
