@@ -1,0 +1,2 @@
+{{ json(load("projects/project", keys.project)) }}
+
