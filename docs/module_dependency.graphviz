@@ -2,8 +2,12 @@ digraph G {
 
   tags -> users;
 
+  clients -> users;
+  clients -> tags;
+
   projects -> users;
   projects -> tags;
+  projects -> clients;
 
   tasks -> users;
   tasks -> tags;
