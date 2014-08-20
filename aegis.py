@@ -16,12 +16,14 @@ import modules
 log = logging.getLogger("engine")
 
 
+jinja = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
+
+
 class RequestData:
     def __init__(self):
         self.user = None
         self.cache = {}
         self.known_loaders = {}
-        self.jinja = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
     def load(self, type, id=None):
         if type not in self.known_loaders:
@@ -118,7 +120,7 @@ class MainPage(webapp2.RequestHandler):
             for pattern in module.actions[method]:
                 if pattern:
                     action = module.actions[method][pattern]
-                    impl, keys = self.interpret_pattern(path_segments, pattern, action)
+                    impl, keys = interpret_pattern(path_segments, pattern, action)
                     if impl:
                         args = dict(keys.items() + data.items())
                         log.debug("Performing action: %s(%s)" % (impl, args))
@@ -141,22 +143,18 @@ class MainPage(webapp2.RequestHandler):
 
 
     def render(self, request, path):
-        jinja = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
-
-        jinja.globals['load'] = request.load
-        jinja.globals['json'] = self.json
-
         format = self.get_data_type("Accept")
-        template, keys = self.find_template(format, path, jinja)
+        template, keys = self.find_template(format, path)
         if format == "html" and not template:
             format = "md"
-            template, keys = self.find_template("md", path, jinja)
+            template, keys = self.find_template("md", path)
 
         if template:
             content = template.render({
                 'keys' : keys,
                 'user' : request.user,
-                'sign_out_url' : users.create_logout_url(path) })
+                'sign_out_url' : users.create_logout_url(path),
+                'load' : request.load })
 
             if format == "md":
                 content = markdown.markdown(content)
@@ -166,7 +164,7 @@ class MainPage(webapp2.RequestHandler):
             log.error("Template not found")
 
 
-    def find_template(self, format, original_path, jinja):
+    def find_template(self, format, original_path):
         path_segments = original_path.split("/")
         module_name, path_segments = path_segments[0], path_segments[1:]
         template = None
@@ -179,16 +177,16 @@ class MainPage(webapp2.RequestHandler):
             keys = {}
 
             if path_segments:
-                template = self.load_template(jinja, "%s/%s.%s" % (base_path, "/".join(path_segments), format))
+                template = load_template("%s/%s.%s" % (base_path, "/".join(path_segments), format))
             else:
-                template = self.load_template(jinja, "%s/_index_.%s" % (base_path, format))
+                template = load_template("%s/_index_.%s" % (base_path, format))
 
             if not template and hasattr(module, "templates"):
                for template_pattern in module.templates:
-                    path, keys = self.interpret_pattern(path_segments, template_pattern, module.templates[template_pattern])
+                    path, keys = interpret_pattern(path_segments, template_pattern, module.templates[template_pattern])
                     if path:
                         if path == "": path = "_index_"
-                        template = self.load_template(jinja, "%s/%s.%s" % (base_path, path, format))
+                        template = load_template("%s/%s.%s" % (base_path, path, format))
                         if template:
                             log.debug("keys: %s" % keys)
                             break;
@@ -197,14 +195,14 @@ class MainPage(webapp2.RequestHandler):
                 path, keys = module.get_template(path_segments)
                 if path:
                     if path == "": path = "_index_"
-                    template = self.load_template(jinja, "%s/%s.%s" % (base_path, path, format))
+                    template = load_template("%s/%s.%s" % (base_path, path, format))
 
         if not template:
             keys = {}
             if original_path == "":
-                template = self.load_template(jinja, "templates/_index_.%s" % format)
+                template = load_template("templates/_index_.%s" % format)
             else:
-                template = self.load_template(jinja, "templates/%s.%s" % (original_path.strip("/"), format))
+                template = load_template("templates/%s.%s" % (original_path.strip("/"), format))
 
         if template:
             return template, keys
@@ -212,53 +210,56 @@ class MainPage(webapp2.RequestHandler):
             return None, None
 
 
-    def interpret_pattern(self, segments, pattern, template):
-        log.debug("Checking template '%s' against '%s'" % (pattern, "/".join(segments)))
-        pattern_pieces = pattern.split("/")
-        keys = {}
-        path = []
-        last_key = None
-        for i in range(len(pattern_pieces)):
-            key = pattern_pieces[i]
-            if key == "*":
-                keys[last_key] = segments[i-1:]
-                return (template or "/".join(path)), keys
-            elif len(segments) <= i:
-                # Pattern doesn't match
-                return None, None
-            elif key.startswith("{") and key.endswith("}"):
-                last_key = key[1:-1]
-                keys[last_key] = segments[i]
-            elif key == segments[i]:
-                path.append(key)
-            else:
-                return None, None
-
-        if len(segments) != len(pattern_pieces):
+def interpret_pattern(segments, pattern, template):
+    log.debug("Checking template '%s' against '%s'" % (pattern, "/".join(segments)))
+    pattern_pieces = pattern.split("/")
+    keys = {}
+    path = []
+    last_key = None
+    for i in range(len(pattern_pieces)):
+        key = pattern_pieces[i]
+        if key == "*":
+            keys[last_key] = segments[i-1:]
+            return (template or "/".join(path)), keys
+        elif len(segments) <= i:
+            # Pattern doesn't match
+            return None, None
+        elif key.startswith("{") and key.endswith("}"):
+            last_key = key[1:-1]
+            keys[last_key] = segments[i]
+        elif key == segments[i]:
+            path.append(key)
+        else:
             return None, None
 
-        return (template or "/".join(path)), keys
+    if len(segments) != len(pattern_pieces):
+        return None, None
+
+    return (template or "/".join(path)), keys
 
 
-    def load_template(self, jinja, path):
-        try:
-            log.debug("Looking for template at %s" % path)
-            return jinja.get_template(path)
-        except jinja2.TemplateNotFound:
-            return None
+def load_template(path):
+    try:
+        log.debug("Looking for template at %s" % path)
+        return jinja.get_template(path)
+    except jinja2.TemplateNotFound:
+        return None
 
 
-    def json(self, obj):
-        date_handler = lambda obj: (
-            obj.isoformat()
-            if isinstance(obj, datetime.datetime)
-            or isinstance(obj, datetime.date)
-            else None)
+def format_json(obj):
+    date_handler = lambda obj: (
+        obj.isoformat()
+        if isinstance(obj, datetime.datetime)
+        or isinstance(obj, datetime.date)
+        else None)
 
-        return json.dumps(obj, 
-                          default=date_handler, 
-                          sort_keys=True,
-                          indent=4)
+    return json.dumps(obj, 
+                      default=date_handler, 
+                      sort_keys=True,
+                      indent=4)
+
+
+jinja.globals['json'] = format_json
 
 
 app = webapp2.WSGIApplication([('/.*', MainPage)], debug=True)
