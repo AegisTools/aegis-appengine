@@ -2,4 +2,5 @@
 
 cd `dirname $0`
 dot -Tpng < module_dependency.graphviz > module_dependency.png
+dot -Tpng < entity_keys.graphviz > entity_keys.png
 

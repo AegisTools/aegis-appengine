@@ -1,0 +1,38 @@
+digraph G {
+  user [label = "User\n(email)"];
+  user_none [label = "None"];
+
+  user -> user_none;
+
+
+  permission_type [label = "Permission_Type\n(type)" ];
+  permission_action_1 [label = "Permission_Action\n(action)" ];
+  permission_action_2 [label = "Permission\n(action)" ];
+  permission_id [label = "Permission\n(key.urlsafe())" ];
+
+  permission_id -> permission_action_1;
+  permission_action_2 -> permission_type;
+  permission_action_1 -> permission_type;
+  permission_type -> user;
+
+
+  tag [label = "Tag\n(path_segment)"];
+  tag_none [label = "None"];
+
+  tag -> tag;
+  tag -> tag_none;
+
+
+  project [label = "Project\n(path_segment)"];
+  project_none [label = "None"];
+
+  project -> project;
+  project -> project_none;
+
+
+  task [label = "Task\n(path_segment)"];
+  task_none [label = "None"];
+
+  task -> task;
+  task -> task_none;
+}
