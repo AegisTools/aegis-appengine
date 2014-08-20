@@ -1,3 +1,5 @@
+{% import 'templates/macros/forms.md' as forms %}
+
 Root Tags
 =========
 
@@ -5,11 +7,17 @@ Root Tags
 * [{{tag.name}}](/tags/{{tag.path}})
 {% endfor %}
 
-[All Tags](/tags)
+Create New Tag
+--------------
 
-[Sign Out]({{ sign_out_url }})
+{{ forms.form("/tags/{path}",
+    [ { "id": "path", "name": "Path" },
+      { "id": "name", "name": "Name" } ],
+    "PUT") }}
 
 ----
+
+[Sign Out]({{ sign_out_url }})
 
 Raw Data
 --------
