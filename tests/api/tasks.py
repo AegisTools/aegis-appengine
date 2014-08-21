@@ -1,6 +1,7 @@
 import sys
 import os
 import common
+import time
 
 from common import USER_ROOT
 
@@ -46,7 +47,10 @@ class TaskTests(common.AegisTestCase):
     def test_root_delete_task(self):
         self.assertEqual(200, self.put("tasks/a", USER_ROOT).status_code)
         self.assertEqual(200, self.delete("tasks/a", USER_ROOT).status_code)
-        self.assertIsNone(self.get("tasks/a", USER_ROOT).json())
+        time.sleep(0.5)
+        self.assertEqual(0, len(self.get("tasks", USER_ROOT).json()))
+        self.assertEqual("a", self.get("tasks/a", USER_ROOT).json()["path"])
+        self.assertEqual([ "a" ], self.get("tasks/a", USER_ROOT).json()["key"])
 
 
     def test_root_delete_nested_task(self):
@@ -56,8 +60,9 @@ class TaskTests(common.AegisTestCase):
         self.assertEqual(1, len(self.get("tasks", USER_ROOT).json()))
 
         self.assertEqual(200, self.delete("tasks/a/b", USER_ROOT).status_code)
-        self.assertIsNone(self.get("tasks/a/b", USER_ROOT).json())
-        self.assertIsNone(self.get("tasks/a/b/c", USER_ROOT).json())
+        self.assertEqual("a", self.get("tasks/a", USER_ROOT).json()["path"])
+        self.assertEqual("a/b", self.get("tasks/a/b", USER_ROOT).json()["path"])
+        self.assertEqual("a/b/c", self.get("tasks/a/b/c", USER_ROOT).json()["path"])
         self.assertEqual(1, len(self.get("tasks", USER_ROOT).json()))
 
 

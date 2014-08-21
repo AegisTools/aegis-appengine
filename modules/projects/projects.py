@@ -25,17 +25,19 @@ def project_key(project_names):
     return key
 
 
-def project_create(viewer, project, name=None, **ignored):
+def project_create(viewer, project, name=None, active=True, **ignored):
     if permission_check(viewer, "project", "create") or permission_is_root(viewer):
-        key = project_key(project)
-        if not key.get():
-            new = Project(key=key)
-            new.parent = key.parent()
-            new.name = name or key.id()
-            new.created_by = user_key(viewer)
-            new.put()
-        else:
-            log.debug("Project exists")
+        project_obj = project_key(project).get()
+        if not project_obj:
+            project_obj = Project(key=project_key(project))
+            project_obj.parent = project_obj.key.parent()
+            project_obj.name = name or project_obj.key.id()
+            project_obj.created_by = user_key(viewer)
+        if active:
+            project_obj.active = active
+        if name:
+            project_obj.name = name
+        project_obj.put()
     else:
         log.debug("Not allowed")
 
@@ -44,7 +46,12 @@ def project_create(viewer, project, name=None, **ignored):
 
 def project_delete(viewer, project, **ignored):
     if permission_check(viewer, "project", "delete") or permission_is_root(viewer):
-        wipe(project_key(project))
+        project = project_key(project).get()
+        if project:
+            project.active = False
+            project.put()
+        else:
+            log.debug("Project not found")
     else:
         log.debug("Not allowed")
 
@@ -57,7 +64,8 @@ def load_project(viewer, id):
         parent = None
         children = []
         for child in Project.query(Project.parent == key, ancestor=key):
-            children.append(project_to_model(child))
+            if child.active:
+                children.append(project_to_model(child))
 
         if id:
             project = project_to_model(key.get())
@@ -87,7 +95,8 @@ def project_to_model(project):
              'path'       : "/".join(path),
              'name'       : project.name,
              'created_by' : project.created_by.id(),
-             'created'    : project.created }
+             'created'    : project.created,
+             'active'     : project.active }
 
 
 def project_key_to_path(key):
@@ -101,8 +110,9 @@ def project_key_to_path(key):
 
 class Project(ndb.Model):
     parent = ndb.KeyProperty(kind='Project')
-    name = ndb.StringProperty()
-    created_by = ndb.KeyProperty(kind='User')
-    created = ndb.DateTimeProperty(auto_now_add=True)
+    name = ndb.StringProperty(required=True)
+    created_by = ndb.KeyProperty(kind='User', required=True)
+    created = ndb.DateTimeProperty(auto_now_add=True, required=True)
+    active = ndb.BooleanProperty(default=True, required=True)
 
 

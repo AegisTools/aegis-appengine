@@ -1,6 +1,7 @@
 import sys
 import os
 import common
+import time
 
 from common import USER_ROOT
 
@@ -46,7 +47,9 @@ class ProjectTests(common.AegisTestCase):
     def test_root_delete_project(self):
         self.assertEqual(200, self.put("projects/a", USER_ROOT).status_code)
         self.assertEqual(200, self.delete("projects/a", USER_ROOT).status_code)
-        self.assertIsNone(self.get("projects/a", USER_ROOT).json())
+        time.sleep(0.5)
+        self.assertEqual(0, len(self.get("projects", USER_ROOT).json()))
+        self.assertEqual("a", self.get("projects/a", USER_ROOT).json()["path"])
 
 
     def test_root_delete_nested_project(self):
@@ -56,9 +59,8 @@ class ProjectTests(common.AegisTestCase):
         self.assertEqual(1, len(self.get("projects", USER_ROOT).json()))
 
         self.assertEqual(200, self.delete("projects/a/b", USER_ROOT).status_code)
-        self.assertIsNone(self.get("projects/a/b", USER_ROOT).json())
-        self.assertIsNone(self.get("projects/a/b/c", USER_ROOT).json())
         self.assertEqual(1, len(self.get("projects", USER_ROOT).json()))
+        self.assertEqual(0, len(self.get("projects/a", USER_ROOT).json()["children"]))
 
 
 

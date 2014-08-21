@@ -25,17 +25,19 @@ def task_key(task_names):
     return key
 
 
-def task_create(viewer, task, name=None, **ignored):
+def task_create(viewer, task, name=None, active=True, **ignored):
     if permission_check(viewer, "task", "create") or permission_is_root(viewer):
-        key = task_key(task)
-        if not key.get():
-            new = Task(key=key)
-            new.parent = key.parent()
-            new.name = name or key.id()
-            new.created_by = user_key(viewer)
-            new.put()
-        else:
-            log.debug("Task exists")
+        task_obj = task_key(task).get()
+        if not task_obj:
+            task_obj = Task(key=task_key(task))
+            task_obj.parent = task_obj.key.parent()
+            task_obj.name = name or task_obj.key.id()
+            task_obj.created_by = user_key(viewer)
+        if active:
+            task_obj.active = active
+        if name:
+            task_obj.name = name
+        task_obj.put()
     else:
         log.debug("Not allowed")
 
@@ -44,7 +46,12 @@ def task_create(viewer, task, name=None, **ignored):
 
 def task_delete(viewer, task, **ignored):
     if permission_check(viewer, "task", "delete") or permission_is_root(viewer):
-        wipe(task_key(task))
+        task = task_key(task).get()
+        if task:
+            task.active = False
+            task.put()
+        else:
+            log.debug("Task not found")
     else:
         log.debug("Not allowed")
 
@@ -57,7 +64,8 @@ def load_task(viewer, id):
         parent = None
         children = []
         for child in Task.query(Task.parent == key, ancestor=key):
-            children.append(task_to_model(child))
+            if child.active:
+                children.append(task_to_model(child))
 
         if id:
             task = task_to_model(key.get())
@@ -101,8 +109,9 @@ def task_key_to_path(key):
 
 class Task(ndb.Model):
     parent = ndb.KeyProperty(kind='Task')
-    name = ndb.StringProperty()
-    created_by = ndb.KeyProperty(kind='User')
-    created = ndb.DateTimeProperty(auto_now_add=True)
+    name = ndb.StringProperty(required=True)
+    created_by = ndb.KeyProperty(kind='User', required=True)
+    created = ndb.DateTimeProperty(auto_now_add=True, required=True)
+    active = ndb.BooleanProperty(default=True, required=True)
 
 
