@@ -171,7 +171,7 @@ class MainPage(webapp2.RequestHandler):
 
         log.info("Rendering module '%s' path: %s (%s)" % (module_name, path_segments, format))
 
-        if module_name != "":
+        if module_name != "" and module_name in self.known_modules:
             module = self.known_modules[module_name]
             base_path = "modules/%s/templates" % module_name
             keys = {}
@@ -203,6 +203,8 @@ class MainPage(webapp2.RequestHandler):
                 template = load_template("templates/_index_.%s" % format)
             else:
                 template = load_template("templates/%s.%s" % (original_path.strip("/"), format))
+                if not template:
+                    template = load_template("templates/%s/_index_.%s" % (original_path.strip("/"), format))
 
         if template:
             return template, keys

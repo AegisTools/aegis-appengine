@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% block title %}Aegis{% endblock %}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <link rel="stylesheet" type="text/css" href="/static/css/kickstart/kickstart.css" media="all" />
+    <link rel="stylesheet" type="text/css" href="/static/css/site.css" media="all" />
+
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript" src="/static/scripts/kickstart/kickstart.js"></script>
+  </head>
+  <body>
+
+    <ul class="menu">
+      <li class="{% if not section_module %}current{% endif %} icon-only">
+        <a href="/"><i class="icon-home icon-large"></i></a>
+      </li>
+      <li class="{% if section_module == "time" %}current{% endif %}">
+        <a href="/time"><i class="icon-time icon-large"></i> Time</a>
+      </li>
+      <li class="{% if section_module == "issues" %}current{% endif %}">
+        <a href="/issues"><i class="icon-bullhorn icon-large"></i> Issues</a>
+      </li>
+      <li class="{% if section_module == "settings" %}current{% endif %}">
+        <a href="/settings"><i class="icon-cogs icon-large"></i> Settings</a>
+      </li>
+    </ul>
+
+
+    <div class="grid">
+      {% block content %}<h3>No Content</h3>{% endblock %}
+    </div>
+  </body>
+</html>
