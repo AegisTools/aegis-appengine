@@ -5,6 +5,7 @@
 ==================
 
 {% if task.parent %}**parent:** [{{ task.parent.name }}](/tasks/{{ task.parent.path }}){% endif %}
+**active:** {{ task.active }}  
 **created:** {{ task.created }}  
 **created_by:** [{{ task.created_by }}](/users/{{ task.created_by }})
 

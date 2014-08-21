@@ -95,7 +95,8 @@ def task_to_model(task):
              'path'       : "/".join(path),
              'name'       : task.name,
              'created_by' : task.created_by.id(),
-             'created'    : task.created }
+             'created'    : task.created,
+             'active'     : task.active }
 
 
 def task_key_to_path(key):

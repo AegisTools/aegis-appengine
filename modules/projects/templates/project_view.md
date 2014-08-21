@@ -5,6 +5,7 @@
 ==================
 
 {% if project.parent %}**parent:** [{{ project.parent.name }}](/projects/{{ project.parent.path }}){% endif %}
+**active:** {{ project.active }}  
 **created:** {{ project.created }}  
 **created_by:** [{{ project.created_by }}](/users/{{ project.created_by }})
 
