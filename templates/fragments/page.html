@@ -15,24 +15,26 @@
 
     <div class="topmenu">
       <ul class="menu">
-        <li class="{% if not section_module %}current{% endif %} icon-only">
+        <li class="{% if not section_site %}current{% endif %} icon-only">
           <a href="/"><i class="icon-home icon-large"></i></a>
         </li>
-        <li class="{% if section_module == "time" %}current{% endif %}">
+        <li class="{% if section_site == "time" %}current{% endif %}">
           <a href="/time"><i class="icon-time icon-large"></i> Time</a>
         </li>
-        <li class="{% if section_module == "issues" %}current{% endif %}">
+        <li class="{% if section_site == "issues" %}current{% endif %}">
           <a href="/issues"><i class="icon-bullhorn icon-large"></i> Issues</a>
         </li>
-        <li class="{% if section_module == "settings" %}current{% endif %}">
+        <li class="{% if section_site == "settings" %}current{% endif %}">
           <a href="/settings"><i class="icon-cogs icon-large"></i> Settings</a>
         </li>
       </ul>
     </div>
 
-    {% block content %}
+    {% block module %}
       <div class="grid">
-        <h3>No Content</h3>
+        {% block content %}
+          <h3>No Content</h3>
+        {% endblock %}
       </div>
     {% endblock %}
   </body>

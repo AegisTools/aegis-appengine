@@ -1,0 +1,27 @@
+{% set section_site = "issues" %}
+{% extends "templates/fragments/page.html" %}
+
+{% block module %}
+
+<div class="submenu">
+  <ul class="menu">
+    <li class="{% if section_module == "assigned" %}current{% endif %}">
+      <a href="/issues">Assigned to Me</a>
+    </li>
+    <li class="{% if section_module == "reported" %}current{% endif %}">
+      <a href="/issues/reported">Reported By Me</a>
+    </li>
+    <li class="{% if section_module == "search" %}current{% endif %}">
+      <a href="/issues/search">Search</a>
+    </li>
+  </ul>
+</div>
+
+<div class="grid">
+  {% block content %}
+    <h3>No Content</h3>
+  {% endblock %}
+</div>
+
+{% endblock %}
+

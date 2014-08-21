@@ -1,33 +1,33 @@
-{% set section_module = "time" %}
+{% set section_site = "time" %}
 {% extends "templates/fragments/page.html" %}
 
-{% block content %}
+{% block module %}
 
 <div class="submenu">
   <ul class="menu">
-    <li class="{% if section_time == "timesheet" %}current{% endif %}">
+    <li class="{% if section_module == "timesheet" %}current{% endif %}">
       <a href="/time">Timesheet</a>
     </li>
-    <li class="{% if section_time == "expenses" %}current{% endif %}">
+    <li class="{% if section_module == "expenses" %}current{% endif %}">
       <a href="/time/expenses">Expenses</a>
     </li>
-    <li class="{% if section_time == "approvals" %}current{% endif %}">
+    <li class="{% if section_module == "approvals" %}current{% endif %}">
       <a href="/time/approvals">Approvals</a>
     </li>
-    <li class="{% if section_time == "reports" %}current{% endif %}">
+    <li class="{% if section_module == "reports" %}current{% endif %}">
       <a href="/time/reports">Reports</a>
     </li>
-    <li class="{% if section_time == "manage" %}current{% endif %}">
+    <li class="{% if section_module == "manage" %}current{% endif %}">
       <a href="/time/settings">Manage</a>
     </li>
   </ul>
 </div>
 
-{% block page_content %}
-  <div class="grid">
+<div class="grid">
+  {% block content %}
     <h3>No Content</h3>
-  </div>
-{% endblock %}
+  {% endblock %}
+</div>
 
 {% endblock %}
 
