@@ -4,3 +4,6 @@
 [submodule "submodules/markdown"]
 	path = submodules/markdown
 	url = git@github.com:waylan/Python-Markdown.git
+[submodule "submodules/HTML-KickStart"]
+	path = submodules/HTML-KickStart
+	url = git@github.com:joshuagatcke/HTML-KickStart.git
