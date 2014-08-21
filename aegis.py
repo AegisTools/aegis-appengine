@@ -4,7 +4,7 @@ import pkgutil
 import logging
 import json
 import datetime
-import markdown
+import lib.markdown
 
 from google.appengine.api import users
 
@@ -157,7 +157,7 @@ class MainPage(webapp2.RequestHandler):
                 'load' : request.load })
 
             if format == "md":
-                content = markdown.markdown(content)
+                content = lib.markdown.markdown(content)
 
             self.response.write(content)
         else:

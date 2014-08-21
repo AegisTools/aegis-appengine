@@ -3,7 +3,7 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
-import requests
+import lib.requests
 import unittest
 
 USER_ROOT = ("root@unittests", "root")
@@ -24,14 +24,14 @@ class AegisTestCase(unittest.TestCase):
         pass
 
     def get(self, fragment, auth=None):
-        return requests.get(URL + fragment, auth=auth, headers=HEADERS)
+        return lib.requests.get(URL + fragment, auth=auth, headers=HEADERS)
 
     def put(self, fragment, payload=None, auth=None):
-        return requests.put(URL + fragment, auth=auth, headers=HEADERS)
+        return lib.requests.put(URL + fragment, auth=auth, headers=HEADERS)
 
     def post(self, fragment, payload=None, auth=None):
-        return requests.post(URL + fragment, auth=auth, headers=HEADERS)
+        return lib.requests.post(URL + fragment, auth=auth, headers=HEADERS)
 
     def delete(self, fragment, auth=None):
-        return requests.delete(URL + fragment, auth=auth, headers=HEADERS)
+        return lib.requests.delete(URL + fragment, auth=auth, headers=HEADERS)
 
