@@ -1,4 +1,42 @@
 body {
     margin: 0px;
+    font-family: Arimo, arial, verdana, sans-serif;
+    font-size: 14px;
+    font-style: normal;
+    font-variant: normal;
+}
+
+ul.button-bar li.selected {
+    -webkit-box-shadow:inset 0 3px 5px rgba(0,0,0,0.2),inset 0 -10px 20px rgba(0,0,0,0.07);
+    -moz-box-shadow:inset 0 3px 5px rgba(0,0,0,0.2),inset 0 -10px 20px rgba(0,0,0,0.07);
+    box-shadow:inset 0 3px 5px rgba(0,0,0,0.2),inset 0 -10px 20px rgba(0,0,0,0.07);
+    border-left:1px solid #ccc;
+
+    background: rgb(204,204,204); /* Old browsers */
+    background: -moz-linear-gradient(top, rgba(204,204,204,1) 0%, rgba(237,237,237,1) 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(204,204,204,1)), color-stop(100%,rgba(237,237,237,1))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, rgba(204,204,204,1) 0%,rgba(237,237,237,1) 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, rgba(204,204,204,1) 0%,rgba(237,237,237,1) 100%); /* Opera11.10+ */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#ededed',GradientType=0 ); /* IE6-9 */
+    background: linear-gradient(top, rgba(204,204,204,1) 0%,rgba(237,237,237,1) 100%); /* W3C */
+}
+
+ul.button-bar li.selected a {
+    text-shadow: none;
+    color: #333;
+}
+
+.timesheet .day-of-week {
+    font-weight: bold;
+    line-height: 140%;
+    font-size:   2.0em;
+    margin:      10px 0 10px 0;
+}
+
+.timesheet .date {
+    color:       #999;
+    line-height: 140%;
+    font-size:   2.0em;
+    margin:      10px;
 }
 

@@ -1,0 +1,84 @@
+{% set today = build_date() %}
+{% if keys.year %}
+  {% set date = build_date(keys.year, keys.month, keys.day) %}
+{% else %}
+  {% set date = today %}
+{% endif %}
+
+<div class="col_5">
+  {% if time_mode == "due" %}
+    <h4>Due timesheets</h4>
+  {% elif time_mode == "day" %}
+    <span class="day-of-week">{{ date.day_of_week }}</span>
+    <span class="date">
+      {{ date.day }} {{ date.month_abbrv }} {% if date.year != today.year %}, {{ date.year }}{% endif %}
+    </span>
+  {% elif time_mode == "week" %}
+    <span class="day-of-week">
+      {{ date.this_week.day }} 
+      {% if date.this_week.month != date.this_week_end.month %}{{ date.this_week.month_abbrv }}{% endif %}
+      {% if date.this_week.year != date.this_week_end.year %}{{ date.this_week.year }}{% endif %}
+      – {{ date.this_week_end.day }} {{ date.this_week_end.month_abbrv }}
+      {% if date.this_week_end.year != today.year %}{{ date.this_week_end.year }}{% endif %}
+  {% endif %}
+</div>
+
+<div class="col_7 right">
+  {% if time_mode == "day" %}
+    <ul class="button-bar">
+      <li><a href="/time/day/{{ date.yesterday.path }}"><i class="icon-angle-left"></i></a></li>
+      <li {% if date == today %}class="selected"{% endif %}>
+        <a href="/time/day">Today</a>
+      </li>
+      <li><a href="/time/day/{{ date.tomorrow.path }}"><i class="icon-angle-right"></i></a></li>
+    </ul>
+  {% elif time_mode == "week" %}
+    <ul class="button-bar">
+      <li><a href="/time/week/{{ date.last_week.path }}"><i class="icon-angle-left"></i></a></li>
+      <li {% if date.this_week == today.this_week %}class="selected"{% endif %}>
+        <a href="/time/week/{{ date.this_week.path }}">This Week</a>
+      </li>
+      <li><a href="/time/week/{{ date.next_week.path }}"><i class="icon-angle-right"></i></a></li>
+    </ul>
+  {% endif %}
+
+  <ul class="button-bar">
+    <li><a href=""><i class="icon-calendar"></i></a></li>
+  </ul>
+
+  <ul class="button-bar">
+    <li {% if time_mode == "day" %}class="selected"{% endif %}><a href="/time/day">Day</a></li>
+    <li {% if time_mode == "week" %}class="selected"{% endif %}><a href="/time/week">Week</a></li>
+    <li {% if time_mode == "due" %}class="selected"{% endif %}><a href="/time/due">Due</a></li>
+  </ul>
+
+  <ul class="button-bar">
+    <li class="{% if keys.user: %}selected{% endif %} tooltip-bottom" 
+        data-content="#select-user" data-action="click" data-delay="0">
+      <a href=""><i class="icon-user"></i></a>
+    </li>
+
+    {% if keys.user: %}
+      {# 
+        I want to keep this in case we want this, but it doesn't fit, particularly with a week spanning years
+
+      {% set user_data = load("users/user", keys.user) %}
+      <li class="selected tooltip-bottom" data-content="#select-user" data-action="click" data-delay="0">
+        <a href=""><i class="icon-user"></i> {{ user_data.user }}</a>
+      </li>
+      #}
+      <li><a href="">Me</a></li>
+    {% endif %}
+  </ul>
+</div>
+
+<div class="tooltip-content" id="select-user">
+  <label for="select1">User: </label>
+  <select id="select1">
+    <option>-- Choose --</option>
+    <option>Ferguson, Fergie</option>
+    <option>Hounshell, Lynda</option>
+    <option>Hounshell, Paul</option>
+  </select>
+</div>
+
