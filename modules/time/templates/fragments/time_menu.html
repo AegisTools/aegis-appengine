@@ -45,7 +45,7 @@ endmacro %}
     <ul class="button-bar">
       <li><a href="{{ url(date.last_week) }}"><i class="icon-angle-left"></i></a></li>
       <li {% if date.this_week == today.this_week %}class="selected"{% endif %}>
-        <a href="{{ url(date.this_week) }}">This Week</a>
+        <a href="{{ url(today.this_week) }}">This Week</a>
       </li>
       <li><a href="{{ url(date.next_week) }}"><i class="icon-angle-right"></i></a></li>
     </ul>
