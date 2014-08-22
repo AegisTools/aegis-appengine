@@ -1,5 +1,7 @@
 digraph G {
 
+  log -> users;
+
   tags -> users;
 
   clients -> users;
@@ -24,4 +26,5 @@ digraph G {
   issues -> users;
   issues -> tags;
   issues -> projects;
+  issues -> log;
 }
