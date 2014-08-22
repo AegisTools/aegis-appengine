@@ -25,19 +25,20 @@ class RequestData:
         self.cache = {}
         self.known_loaders = {}
 
-    def load(self, type, id=None):
+    def load(self, type, *args, **kwargs):
         if type not in self.known_loaders:
             raise Exception("Loader '%s' not found" % type)
 
-        key = type + "/" + str(id)
-        if key in self.cache:
-            log.debug("Cache hit for %s: %s" % (type, id))
-            return self.cache[key]
+        # key = type + "/" + str(id)
+        # if key in self.cache:
+        #     log.debug("Cache hit for %s: %s" % (type, id))
+        #     return self.cache[key]
 
         loader = self.known_loaders[type]
-        log.debug("Loading %s: %s (%s)" % (type, id, loader))
-        self.cache[key] = loader(self.user, id)
-        return self.cache[key]
+        log.debug("Loading %s: %s %s (%s)" % (type, args, kwargs, loader))
+        # self.cache[key] = loader(self.user, *args, **kwargs)
+        # return self.cache[key]
+        return loader(self.user, *args, **kwargs)
 
     
 class MainPage(webapp2.RequestHandler):

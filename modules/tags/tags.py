@@ -51,7 +51,7 @@ def tag_delete(viewer, tag, **ignored):
     return "/tags"
 
 
-def load_tag(viewer, id):
+def load_tag(viewer, id=None):
     if permission_check(viewer, "tag", "read") or permission_is_root(viewer):
         key = tag_key(id)
         parent = None

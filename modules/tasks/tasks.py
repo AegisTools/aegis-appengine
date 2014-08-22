@@ -58,7 +58,7 @@ def task_delete(viewer, task, **ignored):
     return "/tasks"
 
 
-def load_task(viewer, id):
+def load_task(viewer, id=None):
     if permission_check(viewer, "task", "read") or permission_is_root(viewer):
         key = task_key(id)
         parent = None

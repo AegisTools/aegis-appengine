@@ -50,7 +50,7 @@ def load_user(viewer, id):
         log.debug("Not allowed")
 
 
-def load_user_list(viewer, ignored):
+def load_user_list(viewer):
     if permission_check(viewer, "user", "read") or permission_is_root(viewer):
         result = []
         for user in User.query(User.active == True).fetch():

@@ -58,7 +58,7 @@ def project_delete(viewer, project, **ignored):
     return "/projects"
 
 
-def load_project(viewer, id):
+def load_project(viewer, id=None):
     if permission_check(viewer, "project", "read") or permission_is_root(viewer):
         key = project_key(id)
         parent = None
