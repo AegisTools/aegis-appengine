@@ -4,6 +4,7 @@ digraph G {
 
   tags -> users;
 
+  clients [color = red]
   clients -> users;
   clients -> tags;
 
@@ -14,15 +15,16 @@ digraph G {
   tasks -> users;
   tasks -> tags;
 
+  assignments [color = red]
   assignments -> users;
   assignments -> projects;
   assignments -> tasks;
-  assignments -> tags;
 
+  timesheets [color = red]
   timesheets -> users;
-  timesheets -> tags;
   timesheets -> assignments;
 
+  issues [color = red]
   issues -> users;
   issues -> tags;
   issues -> projects;
