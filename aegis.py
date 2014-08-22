@@ -171,7 +171,7 @@ class MainPage(webapp2.RequestHandler):
 
         log.info("Rendering module '%s' path: %s (%s)" % (module_name, path_segments, format))
 
-        if module_name != "":
+        if module_name != "" and module_name in self.known_modules:
             module = self.known_modules[module_name]
             base_path = "modules/%s/templates" % module_name
             keys = {}
@@ -203,6 +203,8 @@ class MainPage(webapp2.RequestHandler):
                 template = load_template("templates/_index_.%s" % format)
             else:
                 template = load_template("templates/%s.%s" % (original_path.strip("/"), format))
+                if not template:
+                    template = load_template("templates/%s/_index_.%s" % (original_path.strip("/"), format))
 
         if template:
             return template, keys
@@ -212,7 +214,11 @@ class MainPage(webapp2.RequestHandler):
 
 def interpret_pattern(segments, pattern, template):
     log.debug("Checking template '%s' against '%s'" % (pattern, "/".join(segments)))
-    pattern_pieces = pattern.split("/")
+    if pattern == None:
+        pattern_pieces = []
+    else:
+        pattern_pieces = pattern.split("/")
+
     keys = {}
     path = []
     last_key = None
@@ -259,8 +265,36 @@ def format_json(obj):
                       indent=4)
 
 
-jinja.globals['json'] = format_json
+def build_date(year=None, month=None, day=None):
+    if year:
+        date = datetime.date(int(year), int(month), int(day))
+    else:
+        date = datetime.date.today()
 
+    week = date - date.resolution * (date.isoweekday() % 7)
+
+    def format_date(date):
+        return { 'year'        : date.year,
+                 'month'       : date.month,
+                 'day'         : date.day,
+                 'day_of_week' : date.strftime("%A"),
+                 'month_abbrv' : date.strftime("%b"),
+                 'path'        : date.strftime("%Y/%m/%d") }
+
+    result                  = format_date(date)
+    result["yesterday"]     = format_date(date - date.resolution)
+    result["tomorrow"]      = format_date(date + date.resolution)
+    result["this_week"]     = format_date(week)
+    result["this_week_end"] = format_date(week + date.resolution * 6)
+    result["last_week"]     = format_date(week - date.resolution * 7)
+    result["next_week"]     = format_date(week + date.resolution * 7)
+
+    return result
+
+
+
+jinja.globals['json'] = format_json
+jinja.globals['build_date'] = build_date
 
 app = webapp2.WSGIApplication([('/.*', MainPage)], debug=True)
 
