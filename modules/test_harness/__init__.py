@@ -8,6 +8,7 @@ from google.appengine.api import memcache
 
 from users.permissions import permission_check, permission_grant, permission_revoke
 from tags.tags import tag_apply, tag_remove, tag_list
+from remarks.remarks import remark_create, remark_list
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common import wipe
@@ -69,6 +70,16 @@ def remove_tag(viewer, thing, tag, **ignored):
 def get_tags(viewer, thing):
     return tag_list(viewer, ndb.Key('Thing', thing))
 
+"""
+REMARK STUBS
+"""
+
+def remark(viewer, thing):
+    remark_create(viewer, ndb.Key('Thing', thing), "This is a dummy remark")
+
+
+def get_remarks(viewer, thing):
+    return remark_list(viewer, ndb.Key('Thing', thing))
 
 """
 HELPER METHODS
@@ -86,11 +97,13 @@ def build_thing_key(kind, id):
 
 templates = { "tag/{thing}"                                  : "tag_list",
               "permissions/{user}/{action}/{kind}"           : "permission_view",
-              "permissions/{user}/{action}/{kind}/{thing}/*" : "permission_view" }
+              "permissions/{user}/{action}/{kind}/{thing}/*" : "permission_view",
+              "remarks/{thing}"                              : "remarks_view" }
 
 
 types = { "permission" : check_permission,
-          "tags"       : get_tags }
+          "tags"       : get_tags,
+          "remarks"    : get_remarks }
 
 
 actions = { "wipe"                                         : { "POST"   : { "method" : wipe } },
@@ -98,7 +111,8 @@ actions = { "wipe"                                         : { "POST"   : { "met
                                                                "DELETE" : { "method" : remove_tag } },
             "permissions/{user}/{action}/{kind}"           : { "PUT"    : { "method" : grant_permission },
                                                                "DELETE" : { "method" : revoke_permission } },
-            "permissions/{user}/{action}/{kind}/{thing}/*" : { "PUT"    : { "method" : grant_permission } } }
+            "permissions/{user}/{action}/{kind}/{thing}/*" : { "PUT"    : { "method" : grant_permission } },
+            "remarks/{thing}"                              : { "POST"   : { "method" : remark } } }
 
 
 log.warn("Test harness is enabled")
