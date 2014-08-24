@@ -1,1 +1,1 @@
-{{ json(load("tags/tag", keys.tag)) }}
+{{ json(load("tags/tag", keys.tag_ids)) }}

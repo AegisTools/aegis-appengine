@@ -38,9 +38,13 @@ class RequestData:
         log.debug("Loading %s: %s %s (%s)" % (type, args, kwargs, loader))
         # self.cache[key] = loader(self.user, *args, **kwargs)
         # return self.cache[key]
-        return loader(self.user, *args, **kwargs)
+        try:
+            return loader(self.user, *args, **kwargs)
+        except Exception as ex:
+            logging.exception("Loader Failed")
+            raise
 
-    
+
 class MainPage(webapp2.RequestHandler):
 
     known_modules = {}
@@ -117,18 +121,18 @@ class MainPage(webapp2.RequestHandler):
 
         data = self.request.POST
 
-        if hasattr(module, "actions") and method in module.actions:
-            for pattern in module.actions[method]:
-                if pattern:
-                    action = module.actions[method][pattern]
+        if hasattr(module, "actions"):
+            for pattern in module.actions:
+                if pattern and method in module.actions[pattern]:
+                    action = module.actions[pattern][method]
                     impl, keys = interpret_pattern(path_segments, pattern, action)
                     if impl:
                         args = dict(keys.items() + data.items())
                         log.debug("Performing action: %s(%s)" % (impl, args))
-                        return impl(request.user, **args)
+                        return impl["method"](request.user, **args)
 
-            if None in module.actions[method]:
-                return module.actions[method][None](request.user, {}, data)
+            if None in module.actions and method in module.actions[None]:
+                return module.actions[None][method]["method"](request.user, **data)
 
         raise Exception("action not found")
 

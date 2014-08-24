@@ -1,1 +1,1 @@
-{{ json(load("projects/project")) }}
+{{ json(load("projects/project", keys.client_id)) }}

@@ -1,16 +1,18 @@
 from tasks import *
 
 
-dependencies = [ "users" ]
+dependencies = [ "users", "tags" ]
+
+templates = { "{task_ids}/*" : "task_view" }
 
 
-templates = { "{task}/*" : "task_view" }
+types = { "task" : task_load }
 
 
-types = { "task" : load_task }
-
-
-actions = { "PUT"    : { "{task}/*" : task_create },
-            "DELETE" : { "{task}/*" : task_delete } }
+actions = { None           : { "POST"   : { "method"   : task_http_post,
+                                            "redirect" : "/task/{id}" } },
+            "{task_ids}/*" : { "PUT"    : { "method"   : task_http_put },
+                               "POST"   : { "method"   : task_http_post },
+                               "DELETE" : { "method"   : task_http_delete } } }
 
 

@@ -2,18 +2,20 @@ from users import *
 from permissions import *
 
 
-dependencies = []
+dependencies = [ ]
 
-templates = { "{user}"             : "user_view",
-              "{user}/edit"        : "user_edit" }
-
-
-types = { "user"            : load_user,
-          "user_list"       : load_user_list }
+templates = { "{user_id}"      : "user_view",
+              "{user_id}/edit" : "user_edit" }
 
 
-actions = { "PUT"    : { "{user}" : create_user },
-            "DELETE" : { "{user}" : delete_user } }
+types = { "user"      : user_load,
+          "user_list" : user_list }
+
+
+actions = { None        : { "POST"   : { "method"   : user_http_post,
+                                         "redirect" : "/users/{email}" } },
+            "{user_id}" : { "PUT"    : { "method"   : user_http_put },
+                            "DELETE" : { "method"   : user_http_delete } } }
 
 
 

@@ -1,15 +1,18 @@
 from tags import *
 
 
-dependencies = [ "users" ]
+dependencies = [ "users", "tags" ]
 
-templates = { "{tag}/*"      : "tag_view" }
-
-
-types = { "tag"         : load_tag }
+templates = { "{tag_ids}/*" : "tag_view" }
 
 
-actions = { "PUT"    : { "{tag}/*" : tag_create },
-            "DELETE" : { "{tag}/*" : tag_delete } }
+types = { "tag" : tag_load }
+
+
+actions = { None          : { "POST"   : { "method"   : tag_http_post,
+                                           "redirect" : "/tag/{id}" } },
+            "{tag_ids}/*" : { "PUT"    : { "method"   : tag_http_put },
+                              "POST"   : { "method"   : tag_http_post },
+                              "DELETE" : { "method"   : tag_http_delete } } }
 
 

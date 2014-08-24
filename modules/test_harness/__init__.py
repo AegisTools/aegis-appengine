@@ -93,13 +93,12 @@ types = { "permission" : check_permission,
           "tags"       : get_tags }
 
 
-actions = { "POST"   : { "wipe"                                         : wipe },
-            "PUT"    : { "tag/{thing}/{tag}/*"                          : apply_tag,
-                         "permissions/{user}/{action}/{kind}"           : grant_permission,
-                         "permissions/{user}/{action}/{kind}/{thing}/*" : grant_permission },
-            "DELETE" : { "tag/{thing}/{tag}/*"                          : remove_tag,
-                         "permissions/{user}/{action}/{kind}"           : revoke_permission,
-                         "permissions/{user}/{action}/{kind}/{thing}/*" : revoke_permission } }
+actions = { "wipe"                                         : { "POST"   : { "method" : wipe } },
+            "tag/{thing}/{tag}/*"                          : { "PUT"    : { "method" : apply_tag },
+                                                               "DELETE" : { "method" : remove_tag } },
+            "permissions/{user}/{action}/{kind}"           : { "PUT"    : { "method" : grant_permission },
+                                                               "DELETE" : { "method" : revoke_permission } },
+            "permissions/{user}/{action}/{kind}/{thing}/*" : { "PUT"    : { "method" : grant_permission } } }
 
 
 log.warn("Test harness is enabled")
