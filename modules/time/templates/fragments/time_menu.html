@@ -14,25 +14,24 @@
 endmacro %}
 
 
-<div class="col_5">
+<div class="col_4">
   {% if time_mode == "due" %}
     <h4>Due timesheets</h4>
   {% elif time_mode == "day" %}
     <span class="day-of-week">{{ date.day_of_week }}</span>
     <span class="date">
-      {{ date.day }} {{ date.month_abbrv }} {% if date.year != today.year %}, {{ date.year }}{% endif %}
+      {{ date.day }} {{ date.month_abbrv }} {% if date.year != today.year %}{{ date.year }}{% endif %}
     </span>
   {% elif time_mode == "week" %}
     <span class="day-of-week">
       {{ date.this_week.day }} 
       {% if date.this_week.month != date.this_week_end.month %}{{ date.this_week.month_abbrv }}{% endif %}
-      {% if date.this_week.year != date.this_week_end.year %}{{ date.this_week.year }}{% endif %}
       – {{ date.this_week_end.day }} {{ date.this_week_end.month_abbrv }}
       {% if date.this_week_end.year != today.year %}{{ date.this_week_end.year }}{% endif %}
   {% endif %}
 </div>
 
-<div class="col_7 right">
+<div class="col_8 right">
   {% if time_mode == "day" %}
     <ul class="button-bar">
       <li><a href="{{ url(date.yesterday) }}"><i class="icon-angle-left"></i></a></li>
@@ -64,7 +63,7 @@ endmacro %}
   <ul class="button-bar">
     <li class="{% if keys.user: %}selected{% endif %} tooltip-bottom" 
         data-content="#select-user" data-action="click" data-delay="0">
-      <a href=""><i class="icon-user"></i></a>
+      <a href=""><i class="icon-user"></i> Hounshell, Lynda</a>
     </li>
 
     {% if keys.user: %}
