@@ -1,2 +1,2 @@
-{{ json(load("tasks/task", keys.task)) }}
+{{ json(load("tasks/task", keys.task_ids)) }}
 

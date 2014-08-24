@@ -8,75 +8,136 @@ from google.appengine.api import users
 from shared import *
 from permissions import permission_check, permission_is_root
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from common.errors import *
+from common.arguments import *
+
+
 log = logging.getLogger("users")
 
 
-def create_user(viewer, user, active=None, notes=None, **ignored):
-    if permission_check(viewer, "user", "create") or permission_is_root(viewer):
-        user_obj = user_key(user).get()
-        if not user_obj:
-            user_obj = User(key=user_key(user))
-            user_obj.user = users.User(user)
-            user_obj.created_by = user_key(viewer)
-        if active:
-            user_obj.active = active
-        if notes:
-            user_obj.notes = notes
-        user_obj.put()
-    else:
-        log.debug("Not allowed")
+def user_http_put(actor, user_id, **kwargs):
+    if "user" in kwargs:
+        del kwargs["user"]
 
-    return None
-
-
-def delete_user(viewer, user, **ignored):
-    if permission_check(viewer, "user", "create") or permission_is_root(viewer):
-        user = user_key(user).get()
-        if user:
-            user.active = False
-            user.put()
+    key = user_key(user_id)
+    user = key.get()
+    if user:
+        if permission_check(actor, "user", "update") or permission_is_root(actor):
+            user_update(actor, user=user, **kwargs)
         else:
-            log.debug("User not found")
+            raise NotAllowedError()
     else:
-        log.debug("Not allowed")
-
-    return "/users"
+        user_http_post(actor, key=key, user_id=user_id, **kwargs)
 
 
-def load_user(viewer, id):
+def user_http_post(actor, **kwargs):
+    if "user" in kwargs:
+        del kwargs["user"]
+    
+    if permission_check(actor, "user", "create") or permission_is_root(actor):
+        user_create(actor, **kwargs)
+    else:
+        raise NotAllowedError()
+
+
+def user_http_delete(actor, user_id, **ignored):
+    if permission_check(actor, "user", "delete") or permission_is_root(actor):
+        user_deactivate(actor, user_id=user_id)
+    else:
+        raise NotAllowedError()
+
+
+def user_create(actor, key=None, user_id=None, name=undefined, active=True, **kwargs):
+    key = key or user_key(user_id or name)
+    user = User(key=key)
+    user.user = users.User(user.key.id())
+    user.created_by = user_key(actor)
+
+    return user_update(actor, user=user, active=True, name=name, **kwargs)
+
+
+def user_update(actor, user_id=None, key=None, user=None,
+                first_name=undefined, last_name=undefined, active=undefined, notes=undefined,
+                **ignored):
+    user = user or (key or user_key(user_id)).get()
+
+    if is_defined(first_name):
+        user.first_name = first_name
+
+    if is_defined(last_name):
+        user.last_name = last_name
+
+    if is_defined(active):
+        user.active = active
+
+    if is_defined(notes):
+        user.notes = notes
+
+    user.updated_by = user_key(actor)
+    user.put()
+
+    return to_model(user)
+
+
+def user_deactivate(actor, user_id=None, key=None, user=None, **ignored):
+    user = user_get(user_id, key, user)
+    user.updated_by = user_key(actor)
+    user.active = False
+    user.put()
+
+
+def user_get(user_id=None, key=None, user=None):
+    result = user or (key or user_key(user_id)).get()
+    if result:
+        return result
+    else:
+        raise NotFoundError()
+
+
+def user_load(viewer, user_id=None, key=None):
     if permission_check(viewer, "user", "read") or permission_is_root(viewer):
-        return user_to_model(user_key(id).get())
+        return to_model((key or user_key(user_id)).get())
     else:
-        log.debug("Not allowed")
+        raise NotAllowedError()
 
 
-def load_user_list(viewer):
+def user_list(viewer):
     if permission_check(viewer, "user", "read") or permission_is_root(viewer):
         result = []
-        for user in User.query(User.active == True).fetch():
-            result.append(user_to_model(user))
+        for user in User.query().filter(User.active == True):
+            result.append(to_model(user))
+
         return result
+    else:
+        raise NotAllowedError()
 
 
-def user_to_model(user):
+def to_model(user):
     if not user:
         return None
 
-    return { 'user'       : user.user.email(),
-             'created_by' : user.created_by.id(),
-             'created'    : user.created,
-             'updated'    : user.updated,
-             'active'     : user.active,
-             'notes'      : user.notes }
+    return { 'key'          : user.key.id(),
+             'first_name'   : user.first_name,
+             'last_name'    : user.last_name,
+             'display_name' : (user.last_name or "Unknown") + ", " + (user.first_name or "Unknown"),
+             'active'       : user.active,
+             'created_by'   : user.created_by.id(),
+             'created'      : user.created,
+             'updated_by'   : user.updated_by.id(),
+             'updated'      : user.updated }
 
 
 class User(ndb.Model):
-    user = ndb.UserProperty(required=True)
-    created_by = ndb.KeyProperty(kind='User', required=True)
-    created = ndb.DateTimeProperty(auto_now_add=True, required=True)
-    updated = ndb.DateTimeProperty(auto_now=True, required=True)
+    user = ndb.UserProperty()
+    first_name = ndb.StringProperty()
+    last_name = ndb.StringProperty()
     notes = ndb.TextProperty()
     active = ndb.BooleanProperty(default=True, required=True)
+    created_by = ndb.KeyProperty(kind='User')
+    created = ndb.DateTimeProperty(auto_now_add=True)
+    updated_by = ndb.KeyProperty(kind='User')
+    updated = ndb.DateTimeProperty(auto_now=True)
 
 
 

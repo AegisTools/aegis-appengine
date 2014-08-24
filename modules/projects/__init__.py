@@ -1,16 +1,19 @@
 from projects import *
 
 
-dependencies = [ "users" ]
+dependencies = [ "users", "tags" ]
+
+templates = { "{client_id}"                 : "project_view",
+              "{client_id}/{project_ids}/*" : "project_view" }
 
 
-templates = { "{project}/*" : "project_view" }
+types = { "project" : project_load }
 
 
-types = { "project" : load_project }
-
-
-actions = { "PUT"    : { "{project}/*" : project_create },
-            "DELETE" : { "{project}/*" : project_delete } }
+actions = { "{client_id}"                 : { "POST"   : { "method"   : project_http_post,
+                                                           "redirect" : "/project/{id}" } },
+            "{client_id}/{project_ids}/*" : { "PUT"    : { "method"   : project_http_put },
+                                              "POST"   : { "method"   : project_http_post },
+                                              "DELETE" : { "method"   : project_http_delete } } }
 
 

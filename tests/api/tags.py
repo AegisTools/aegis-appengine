@@ -46,7 +46,8 @@ class TagTests(common.AegisTestCase):
     def test_root_delete_tag(self):
         self.assertEqual(200, self.put("tags/a", USER_ROOT).status_code)
         self.assertEqual(200, self.delete("tags/a", USER_ROOT).status_code)
-        self.assertIsNone(self.get("tags/a", USER_ROOT).json())
+        self.assertEqual("a", self.get("tags/a", USER_ROOT).json()["path"])
+        self.assertEqual(0, len(self.get("tags", USER_ROOT).json()))
 
 
     def test_root_delete_nested_tag(self):
@@ -56,9 +57,10 @@ class TagTests(common.AegisTestCase):
         self.assertEqual(1, len(self.get("tags", USER_ROOT).json()))
 
         self.assertEqual(200, self.delete("tags/a/b", USER_ROOT).status_code)
-        self.assertIsNone(self.get("tags/a/b", USER_ROOT).json())
-        self.assertIsNone(self.get("tags/a/b/c", USER_ROOT).json())
+        self.assertEqual("a/b", self.get("tags/a/b", USER_ROOT).json()["path"])
+        self.assertEqual("a/b/c", self.get("tags/a/b/c", USER_ROOT).json()["path"])
         self.assertEqual(1, len(self.get("tags", USER_ROOT).json()))
+        self.assertEqual(0, len(self.get("tags/a", USER_ROOT).json()["children"]))
 
 
     def test_root_apply_tag(self):

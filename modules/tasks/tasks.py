@@ -6,7 +6,8 @@ from google.appengine.ext import ndb
 from google.appengine.api import users
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from common import wipe
+from common.errors import *
+from common.arguments import *
 from users.permissions import permission_check, permission_is_root
 from users.users import user_key
 
@@ -14,64 +15,96 @@ from users.users import user_key
 log = logging.getLogger("tasks")
 
 
-def task_key(task_names):
+def task_key(task_ids):
     key = None
-    if not task_names:
+    if not task_ids:
         return None
 
-    for name in task_names:
-        key = ndb.Key("Task", name, parent=key)
+    for segment in task_ids:
+        key = ndb.Key("Task", segment, parent=key)
 
     return key
 
 
-def task_create(viewer, task, name=None, active=True, **ignored):
-    if permission_check(viewer, "task", "create") or permission_is_root(viewer):
-        task_obj = task_key(task).get()
-        if not task_obj:
-            task_obj = Task(key=task_key(task))
-            task_obj.parent = task_obj.key.parent()
-            task_obj.name = name or task_obj.key.id()
-            task_obj.created_by = user_key(viewer)
-        if active:
-            task_obj.active = active
-        if name:
-            task_obj.name = name
-        task_obj.put()
-    else:
-        log.debug("Not allowed")
-
-    return None
-
-
-def task_delete(viewer, task, **ignored):
-    if permission_check(viewer, "task", "delete") or permission_is_root(viewer):
-        task = task_key(task).get()
-        if task:
-            task.active = False
-            task.put()
+def task_http_put(actor, task_ids, **kwargs):
+    key = task_key(task_ids)
+    task = key.get()
+    if task:
+        if permission_check(actor, "task", "update") or permission_is_root(actor):
+            task_update(actor, task=task, **kwargs)
         else:
-            log.debug("Task not found")
+            raise NotAllowedError()
     else:
-        log.debug("Not allowed")
-
-    return "/tasks"
+        task_http_post(actor, key=key, task_ids=task_ids, **kwargs)
 
 
-def load_task(viewer, id=None):
+def task_http_post(actor, **kwargs):
+    if permission_check(actor, "task", "create") or permission_is_root(actor):
+        task_create(actor, **kwargs)
+    else:
+        raise NotAllowedError()
+
+
+def task_http_delete(actor, task_ids, **ignored):
+    if permission_check(actor, "task", "delete") or permission_is_root(actor):
+        task_deactivate(actor, task_ids=task_ids)
+    else:
+        raise NotAllowedError()
+
+
+def task_create(actor, key=None, task_ids=None, name=undefined, active=True, **kwargs):
+    key = key or task_key(task_ids or name)
+    task = Task(key=key)
+    task.name = task_ids[-1]
+    task.parent = key.parent()
+    task.created_by = user_key(actor)
+    return task_update(actor, task=task, active=True, name=name, **kwargs)
+
+
+def task_update(actor, task_ids=None, key=None, task=None, name=undefined, active=undefined, **ignored):
+    task = task or (key or task_key(task_ids)).get()
+
+    if is_defined(name):
+        task.name = name
+
+    if is_defined(active):
+        task.active = active
+
+    task.updated_by = user_key(actor)
+    task.put()
+
+    return to_model(task)
+
+
+def task_deactivate(actor, task_ids=None, key=None, task=None, **ignored):
+    task = task_get(task_ids, key, task)
+    task.updated_by = user_key(actor)
+    task.active = False
+    task.put()
+
+
+def task_get(task_ids=None, key=None, task=None):
+    result = task or (key or task_key(task_ids)).get()
+    if result:
+        return result
+    else:
+        raise NotFoundError()
+
+
+def task_load(viewer, task_ids=None):
     if permission_check(viewer, "task", "read") or permission_is_root(viewer):
-        key = task_key(id)
+        key = task_key(task_ids)
         parent = None
         children = []
         for child in Task.query(Task.parent == key, ancestor=key):
             if child.active:
-                children.append(task_to_model(child))
+                children.append(to_model(child))
 
-        if id:
-            task = task_to_model(key.get())
+        if task_ids:
+            task = to_model(key.get())
             if task:
                 if key.parent():
-                    parent = task_to_model(key.parent().get())
+                    parent = to_model(key.parent().get())
                 task["parent"] = parent
                 task["children"] = children
             return task
@@ -81,7 +114,7 @@ def load_task(viewer, id=None):
         log.debug("Not allowed")
 
 
-def task_to_model(task):
+def to_model(task):
     if not task:
         return None
 
@@ -111,8 +144,10 @@ def task_key_to_path(key):
 class Task(ndb.Model):
     parent = ndb.KeyProperty(kind='Task')
     name = ndb.StringProperty(required=True)
-    created_by = ndb.KeyProperty(kind='User', required=True)
-    created = ndb.DateTimeProperty(auto_now_add=True, required=True)
-    active = ndb.BooleanProperty(default=True, required=True)
+    active = ndb.BooleanProperty(default=True)
+    created_by = ndb.KeyProperty(kind='User')
+    created = ndb.DateTimeProperty(auto_now_add=True)
+    updated_by = ndb.KeyProperty(kind='User')
+    updated = ndb.DateTimeProperty(auto_now=True)
 
 
