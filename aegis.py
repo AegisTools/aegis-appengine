@@ -119,7 +119,17 @@ class MainPage(webapp2.RequestHandler):
         module_name, path_segments = path_segments[0], path_segments[1:]
         module = self.known_modules[module_name]
 
-        data = self.request.POST
+        format = self.get_data_type("Content-Type")
+        if format == "json":
+            if self.request.body == "":
+                data = {}
+            else:
+                log.debug(self.request.body)
+                data = json.loads(self.request.body)
+        elif format == "html":
+            data = self.request.POST
+        else:
+            data = {}
 
         if hasattr(module, "actions"):
             for pattern in module.actions:
