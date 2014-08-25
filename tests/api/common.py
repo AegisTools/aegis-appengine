@@ -14,7 +14,7 @@ HEADERS = { "Content-Type" : "application/json",
 class AegisTestCase(unittest.TestCase):
 
     def wipe(self):
-        self.post("test_harness/wipe", USER_ROOT)
+        self.post("test_harness/wipe", auth=USER_ROOT)
 
     def setUp(self):
         self.wipe()
@@ -27,10 +27,10 @@ class AegisTestCase(unittest.TestCase):
         return lib.requests.get(URL + fragment, auth=auth, headers=HEADERS)
 
     def put(self, fragment, payload=None, auth=None):
-        return lib.requests.put(URL + fragment, auth=auth, headers=HEADERS)
+        return lib.requests.put(URL + fragment, data=payload, auth=auth, headers=HEADERS)
 
     def post(self, fragment, payload=None, auth=None):
-        return lib.requests.post(URL + fragment, auth=auth, headers=HEADERS)
+        return lib.requests.post(URL + fragment, data=payload, auth=auth, headers=HEADERS)
 
     def delete(self, fragment, auth=None):
         return lib.requests.delete(URL + fragment, auth=auth, headers=HEADERS)
