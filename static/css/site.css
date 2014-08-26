@@ -40,3 +40,36 @@ ul.button-bar li.selected a {
     margin:      10px;
 }
 
+.issues .property {
+    font-weight: bold;
+}
+
+.issues .value {
+    text-align: right;
+}
+
+.issues .header {
+    font-size: 10px;
+}
+
+.issues .body {
+    font-size: 17px;
+}
+
+.issues hr {
+    margin: 10px 0 20px 0;
+}
+
+.issues table.issue-list thead {
+    font-weight: bold;
+}
+
+.issues table.issue-list td {
+    vertical-align: top;
+}
+
+.clickable-row {
+    cursor: pointer;
+}
+
+

@@ -1,0 +1,23 @@
+digraph G {
+  "" -> triage -> assigned -> working -> fixed -> closed
+
+  triage -> rejected -> closed;
+  triage -> deferred -> closed;
+
+  assigned -> fixed;
+  assigned -> deferred;
+  assigned -> rejected;
+
+  working -> rejected;
+  working -> deferred;
+  working -> assigned;
+  working -> triage;
+
+  fixed -> assigned;
+  fixed -> triage;
+
+  rejected -> triage;
+
+  deferred -> assigned;
+  deferred -> rejected;
+}

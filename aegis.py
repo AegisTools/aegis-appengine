@@ -172,7 +172,7 @@ class MainPage(webapp2.RequestHandler):
                 'load' : request.load })
 
             if format == "md":
-                content = lib.markdown.markdown(content)
+                content = format_markdown(content)
 
             self.response.write(content)
         else:
@@ -280,6 +280,10 @@ def format_json(obj):
                       indent=4)
 
 
+def format_markdown(content):
+    return lib.markdown.markdown(content)
+
+
 def build_date(year=None, month=None, day=None):
     if year:
         date = datetime.date(int(year), int(month), int(day))
@@ -308,7 +312,8 @@ def build_date(year=None, month=None, day=None):
 
 
 
-jinja.globals['json'] = format_json
+jinja.globals['json']       = format_json
+jinja.globals['markdown']   = format_markdown
 jinja.globals['build_date'] = build_date
 
 app = webapp2.WSGIApplication([('/.*', MainPage)], debug=True)

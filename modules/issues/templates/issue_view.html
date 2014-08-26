@@ -1,0 +1,38 @@
+{% extends "modules/issues/fragments/page.html" %}
+
+{% set issue = load("issues/issue", keys.issue_id) %}
+
+{% block content %}
+  <div class="col_12 issues">
+    <div class="col_12 summary"><h4>{{ issue.summary }}</h4></div>
+
+    <div class="col_8">
+      {% if issue.project %}
+        <div class="project">Project: {{ issue.project }}</div>
+      {% endif %}
+      {% for remark in issue.history %}
+        {% if loop.index != 1 %}<hr>{% endif %}
+        <div class="header">{{ markdown(remark.subtext) }}</div>
+        <div class="body">{{ markdown(remark.text) }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="col_4">
+      <table cellspacing="0" cellpadding="0"><tbody>
+        <tr><td nowrap class="property">Status:</td><td class="value">{{ issue.status }}</td></tr>
+        <tr><td nowrap class="property">Priority:</td><td class="value">{{ issue.priority }}</td></tr>
+        <tr><td nowrap class="property">Severity:</td><td class="value">{{ issue.severity }}</td></tr>
+        <tr><td nowrap class="property">Assigned To:</td><td class="value">{{ issue.assignee }}</td></tr>
+        <tr><td nowrap class="property">Reported By:</td><td class="value">{{ issue.reporter }} </td></tr>
+        <tr><td nowrap class="property">Verified By:</td><td class="value">{{ issue.verifier }} </td></tr>
+        <tr><td nowrap class="property">CC:</td><td class="value">{{ issue.cc }} </td></tr>
+        <tr><td nowrap class="property">Depends On:</td><td class="value">{{ issue.depends_on }} </td></tr>
+        <tr><td nowrap class="property">Blocking:</td><td class="value">{{ issue.blocking }} </td></tr>
+        <tr><td nowrap class="property">Privacy:</td><td class="value">
+          {% if issue.private %}Private{% else %}Public{% endif %}
+        </td></tr>
+      </tbody></table>
+    </div>
+  </div>
+{% endblock %}
+

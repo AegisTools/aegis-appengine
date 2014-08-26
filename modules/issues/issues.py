@@ -46,7 +46,9 @@ def issue_create(actor, key=None, issue_id=None, name=undefined, active=True, **
     if "assignee" not in kwargs: kwargs["assignee"] = actor
     if "verifier" not in kwargs: kwargs["verifier"] = actor
 
-    if "status" not in kwargs: kwargs["status"] = "triage"
+    if "status"   not in kwargs: kwargs["status"]   = "triage"
+    if "priority" not in kwargs: kwargs["priority"] = 2
+    if "severity" not in kwargs: kwargs["severity"] = 2
 
     issue = Issue()
     issue.created_by = user_key(actor)
@@ -54,18 +56,18 @@ def issue_create(actor, key=None, issue_id=None, name=undefined, active=True, **
 
 
 def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, project=undefined, 
-                 status=undefined, reporter=undefined, assignee=undefined, verifier=undefined,
-                 cc=undefined, depends_on=undefined, blocking=undefined, private=undefined, body="", 
-                 **ignored):
+                 status=undefined, priority=undefined, severity=undefined, reporter=undefined, 
+                 assignee=undefined, verifier=undefined, cc=undefined, depends_on=undefined, 
+                 blocking=undefined, private=undefined, body="", **ignored):
     issue = issue or (key or issue_key(issue_id)).get()
-    body = "\n" + body
+    header = "**" + actor.email() + "** on " + time.strftime("%c") + "\n\n"
 
     if is_defined(summary) and summary != issue.summary:
-        body = "**Summary:** " + summary + "  \n" + body
+        header = header + "**Summary:** " + summary + "  \n"
         issue.summary = summary
 
     if is_defined(project) and project != issue.project:
-        body = "**Project:** " + project + "  \n" + body
+        header = header + "**Project:** " + project + "  \n"
         issue.project = project
 
     if is_defined(status) and status != issue.status:
@@ -73,44 +75,50 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
             raise Exception("Status not recognized")
         if not status in issue_transitions[issue.status]:
             raise Exception("Status transition not allowed")
-        body = "**Status:** " + status + "  \n" + body
+        header = header + "**Status:** " + status + "  \n"
         issue.status = status
 
+    if is_defined(priority) and int(priority) != issue.priority:
+        header = header + "**Priority:** " + str(priority) + "  \n"
+        issue.priority = int(priority)
+
+    if is_defined(severity) and int(severity) != issue.severity:
+        header = header + "**Severity:** " + str(severity) + "  \n"
+        issue.severity = int(severity)
+
     if is_defined(reporter) and reporter != issue.reporter:
-        body = "**Reporter:** " + reporter.email() + "  \n" + body
+        header = header + "**Reporter:** " + reporter.email() + "  \n"
         issue.reporter = user_key(reporter)
 
     if is_defined(assignee) and assignee != issue.assignee:
-        body = "**Assignee:** " + assignee.email() + "  \n" + body
+        header = header + "**Assignee:** " + assignee.email() + "  \n"
         issue.assignee = user_key(assignee)
 
     if is_defined(verifier) and verifier != issue.verifier:
-        body = "**Verifier:** " + verifier.email() + "  \n" + body
+        header = header + "**Verifier:** " + verifier.email() + "  \n"
         issue.verifier = user_key(verifier)
 
     if is_defined(cc) and cc != issue.cc:
-        body = "**CC:** " + reporter + "  \n" + body
+        header = header + "**CC:** " + reporter + "  \n"
         issue.cc = cc
 
     if is_defined(depends_on) and depends_on != issue.depends_on:
-        body = "**Depends On:** " + reporter + "  \n" + body
+        header = header + "**Depends On:** " + reporter + "  \n"
         issue.depends_on = depends_on
 
     if is_defined(blocking) and blocking != issue.blocking:
-        body = "**Blocking:** " + reporter + "  \n" + body
+        header = header + "**Blocking:** " + reporter + "  \n"
         issue.blocking = blocking
 
     if is_defined(private) and private != issue.private:
-        body = "**Private:** " + reporter + "  \n" + body
+        header = header + "**Private:** " + reporter + "  \n"
         issue.private = private
-
-    body = "**" + actor.email() + "** on " + time.strftime("%c")
 
     issue.updated_by = user_key(actor)
     issue.put()
     log.debug(issue)
 
-    issue.history = [ remark_create(actor, issue.key, body) ]
+    issue.history = [ remark_create(actor, issue.key, body.strip(), header.strip()) ]
 
     return to_model(issue)
 
@@ -142,7 +150,7 @@ def issue_list(viewer):
     if permission_check(viewer, "issue", "read") or permission_is_root(viewer):
         result = []
         for issue in Issue.query().filter():
-            issue.history = remark_list(viewer, issue.key)
+            issue.history = []
             result.append(to_model(issue))
 
         return result
@@ -159,6 +167,8 @@ def to_model(issue):
              'history'    : issue.history,
              'project'    : issue.project,
              'status'     : issue.status,
+             'priority'   : issue.priority,
+             'severity'   : issue.severity,
              'reporter'   : issue.reporter.id(),
              'assignee'   : issue.assignee.id(),
              'verifier'   : issue.verifier.id(),
@@ -176,6 +186,8 @@ class Issue(ndb.Model):
     summary = ndb.StringProperty(required=True)
     project = ndb.KeyProperty(kind=Project)
     status = ndb.StringProperty(required=True)
+    priority = ndb.IntegerProperty(required=True)
+    severity = ndb.IntegerProperty(required=True)
     reporter = ndb.KeyProperty(kind=User, required=True)
     assignee = ndb.KeyProperty(kind=User, required=True)
     verifier = ndb.KeyProperty(kind=User, required=True)

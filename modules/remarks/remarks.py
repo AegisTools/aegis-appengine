@@ -17,10 +17,11 @@ def remark_key(target_key, remark_id):
     return ndb.Key("Remark", remark_id, parent=target_key)
 
 
-def remark_create(actor, target_key, text):
+def remark_create(actor, target_key, text, subtext=None):
     remark = Remark(parent=target_key)
     remark.target = target_key
     remark.text = text
+    remark.subtext = subtext
     remark.created_by = user_key(actor)
     remark.put()
 
@@ -37,7 +38,7 @@ def remark_get(target_key, remark_id):
 
 def remark_list(viewer, target_key):
     result = []
-    for remark in Remark.query(ancestor=target_key).filter(Remark.target == target_key):
+    for remark in Remark.query(ancestor=target_key).filter(Remark.target == target_key).order(Remark.created):
         result.append(to_model(remark))
 
     return result
@@ -50,6 +51,7 @@ def to_model(remark):
     return { 'key'        : remark.key.id(),
              'target'     : remark.target,
              'text'       : remark.text,
+             'subtext'    : remark.subtext,
              'created_by' : remark.created_by.id(),
              'created'    : remark.created }
 
@@ -57,6 +59,7 @@ def to_model(remark):
 class Remark(ndb.Model):
     target = ndb.KeyProperty(required=True)
     text = ndb.TextProperty()
+    subtext = ndb.TextProperty()
     created_by = ndb.KeyProperty(kind='User')
     created = ndb.DateTimeProperty(auto_now_add=True)
 

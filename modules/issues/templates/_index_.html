@@ -1,7 +1,41 @@
-{% set section_module = "assigned" %}
-{% extends "modules/issues/templates/fragments/page.html" %}
+{% extends "modules/issues/fragments/page.html" %}
+
+{% set issue_list = load("issues/issue_list") %}
 
 {% block content %}
-  <h3>Assigned To Me</h3>
+  <div class="col_12 issues">
+    <table cellspacing="0" cellpadding="0" class="striped issue-list">
+      <thead><tr>
+        <td></td>
+        <td nowrap>P</td>
+        <td nowrap>S</td>
+        <td nowrap>Status</id>
+        <td nowrap>Assignee</td>
+        <td nowrap>Created On</td>
+        <td nowrap>Summary</td>
+      </tr></thead>
+      <tbody>
+        {% for issue in issue_list %}
+          <tr class="clickable-row" data-href="/issues/{{ issue.id }}">
+            <td nowrap>{{ issue.id }}</td>
+            <td nowrap>{{ issue.priority }}</td>
+            <td nowrap>{{ issue.severity }}</td>
+            <td nowrap>{{ issue.status }}</td>
+            <td nowrap>{{ issue.assignee }}</td>
+            <td nowrap>{{ issue.created.date() }}</td>
+            <td><a href="/issues/{{ issue.id }}">{{ issue.summary }}</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    jQuery(document).ready(function($) {
+      $(".clickable-row").click(function() {
+            window.document.location = $(this).attr("data-href");
+      });
+    });
+  </script>
 {% endblock %}
 
