@@ -1,10 +1,10 @@
 {% set section_module = "timesheet" %}
-{% extends "modules/time/templates/fragments/page.html" %}
+{% extends "modules/time/fragments/page.html" %}
 
 {% block content %}
   <div class="col_12 timesheet">
     {% set time_mode = "day" %}
-    {% include "modules/time/templates/fragments/time_menu.html" %}
+    {% include "modules/time/fragments/time_menu.html" %}
 
     <div class="col_12">
       Grid

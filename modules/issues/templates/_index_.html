@@ -6,7 +6,7 @@
   <div class="col_12 issues">
     <table cellspacing="0" cellpadding="0" class="striped issue-list">
       <thead><tr>
-        <td></td>
+        <td>ID</td>
         <td nowrap>P</td>
         <td nowrap>S</td>
         <td nowrap>Status</id>
@@ -17,13 +17,13 @@
       <tbody>
         {% for issue in issue_list %}
           <tr class="clickable-row" data-href="/issues/{{ issue.id }}">
-            <td nowrap>{{ issue.id }}</td>
+            <td nowrap><a href="/issues/{{ issue.id }}">{{ issue.id }}</a></td>
             <td nowrap>{{ issue.priority }}</td>
             <td nowrap>{{ issue.severity }}</td>
             <td nowrap>{{ issue.status }}</td>
             <td nowrap>{{ issue.assignee }}</td>
             <td nowrap>{{ issue.created.date() }}</td>
-            <td><a href="/issues/{{ issue.id }}">{{ issue.summary }}</a></td>
+            <td>{{ issue.summary }}</td>
           </tr>
         {% endfor %}
       </tbody>
