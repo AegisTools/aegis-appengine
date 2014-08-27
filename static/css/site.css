@@ -89,6 +89,11 @@ ul.button-bar li.selected a {
     cursor: pointer;
 }
 
+.long-line {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
 .issues h1 {
     font-size: 2em;
 }

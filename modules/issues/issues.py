@@ -79,11 +79,13 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
     verifier = fix_user(verifier)
 
     if is_defined(cc):
-        log.debug(cc)
         cc = [user_key(id) for id in re.split("[\\s,;]+", cc) if len(id) > 0]
-        log.debug(cc)
 
-    blocking = undefined
+    if is_defined(depends_on):
+        depends_on = [issue_key(id) for id in re.split("[\\s,;]+", depends_on) if len(id) > 0]
+
+    if is_defined(blocking):
+        blocking = [issue_key(id) for id in re.split("[\\s,;]+", blocking) if len(id) > 0]
 
     if is_defined(private):
         private = private in (True, "yes", "true", 1)
@@ -126,15 +128,15 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
         issue.verifier = verifier
 
     if is_defined(cc) and cc != issue.cc:
-        header = header + "**CC:** " + ", ".join(map(lambda user: user.id(), cc)) + "  \n"
+        header = header + "**CC:** " + ", ".join([user.id() for user in cc]) + "  \n"
         issue.cc = cc
 
     if is_defined(depends_on) and depends_on != issue.depends_on:
-        header = header + "**Depends On:** " + depends_on + "  \n"
+        header = header + "**Depends On:** " + ", ".join([str(iss.id()) for iss in depends_on]) + "  \n"
         issue.depends_on = depends_on
 
     if is_defined(blocking) and blocking != issue.blocking:
-        header = header + "**Blocking:** " + blocking + "  \n"
+        header = header + "**Blocking:** " + ", ".join([str(iss.id()) for iss in blocking]) + "  \n"
         issue.blocking = blocking
 
     if is_defined(private) and private != issue.private:
@@ -157,18 +159,20 @@ def issue_deactivate(actor, issue_id=None, key=None, issue=None, **ignored):
     issue.put()
 
 
-def issue_get(viewer, issue_id=None, key=None, issue=None):
+def issue_get(viewer, issue_id=None, key=None, issue=None, silent=False):
     result = issue or (key or issue_key(issue_id)).get()
     if result:
         result.history = remark_list(viewer, result.key)
-        return to_model(viewer, result)
+        return result
+    elif silent:
+        return None
     else:
         raise NotFoundError()
 
 
 def issue_load(viewer, issue_id):
     if permission_check(viewer, "issue", "read") or permission_is_root(viewer):
-        return issue_get(viewer, issue_id)
+        return to_model(viewer, issue_get(viewer, issue_id))
     else:
         raise NotAllowedError()
 
@@ -178,7 +182,7 @@ def issue_list(viewer):
         result = []
         for issue in Issue.query().filter():
             issue.history = []
-            result.append(viewer, to_model(issue))
+            result.append(viewer, to_model(issue, get_related_issues=False))
 
         return result
     else:
@@ -201,7 +205,7 @@ def issue_search(viewer, simple=None, query=None, complex=None):
 
         for issue in dataset:
             issue.history = []
-            result.append(viewer, to_model(issue))
+            result.append(to_model(viewer, issue))
 
         return result
     raise NotAllowedError()
@@ -268,28 +272,43 @@ def complex_search_to_ndb_query(query):
         return ndb.AND(*phrases)
 
 
-def to_model(viewer, issue):
+def to_model(viewer, issue, get_related_issues=True):
     if not issue:
         return None
 
-    return { 'id'         : issue.key.id(),
-             'summary'    : issue.summary,
-             'history'    : issue.history,
-             'project'    : issue.project,
-             'status'     : issue.status,
-             'priority'   : issue.priority,
-             'severity'   : issue.severity,
-             'reporter'   : user_load(viewer, key=issue.reporter),
-             'assignee'   : user_load(viewer, key=issue.assignee),
-             'verifier'   : user_load(viewer, key=issue.verifier),
-             'cc'         : [user_load(viewer, key=key) for key in issue.cc],
-             'depends_on' : issue.depends_on,
-             'blocking'   : issue.blocking,
-             'private'    : issue.private,
-             'created_by' : issue.created_by.id(),
-             'created'    : issue.created,
-             'updated_by' : issue.updated_by.id(),
-             'updated'    : issue.updated }
+    if get_related_issues:
+        blocking   = { key.id(): to_model(viewer, issue_get(viewer, key=key, silent=True), False) 
+                        for key in issue.blocking }
+        depends_on = { key.id(): to_model(viewer, issue_get(viewer, key=key, silent=True), False)
+                        for key in issue.depends_on }
+    else:
+        log.debug(issue)
+        blocking   = { key.id(): None for key in issue.blocking }
+        depends_on = { key.id(): None for key in issue.depends_on }
+
+    cc = { key.id(): user_load(viewer, key=key) for key in issue.cc }
+
+    return { 'id'             : issue.key.id(),
+             'summary'        : issue.summary,
+             'history'        : issue.history,
+             'project'        : issue.project,
+             'status'         : issue.status,
+             'priority'       : issue.priority,
+             'severity'       : issue.severity,
+             'reporter_email' : issue.reporter.id(),
+             'assignee_email' : issue.assignee.id(),
+             'verifier_email' : issue.verifier.id(),
+             'reporter'       : user_load(viewer, key=issue.reporter),
+             'assignee'       : user_load(viewer, key=issue.assignee),
+             'verifier'       : user_load(viewer, key=issue.verifier),
+             'cc'             : cc,
+             'depends_on'     : depends_on,
+             'blocking'       : blocking,
+             'private'        : issue.private,
+             'created_by'     : issue.created_by.id(),
+             'created'        : issue.created,
+             'updated_by'     : issue.updated_by.id(),
+             'updated'        : issue.updated }
 
 
 class Issue(ndb.Model):
