@@ -79,13 +79,13 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
     verifier = fix_user(verifier)
 
     if is_defined(cc):
-        cc = [user_key(id) for id in re.split("[\\s,;]+", cc) if len(id) > 0]
+        cc = set([user_key(id) for id in re.split("[\\s,;]+", cc) if len(id) > 0])
 
     if is_defined(depends_on):
-        depends_on = [issue_key(id) for id in re.split("[\\s,;]+", depends_on) if len(id) > 0]
+        depends_on = set([issue_key(id) for id in re.split("[\\s,;]+", depends_on) if len(id) > 0])
 
     if is_defined(blocking):
-        blocking = [issue_key(id) for id in re.split("[\\s,;]+", blocking) if len(id) > 0]
+        blocking = set([issue_key(id) for id in re.split("[\\s,;]+", blocking) if len(id) > 0])
 
     if is_defined(private):
         private = private in (True, "yes", "true", 1)
@@ -127,20 +127,20 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
         header = header + "**Verifier:** " + verifier.id() + "  \n"
         issue.verifier = verifier
 
-    if is_defined(cc) and cc != issue.cc:
+    if is_defined(cc) and cc != set(issue.cc):
         header = header + "**CC:** " + ", ".join([user.id() for user in cc]) + "  \n"
-        issue.cc = cc
+        issue.cc = list(cc)
 
-    if is_defined(depends_on) and depends_on != issue.depends_on:
+    if is_defined(depends_on) and depends_on != set(issue.depends_on):
         header = header + "**Depends On:** " + ", ".join([str(iss.id()) for iss in depends_on]) + "  \n"
-        issue.depends_on = depends_on
+        issue.depends_on = list(depends_on)
 
-    if is_defined(blocking) and blocking != issue.blocking:
+    if is_defined(blocking) and blocking != set(issue.blocking):
         header = header + "**Blocking:** " + ", ".join([str(iss.id()) for iss in blocking]) + "  \n"
-        issue.blocking = blocking
+        issue.blocking = list(blocking)
 
     if is_defined(private) and private != issue.private:
-        header = header + "**Private:** " + str(private) + "  \n"
+        header = header + "**Privacy:** " + ("private" if private else "public") + "  \n"
         issue.private = private
 
     issue.updated_by = user_key(actor)
@@ -301,9 +301,9 @@ def to_model(viewer, issue, get_related_issues=True):
              'reporter'       : user_load(viewer, key=issue.reporter),
              'assignee'       : user_load(viewer, key=issue.assignee),
              'verifier'       : user_load(viewer, key=issue.verifier),
-             'cc'             : cc,
-             'depends_on'     : depends_on,
-             'blocking'       : blocking,
+             'cc'             : sorted(cc),
+             'depends_on'     : sorted(depends_on),
+             'blocking'       : sorted(blocking),
              'private'        : issue.private,
              'created_by'     : issue.created_by.id(),
              'created'        : issue.created,

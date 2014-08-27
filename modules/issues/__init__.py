@@ -3,8 +3,9 @@ from issues import *
 
 dependencies = [ "users", "tags", "remarks" ]
 
-templates = { "{issue_id}"      : "issue_view",
-              "{issue_id}/edit" : "issue_edit" }
+templates = { "{issue_id}"      : "view",
+              "{issue_id}/edit" : "edit",
+              "edit/{issue_id}" : "edit" }
 
 
 types = { "issue"        : issue_load,

@@ -1,8 +1,7 @@
 digraph G {
   "" -> triage -> assigned -> working -> fixed -> closed
 
-  triage -> rejected -> closed;
-  triage -> deferred -> closed;
+  triage -> deferred -> rejected -> closed;
 
   assigned -> fixed;
   assigned -> deferred;
