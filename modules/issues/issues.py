@@ -2,6 +2,7 @@ import sys
 import os
 import logging
 import time
+import re
 
 from issue_rules import *
 
@@ -11,7 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
 from common.arguments import *
 from users.permissions import permission_check, permission_is_root
-from users.users import user_key, User
+from users.users import user_key, user_load, User
 from projects.projects import Project
 from remarks.remarks import remark_create, remark_list
 
@@ -62,6 +63,32 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
     issue = issue or (key or issue_key(issue_id)).get()
     header = "**" + actor.email() + "** on " + time.strftime("%c") + "\n\n"
 
+
+    # Rewrite input types if necessary
+    def fix_user(field):
+        if is_undefined(field):
+            return field
+        if field == "":
+            return undefined
+        if isinstance(field, User):
+            return field
+        return user_key(field)
+
+    reporter = fix_user(reporter)
+    assignee = fix_user(assignee)
+    verifier = fix_user(verifier)
+
+    if is_defined(cc):
+        log.debug(cc)
+        cc = [user_key(id) for id in re.split("[\\s,;]+", cc) if len(id) > 0]
+        log.debug(cc)
+
+    blocking = undefined
+
+    if is_defined(private):
+        private = private in (True, "yes", "true", 1)
+
+    # Update all fields
     if is_defined(summary) and summary != issue.summary:
         header = header + "**Summary:** " + summary + "  \n"
         issue.summary = summary
@@ -87,31 +114,31 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
         issue.severity = int(severity)
 
     if is_defined(reporter) and reporter != issue.reporter:
-        header = header + "**Reporter:** " + reporter.email() + "  \n"
-        issue.reporter = user_key(reporter)
+        header = header + "**Reporter:** " + reporter.id() + "  \n"
+        issue.reporter = reporter
 
     if is_defined(assignee) and assignee != issue.assignee:
-        header = header + "**Assignee:** " + assignee.email() + "  \n"
-        issue.assignee = user_key(assignee)
+        header = header + "**Assignee:** " + assignee.id() + "  \n"
+        issue.assignee = assignee
 
     if is_defined(verifier) and verifier != issue.verifier:
-        header = header + "**Verifier:** " + verifier.email() + "  \n"
-        issue.verifier = user_key(verifier)
+        header = header + "**Verifier:** " + verifier.id() + "  \n"
+        issue.verifier = verifier
 
     if is_defined(cc) and cc != issue.cc:
-        header = header + "**CC:** " + reporter + "  \n"
+        header = header + "**CC:** " + ", ".join(map(lambda user: user.id(), cc)) + "  \n"
         issue.cc = cc
 
     if is_defined(depends_on) and depends_on != issue.depends_on:
-        header = header + "**Depends On:** " + reporter + "  \n"
+        header = header + "**Depends On:** " + depends_on + "  \n"
         issue.depends_on = depends_on
 
     if is_defined(blocking) and blocking != issue.blocking:
-        header = header + "**Blocking:** " + reporter + "  \n"
+        header = header + "**Blocking:** " + blocking + "  \n"
         issue.blocking = blocking
 
     if is_defined(private) and private != issue.private:
-        header = header + "**Private:** " + reporter + "  \n"
+        header = header + "**Private:** " + str(private) + "  \n"
         issue.private = private
 
     issue.updated_by = user_key(actor)
@@ -120,7 +147,7 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
 
     issue.history = [ remark_create(actor, issue.key, body.strip(), header.strip()) ]
 
-    return to_model(issue)
+    return to_model(actor, issue)
 
 
 def issue_deactivate(actor, issue_id=None, key=None, issue=None, **ignored):
@@ -134,7 +161,7 @@ def issue_get(viewer, issue_id=None, key=None, issue=None):
     result = issue or (key or issue_key(issue_id)).get()
     if result:
         result.history = remark_list(viewer, result.key)
-        return to_model(result)
+        return to_model(viewer, result)
     else:
         raise NotFoundError()
 
@@ -151,14 +178,97 @@ def issue_list(viewer):
         result = []
         for issue in Issue.query().filter():
             issue.history = []
-            result.append(to_model(issue))
+            result.append(viewer, to_model(issue))
 
         return result
     else:
         raise NotAllowedError()
 
 
-def to_model(issue):
+def issue_search(viewer, simple=None, query=None, complex=None):
+    if permission_check(viewer, "issue", "read") or permission_is_root(viewer):
+        if not complex:
+            if query:
+                complex = query_to_complex_search(query)
+
+        result = []
+        ndb_query = complex_search_to_ndb_query(complex)
+        log.debug(ndb_query)
+        if ndb_query:
+            dataset = Issue.query().filter(ndb_query)
+        else:
+            dataset = Issue.query()
+
+        for issue in dataset:
+            issue.history = []
+            result.append(viewer, to_model(issue))
+
+        return result
+    raise NotAllowedError()
+
+
+def query_to_complex_search(query):
+    segments = []
+    for i in range(int(query["c"])):
+        field, operator, value = query["f" + str(i)], query["o" + str(i)], query["v" + str(i)]
+        segments.append({ "field"    : query["f" + str(i)],
+                          "operator" : query["o" + str(i)],
+                          "value"    : query["v" + str(i)].split(",") })
+
+    return { "boolean" : query["b"], "sub" : segments }
+
+
+def complex_search_to_ndb_query(query):
+    if not query:
+        return None
+
+    phrases = []
+    for phrase in query["sub"]:
+        if "boolean" in phrase:
+            phrases.append(complex_search_to_ndb_query(phrase))
+        elif phrase["field"] == "text":
+            pass
+        else:
+            field = getattr(Issue, phrase["field"])
+            subphrases = []
+            if phrase["operator"] == "=" or phrase["operator"] == "==" or phrase["operator"] == "in":
+                for value in phrase["value"]:
+                    subphrases.append(field == value)
+                phrases.append(ndb.OR(*subphrases))
+
+            elif phrase["operator"] == "!=":
+                for value in phrase["value"]:
+                    subphrases.append(field != value)
+                phrases.append(ndb.AND(*subphrases))
+
+            elif phrase["operator"] == ">":
+                for value in phrase["value"]:
+                    subphrases.append(field > value)
+                phrases.append(ndb.AND(*subphrases))
+
+            elif phrase["operator"] == ">=":
+                for value in phrase["value"]:
+                    subphrases.append(field >= value)
+                phrases.append(ndb.AND(*subphrases))
+
+            elif phrase["operator"] == "<":
+                for value in phrase["value"]:
+                    subphrases.append(field < value)
+                phrases.append(ndb.AND(*subphrases))
+
+            elif phrase["operator"] == "<=":
+                for value in phrase["value"]:
+                    subphrases.append(field <= value)
+                phrases.append(ndb.AND(*subphrases))
+
+
+    if query["boolean"] == "or":
+        return ndb.OR(*phrases)
+    else:
+        return ndb.AND(*phrases)
+
+
+def to_model(viewer, issue):
     if not issue:
         return None
 
@@ -169,10 +279,10 @@ def to_model(issue):
              'status'     : issue.status,
              'priority'   : issue.priority,
              'severity'   : issue.severity,
-             'reporter'   : issue.reporter.id(),
-             'assignee'   : issue.assignee.id(),
-             'verifier'   : issue.verifier.id(),
-             'cc'         : issue.cc,
+             'reporter'   : user_load(viewer, key=issue.reporter),
+             'assignee'   : user_load(viewer, key=issue.assignee),
+             'verifier'   : user_load(viewer, key=issue.verifier),
+             'cc'         : [user_load(viewer, key=key) for key in issue.cc],
              'depends_on' : issue.depends_on,
              'blocking'   : issue.blocking,
              'private'    : issue.private,

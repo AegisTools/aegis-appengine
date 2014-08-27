@@ -5,6 +5,9 @@
 
 <div class="submenu">
   <ul class="menu">
+    <li class="{% if section_module == "create" %}current{% endif %}">
+      <a href="/issues/create">Create</a>
+    </li>
     <li class="{% if section_module == "assigned" %}current{% endif %}">
       <a href="/issues">Assigned to Me</a>
     </li>
@@ -13,9 +16,6 @@
     </li>
     <li class="{% if section_module == "search" %}current{% endif %}">
       <a href="/issues/search">Search</a>
-    </li>
-    <li class="{% if section_module == "create" %}current{% endif %}">
-      <a href="/issues/create">Create</a>
     </li>
   </ul>
 </div>

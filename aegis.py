@@ -114,12 +114,14 @@ class MainPage(webapp2.RequestHandler):
 
 
     def action(self, method, request):
-        log.info("%s %s" % (method, self.request.path.strip("/")))
+        format = self.get_data_type("Content-Type")
+
+        log.info("%s %s : %s" % (method, self.request.path.strip("/"), format))
+
         path_segments = self.request.path.strip("/").split("/")
         module_name, path_segments = path_segments[0], path_segments[1:]
         module = self.known_modules[module_name]
 
-        format = self.get_data_type("Content-Type")
         if format == "json":
             if self.request.body == "":
                 data = {}
@@ -142,6 +144,7 @@ class MainPage(webapp2.RequestHandler):
                         return impl["method"](request.user, **args)
 
             if None in module.actions and method in module.actions[None]:
+                log.debug("Performing action: %s(%s)" % (module.actions[None][method], data))
                 return module.actions[None][method]["method"](request.user, **data)
 
         raise Exception("action not found")
@@ -153,6 +156,10 @@ class MainPage(webapp2.RequestHandler):
             type = self.request.headers[header][len("application/"):]
         if "format" in self.request.GET:
             type = self.request.GET["format"]
+
+        if type == "x-www-form-urlencoded":
+            type = "html"
+
         return type
 
 
@@ -165,11 +172,13 @@ class MainPage(webapp2.RequestHandler):
             template, keys = self.find_template("md", path)
 
         if template:
-            content = template.render({
-                'keys' : keys,
-                'user' : request.user,
-                'sign_out_url' : users.create_logout_url(path),
-                'load' : request.load })
+            obj = {'query'        : self.request.GET,
+                   'keys'         : keys,
+                   'user'         : request.user,
+                   'sign_out_url' : users.create_logout_url(path),
+                   'load'         : request.load }
+            log.debug("Rendering template %s: %s", template, obj)
+            content = template.render(obj)
 
             if format == "md":
                 content = format_markdown(content)

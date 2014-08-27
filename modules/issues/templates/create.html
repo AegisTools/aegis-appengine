@@ -1,0 +1,84 @@
+{% set section_module = "create" %}
+{% extends "modules/issues/fragments/page.html" %}
+
+{% block content %}
+  <script language="javascript" src="/scripts/marked/marked.js"></script>
+
+  <form action="/issues" method="POST">
+    <div class="col_12 issues">
+      <div class="col_1 property" style="padding: 5px 0 0 0;"><label for="summary">Summary:</label></div>
+      <div class="col_11 summary"><input type="text" name="summary" class="full-width error"></div>
+    </div>
+
+    <div class="col_12 issues">
+      <div class="col_8">
+        <div style="margin: 0 0 20px 0;"><textarea name="body" rows="15" class="error"></textarea></div>
+        <div class="preview" id="preview">Preview</div>
+      </div>
+
+      <script language="javascript">
+        $("#body").on('change keyup paste', function() {
+          console.log(document.forms
+        });
+      </script>
+
+      <div class="col_4">
+        <div>
+          <table cellspacing="0" cellpadding="0"><tbody>
+            <tr><td nowrap class="property">Status:</td><td class="value">triage</td></tr>
+            <tr><td nowrap class="property">Priority:</td><td class="value">
+              <select name="priority">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </td></tr>
+            <tr><td nowrap class="property">Severity:</td><td class="value">
+              <select name="severity">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </td></tr>
+            <tr>
+              <td nowrap class="property">Assigned To:</td>
+              <td class="value"><input type="text" class="full-width error" name="assignee"></td>
+            </tr>
+            <tr>
+              <td nowrap class="property">Reported By:</td>
+              <td class="value"><input type="text" class="full-width error" name="reporter"></td>
+            </tr>
+            <tr>
+              <td nowrap class="property">Verified By:</td>
+              <td class="value"><input type="text" class="full-width error" name="verifier"></td>
+            </tr>
+            <tr>
+              <td nowrap class="property">CC:</td>
+              <td class="value"><textarea name="cc" rows="3"></textarea></td>
+            </tr>
+            <tr>
+              <td nowrap class="property">Depends On:</td>
+              <td class="value"><textarea name="depends" rows="3"></textarea></td>
+            </tr>
+            <tr>
+              <td nowrap class="property">Blocking:</td>
+              <td class="value"><textarea name="blocking" rows="3"></textarea></td>
+            </tr>
+            <tr><td nowrap class="property">Privacy:</td><td class="value privacy">
+              <div><input type="radio" name="private" value="yes" checked><span>Private</span></div>
+              <div><input type="radio" name="private" value="no"><span>Public</span></div>
+            </td></tr>
+          </tbody></table>
+        </div>
+        <div class="right">
+          <input type="submit" class="large blue" value="Create">
+        </div>
+      </div>
+    </div>
+  </form>
+{% endblock %}
+

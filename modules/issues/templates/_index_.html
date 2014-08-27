@@ -1,6 +1,6 @@
 {% extends "modules/issues/fragments/page.html" %}
 
-{% set issue_list = load("issues/issue_list") %}
+{% set issue_list = load("issues/issue_search", query=query) %}
 
 {% block content %}
   <div class="col_12 issues">

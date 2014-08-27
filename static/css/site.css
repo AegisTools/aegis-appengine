@@ -40,7 +40,17 @@ ul.button-bar li.selected a {
     margin:      10px;
 }
 
+.issues textarea {
+    width: 100%;
+    height: auto;
+}
+
+.issues .full-width {
+    width: 100%;
+}
+
 .issues .property {
+    vertical-align: top;
     font-weight: bold;
 }
 
@@ -53,7 +63,7 @@ ul.button-bar li.selected a {
 }
 
 .issues .body {
-    font-size: 17px;
+    font-size: 14px;
 }
 
 .issues hr {
@@ -68,8 +78,40 @@ ul.button-bar li.selected a {
     vertical-align: top;
 }
 
+.issues .value.privacy span {
+    display: inline-block;
+    width: 50px;
+    padding: 0 0 7px 10px;
+    align: right;
+}
+
 .clickable-row {
     cursor: pointer;
 }
+
+.issues h1 {
+    font-size: 2em;
+}
+
+.issues h2 {
+    font-size: 1.8em;
+}
+
+.issues h3 {
+    font-size: 1.6em;
+}
+
+.issues h4 {
+    font-size: 1.4em;
+}
+
+.issues h5 {
+    font-size: 1.2em;
+}
+
+.issues h6 {
+    font-size: 1em;
+}
+
 
 

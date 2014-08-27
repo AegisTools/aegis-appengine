@@ -7,8 +7,8 @@ templates = { "{issue_id}"      : "issue_view",
               "{issue_id}/edit" : "issue_edit" }
 
 
-types = { "issue"      : issue_load,
-          "issue_list" : issue_list }
+types = { "issue"        : issue_load,
+          "issue_search" : issue_search }
 
 
 actions = { None         : { "POST"   : { "method"   : issue_http_post,
