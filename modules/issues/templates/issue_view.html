@@ -35,38 +35,43 @@
     </div>
 
     <div class="col_4">
-      <table cellspacing="0" cellpadding="0"><tbody>
-        <tr><td nowrap class="property">Status:</td><td class="value">{{ issue.status }}</td></tr>
-        <tr><td nowrap class="property">Priority:</td><td class="value">{{ issue.priority }}</td></tr>
-        <tr><td nowrap class="property">Severity:</td><td class="value">{{ issue.severity }}</td></tr>
-        <tr><td nowrap class="property">Assigned To:</td><td class="value">
-          {{ user_link(issue.assignee_email, issue.assignee) }}
-        </td></tr>
-        <tr><td nowrap class="property">Reported By:</td><td class="value">
-          {{ user_link(issue.reporter_email, issue.reporter) }}
-        </td></tr>
-        <tr><td nowrap class="property">Verified By:</td><td class="value">
-          {{ user_link(issue.verifier_email, issue.verifier) }}
-        </td></tr>
-        <tr><td nowrap class="property">CC:</td><td class="value">
-          {% for cc in issue.cc %}
-            <div><span>{{ user_link(cc, issue.cc[cc]) }}</span></div>
-          {% endfor %}
-        </td></tr>
-        <tr><td nowrap class="property">Depends On:</td><td class="value">
-          {% for iss in issue.depends_on %}
-            <div><span class="long-line">{{ issue_link(iss, issue.depends_on[iss]) }}</span></div>
-          {% endfor %}
-        </td></tr>
-        <tr><td nowrap class="property">Blocking:</td><td class="value">
-          {% for iss in issue.blocking %}
-            <div><span class="long-line">{{ issue_link(iss, issue.blocking[iss]) }}</span></div>
-          {% endfor %}
-        </td></tr>
-        <tr><td nowrap class="property">Privacy:</td><td class="value">
-          {% if issue.private %}Private{% else %}Public{% endif %}
-        </td></tr>
-      </tbody></table>
+      <div>
+        <table cellspacing="0" cellpadding="0"><tbody>
+          <tr><td nowrap class="property">Status:</td><td class="value">{{ issue.status }}</td></tr>
+          <tr><td nowrap class="property">Priority:</td><td class="value">{{ issue.priority }}</td></tr>
+          <tr><td nowrap class="property">Severity:</td><td class="value">{{ issue.severity }}</td></tr>
+          <tr><td nowrap class="property">Assigned To:</td><td class="value">
+            {{ user_link(issue.assignee_email, issue.assignee) }}
+          </td></tr>
+          <tr><td nowrap class="property">Reported By:</td><td class="value">
+            {{ user_link(issue.reporter_email, issue.reporter) }}
+          </td></tr>
+          <tr><td nowrap class="property">Verified By:</td><td class="value">
+            {{ user_link(issue.verifier_email, issue.verifier) }}
+          </td></tr>
+          <tr><td nowrap class="property">CC:</td><td class="value">
+            {% for cc in issue.cc %}
+              <div><span>{{ user_link(cc, issue.cc[cc]) }}</span></div>
+            {% endfor %}
+          </td></tr>
+          <tr><td nowrap class="property">Depends On:</td><td class="value">
+            {% for iss in issue.depends_on %}
+              <div><span class="long-line">{{ issue_link(iss, issue.depends_on[iss]) }}</span></div>
+            {% endfor %}
+          </td></tr>
+          <tr><td nowrap class="property">Blocking:</td><td class="value">
+            {% for iss in issue.blocking %}
+              <div><span class="long-line">{{ issue_link(iss, issue.blocking[iss]) }}</span></div>
+            {% endfor %}
+          </td></tr>
+          <tr><td nowrap class="property">Privacy:</td><td class="value">
+            {% if issue.private %}Private{% else %}Public{% endif %}
+          </td></tr>
+        </tbody></table>
+      </div>
+      <div class="right">
+        <a class="button large blue" href="/issues/edit/{{ keys.issue_id }}"><i class="icon-pencil"></i> Update</a>
+      </div>
     </div>
   </div>
 {% endblock %}
