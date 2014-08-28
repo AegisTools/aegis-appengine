@@ -320,7 +320,7 @@ class Issue(ndb.Model):
     cc = ndb.KeyProperty(kind=User, repeated=True)
     depends_on = ndb.KeyProperty(kind='Issue', repeated=True)
     blocking = ndb.KeyProperty(kind='Issue', repeated=True)
-    privacy = ndb.StringProperty(default=False, required=True, choices=["public", "private", "secure"])
+    privacy = ndb.StringProperty(default="public", required=True, choices=["public", "private", "secure"])
     created_by = ndb.KeyProperty(kind=User)
     created = ndb.DateTimeProperty(auto_now_add=True)
     updated_by = ndb.KeyProperty(kind=User)

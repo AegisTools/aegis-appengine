@@ -1,1 +1,1 @@
-{{ json(load("issues/issue_list")) }}
+{{ json(load("issues/issue_search", query=query)) }}

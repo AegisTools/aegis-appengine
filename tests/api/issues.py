@@ -8,6 +8,7 @@ from common import USER_ROOT
 class ClientTests(common.AegisTestCase):
 
     def test_wipe_cleared_data(self):
+        time.sleep(0.5)
         self.assertEqual(0, len(self.get("issues", auth=USER_ROOT).json()))
 
 
