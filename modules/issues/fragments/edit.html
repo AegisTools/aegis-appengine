@@ -38,38 +38,38 @@
             <tr><td nowrap class="property">Status:</td><td class="value status">
               {% if issue %}
                 {% if issue.status == "triage" %}
-                  <div><input type="radio" name="status" value="triage" checked><span>triage</span></div>
-                  <div><input type="radio" name="status" value="assigned"><span>assigned</span></div>
-                  <div><input type="radio" name="status" value="deferred"><span>deferred</span></div>
-                  <div><input type="radio" name="status" value="rejected"><span>rejected</span></div>
+                  <div><input type="radio" name="status" value="triage" checked><span>Triage</span></div>
+                  <div><input type="radio" name="status" value="assigned"><span>Assigned</span></div>
+                  <div><input type="radio" name="status" value="deferred"><span>Deferred</span></div>
+                  <div><input type="radio" name="status" value="rejected"><span>Rejected</span></div>
                 {% elif issue.status == "assigned" %}
-                  <div><input type="radio" name="status" value="assigned" checked><span>assigned</span></div>
-                  <div><input type="radio" name="status" value="working"><span>working</span></div>
-                  <div><input type="radio" name="status" value="fixed"><span>fixed</span></div>
-                  <div><input type="radio" name="status" value="deferred"><span>deferred</span></div>
-                  <div><input type="radio" name="status" value="rejected"><span>rejected</span></div>
+                  <div><input type="radio" name="status" value="assigned" checked><span>Assigned</span></div>
+                  <div><input type="radio" name="status" value="working"><span>Working</span></div>
+                  <div><input type="radio" name="status" value="fixed"><span>Fixed</span></div>
+                  <div><input type="radio" name="status" value="deferred"><span>Deferred</span></div>
+                  <div><input type="radio" name="status" value="rejected"><span>Rejected</span></div>
                 {% elif issue.status == "working" %}
-                  <div><input type="radio" name="status" value="assigned"><span>assigned</span></div>
-                  <div><input type="radio" name="status" value="working" checked><span>working</span></div>
-                  <div><input type="radio" name="status" value="fixed"><span>fixed</span></div>
-                  <div><input type="radio" name="status" value="deferred"><span>deferred</span></div>
-                  <div><input type="radio" name="status" value="rejected"><span>rejected</span></div>
+                  <div><input type="radio" name="status" value="assigned"><span>Assigned</span></div>
+                  <div><input type="radio" name="status" value="working" checked><span>Working</span></div>
+                  <div><input type="radio" name="status" value="fixed"><span>Fixed</span></div>
+                  <div><input type="radio" name="status" value="deferred"><span>Deferred</span></div>
+                  <div><input type="radio" name="status" value="rejected"><span>Rejected</span></div>
                 {% elif issue.status == "fixed" %}
-                  <div><input type="radio" name="status" value="triage"><span>triage</span></div>
-                  <div><input type="radio" name="status" value="assigned"><span>assigned</span></div>
-                  <div><input type="radio" name="status" value="fixed" checked><span>fixed</span></div>
-                  <div><input type="radio" name="status" value="closed"><span>closed</span></div>
+                  <div><input type="radio" name="status" value="triage"><span>Triage</span></div>
+                  <div><input type="radio" name="status" value="assigned"><span>Assigned</span></div>
+                  <div><input type="radio" name="status" value="fixed" checked><span>Fixed</span></div>
+                  <div><input type="radio" name="status" value="closed"><span>Closed</span></div>
                 {% elif issue.status == "deferred" %}
-                  <div><input type="radio" name="status" value="triage"><span>triage</span></div>
-                  <div><input type="radio" name="status" value="assigned"><span>assigned</span></div>
-                  <div><input type="radio" name="status" value="deferred" checked><span>deferred</span></div>
-                  <div><input type="radio" name="status" value="rejected"><span>rejected</span></div>
+                  <div><input type="radio" name="status" value="triage"><span>Triage</span></div>
+                  <div><input type="radio" name="status" value="assigned"><span>Assigned</span></div>
+                  <div><input type="radio" name="status" value="deferred" checked><span>Deferred</span></div>
+                  <div><input type="radio" name="status" value="rejected"><span>Rejected</span></div>
                 {% elif issue.status == "rejected" %}
-                  <div><input type="radio" name="status" value="triage"><span>triage</span></div>
-                  <div><input type="radio" name="status" value="rejected" checked><span>rejected</span></div>
-                  <div><input type="radio" name="status" value="closed"><span>closed</span></div>
+                  <div><input type="radio" name="status" value="triage"><span>Triage</span></div>
+                  <div><input type="radio" name="status" value="rejected" checked><span>Rejected</span></div>
+                  <div><input type="radio" name="status" value="closed"><span>Closed</span></div>
                 {% else %}
-                  <div><span>{{ issue.status }}</span></div>
+                  <div><span>{{ issue.status|capitalize }}</span></div>
                 {% endif %}
               {% else %}
                 triage

@@ -37,7 +37,7 @@
     <div class="col_4">
       <div>
         <table cellspacing="0" cellpadding="0"><tbody>
-          <tr><td nowrap class="property">Status:</td><td class="value">{{ issue.status }}</td></tr>
+          <tr><td nowrap class="property">Status:</td><td class="value">{{ issue.status|capitalize }}</td></tr>
           <tr><td nowrap class="property">Priority:</td><td class="value">{{ issue.priority }}</td></tr>
           <tr><td nowrap class="property">Severity:</td><td class="value">{{ issue.severity }}</td></tr>
           <tr><td nowrap class="property">Assigned To:</td><td class="value">
@@ -65,10 +65,7 @@
             {% endfor %}
           </td></tr>
           <tr><td nowrap class="property">Privacy:</td><td class="value">
-            {% if issue.privacy == "private" %}Private
-            {% elif issue.privacy == "secure" %}Secure
-            {% else %}Public
-            {% endif %}
+            {{ issue.privacy|capitalize }}
           </td></tr>
         </tbody></table>
       </div>
