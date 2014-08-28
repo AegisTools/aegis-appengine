@@ -1,0 +1,173 @@
+{% extends "modules/issues/fragments/page.html" %}
+
+{% block content %}
+  <script language="javascript" src="/static/scripts/marked/marked.js"></script>
+
+  <form action="/issues{% if issue %}/{{ keys.issue_id }}{% endif %}" method="POST">
+    {% if issue %}<input type="hidden" name="_method_" value="PUT">{% endif %}
+    <div class="col_12 issues">
+      <div class="col_1 property" style="padding: 5px 0 0 0;"><label for="summary">Summary:</label></div>
+      <div class="col_11 summary">
+        <input type="text" name="summary" class="full-width required"
+            value="{% if issue %}{{ issue.summary|e }}{% endif %}">
+      </div>
+    </div>
+
+    <div class="col_12 issues">
+      <div class="col_8">
+        {% if issue %}
+          {% for remark in issue.history %}
+            <div class="header">{{ markdown(remark.subtext) }}</div>
+            <div class="body">{{ markdown(remark.text) }}</div>
+            <hr>
+          {% endfor %}
+        {% endif %}
+        <div style="margin: 0 0 20px 0;"><textarea name="body" id="body" rows="15"></textarea></div>
+        <div class="preview" id="preview"></div>
+      </div>
+
+      <script language="javascript">
+        $("#body").on('change keyup paste', function() {
+          $("#preview").html(marked($(this).context.value))
+        });
+      </script>
+
+      <div class="col_4">
+        <div>
+          <table cellspacing="0" cellpadding="0"><tbody>
+            <tr><td nowrap class="property">Status:</td><td class="value status">
+              {% if issue %}
+                {% if issue.status == "triage" %}
+                  <div><input type="radio" name="status" value="triage" checked><span>triage</span></div>
+                  <div><input type="radio" name="status" value="assigned"><span>assigned</span></div>
+                  <div><input type="radio" name="status" value="deferred"><span>deferred</span></div>
+                  <div><input type="radio" name="status" value="rejected"><span>rejected</span></div>
+                {% elif issue.status == "assigned" %}
+                  <div><input type="radio" name="status" value="assigned" checked><span>assigned</span></div>
+                  <div><input type="radio" name="status" value="working"><span>working</span></div>
+                  <div><input type="radio" name="status" value="fixed"><span>fixed</span></div>
+                  <div><input type="radio" name="status" value="deferred"><span>deferred</span></div>
+                  <div><input type="radio" name="status" value="rejected"><span>rejected</span></div>
+                {% elif issue.status == "working" %}
+                  <div><input type="radio" name="status" value="assigned"><span>assigned</span></div>
+                  <div><input type="radio" name="status" value="working" checked><span>working</span></div>
+                  <div><input type="radio" name="status" value="fixed"><span>fixed</span></div>
+                  <div><input type="radio" name="status" value="deferred"><span>deferred</span></div>
+                  <div><input type="radio" name="status" value="rejected"><span>rejected</span></div>
+                {% elif issue.status == "fixed" %}
+                  <div><input type="radio" name="status" value="triage"><span>triage</span></div>
+                  <div><input type="radio" name="status" value="assigned"><span>assigned</span></div>
+                  <div><input type="radio" name="status" value="fixed" checked><span>fixed</span></div>
+                  <div><input type="radio" name="status" value="closed"><span>closed</span></div>
+                {% elif issue.status == "deferred" %}
+                  <div><input type="radio" name="status" value="triage"><span>triage</span></div>
+                  <div><input type="radio" name="status" value="assigned"><span>assigned</span></div>
+                  <div><input type="radio" name="status" value="deferred" checked><span>deferred</span></div>
+                  <div><input type="radio" name="status" value="rejected"><span>rejected</span></div>
+                {% elif issue.status == "rejected" %}
+                  <div><input type="radio" name="status" value="triage"><span>triage</span></div>
+                  <div><input type="radio" name="status" value="rejected" checked><span>rejected</span></div>
+                  <div><input type="radio" name="status" value="closed"><span>closed</span></div>
+                {% else %}
+                  <div><span>{{ issue.status }}</span></div>
+                {% endif %}
+              {% else %}
+                triage
+              {% endif %}
+            </td></tr>
+            <tr><td nowrap class="property">Priority:</td><td class="value">
+              <select name="priority">
+                <option value="1" {% if issue and issue.priority == 1 %}selected{% endif %}>1</option>
+                <option value="2" {% if issue and issue.priority == 2 %}selected{% endif %}>2</option>
+                <option value="3" {% if not issue or issue.priority == 3 %}selected{% endif %}>3</option>
+                <option value="4" {% if issue and issue.priority == 4 %}selected{% endif %}>4</option>
+                <option value="5" {% if issue and issue.priority == 5 %}selected{% endif %}>5</option>
+              </select>
+            </td></tr>
+            <tr><td nowrap class="property">Severity:</td><td class="value">
+              <select name="severity">
+                <option value="1" {% if issue and issue.severity == 1 %}selected{% endif %}>1</option>
+                <option value="2" {% if issue and issue.severity == 2 %}selected{% endif %}>2</option>
+                <option value="3" {% if not issue or issue.severity == 3 %}selected{% endif %}>3</option>
+                <option value="4" {% if issue and issue.severity == 4 %}selected{% endif %}>4</option>
+                <option value="5" {% if issue and issue.severity == 5 %}selected{% endif %}>5</option>
+              </select>
+            </td></tr>
+            <tr>
+              <td nowrap class="property">Assigned To:</td>
+              <td class="value">
+                <input type="text" class="full-width required" name="assignee" 
+                    value="{% if issue %}{{ issue.assignee_email|e }}{% endif %}">
+              </td>
+            </tr>
+            <tr>
+              <td nowrap class="property">Reported By:</td>
+              <td class="value">
+                <input type="text" class="full-width required" name="reporter"
+                    value="{% if issue %}{{ issue.reporter_email|e }}{% endif %}">
+              </td>
+            </tr>
+            <tr>
+              <td nowrap class="property">Verified By:</td>
+              <td class="value">
+                <input type="text" class="full-width required" name="verifier"
+                    value="{% if issue %}{{ issue.verifier_email|e }}{% endif %}">
+              </td>
+            </tr>
+            <tr>
+              <td nowrap class="property">CC:</td>
+              <td class="value">
+                <textarea name="cc" rows="3">{% if issue %}{% for cc in issue.cc %}{{ cc|e }}
+{% endfor %}{% endif %}</textarea>
+              </td>
+            </tr>
+            <tr>
+              <td nowrap class="property">Depends On:</td>
+              <td class="value">
+                <textarea name="depends_on" rows="3">{% if issue %}{% for iss in issue.depends_on %}{{ iss }}
+{% endfor %}{% endif %}</textarea>
+              </td>
+            </tr>
+            <tr>
+              <td nowrap class="property">Blocking:</td>
+              <td class="value">
+                <textarea name="blocking" rows="3">{% if issue %}{% for iss in issue.blocking %}{{ iss }}
+{% endfor %}{% endif %}</textarea>
+              </td>
+            </tr>
+            <tr><td nowrap class="property">Privacy:</td><td class="value privacy">
+              <div>
+                <input type="radio" name="private" value="yes" {% if not issue or issue.private %}checked{% endif %}>
+                <span>Private</span>
+              </div>
+              <div>
+                <input type="radio" name="private" value="no" {% if issue and not issue.private %}checked{% endif %}>
+                <span>Public</span>
+              </div>
+            </td></tr>
+          </tbody></table>
+        </div>
+        <div class="right">
+          {% if issue %}
+            <input type="submit" class="large blue" value="Save">
+          {% else %}
+            <input type="submit" class="large blue" value="Create">
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <script language="javascript">
+    $('.required').on('change keyup paste', function() {
+      if ($(this).context.value == "") {
+        $(this).addClass("error");
+      } else {
+        $(this).removeClass("error");
+      }
+    });
+
+    $('.required').change();
+  </script>
+{% endblock %}
+
