@@ -6,10 +6,14 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 import lib.requests
 import unittest
 
-USER_ROOT = ("root@unittests", "root")
 URL = "http://localhost:8080/"
 HEADERS = { "Content-Type" : "application/json",
             "Accept"       : "application/json" }
+
+USER_ROOT = lib.requests.Session()
+USER_ANONYMOUS = lib.requests.Session()
+
+USER_ROOT.get(URL + "_ah/login?email=root%40test.com&action=Login&admin=True")
 
 class AegisTestCase(unittest.TestCase):
 
@@ -23,15 +27,15 @@ class AegisTestCase(unittest.TestCase):
         # self.wipe()
         pass
 
-    def get(self, fragment, auth=None):
-        return lib.requests.get(URL + fragment, auth=auth, headers=HEADERS)
+    def get(self, fragment, auth=USER_ANONYMOUS):
+        return auth.get(URL + fragment, headers=HEADERS)
 
-    def put(self, fragment, payload=None, auth=None):
-        return lib.requests.put(URL + fragment, data=payload, auth=auth, headers=HEADERS)
+    def put(self, fragment, payload=None, auth=USER_ANONYMOUS):
+        return auth.put(URL + fragment, data=payload, headers=HEADERS)
 
-    def post(self, fragment, payload=None, auth=None):
-        return lib.requests.post(URL + fragment, data=payload, auth=auth, headers=HEADERS)
+    def post(self, fragment, payload=None, auth=USER_ANONYMOUS):
+        return auth.post(URL + fragment, data=payload, headers=HEADERS)
 
-    def delete(self, fragment, auth=None):
-        return lib.requests.delete(URL + fragment, auth=auth, headers=HEADERS)
+    def delete(self, fragment, auth=USER_ANONYMOUS):
+        return auth.delete(URL + fragment, headers=HEADERS)
 
