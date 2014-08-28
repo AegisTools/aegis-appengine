@@ -82,6 +82,11 @@ ul.button-bar li.selected a {
     vertical-align: top;
 }
 
+.issues .value input {
+    font-size: 0.9em;
+    text-align: right;
+}
+
 .issues .value.status span {
     display: inline-block;
     width: 80px;

@@ -104,7 +104,7 @@
               <td nowrap class="property">Reported By:</td>
               <td class="value">
                 <input type="text" class="full-width required" name="reporter"
-                    value="{% if issue %}{{ issue.reporter_email|e }}{% endif %}">
+                    value="{% if issue %}{{ issue.reporter_email|e }}{% else %}{{ user.email()|e }}{% endif %}">
               </td>
             </tr>
             <tr>
