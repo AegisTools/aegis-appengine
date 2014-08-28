@@ -40,7 +40,7 @@ def permission_check(user, type, action, key=None):
 
 
 def permission_is_root(user):
-    if permission_check(user, "root", "root") or users.is_current_user_admin() or True:
+    if permission_check(user, "root", "root") or users.is_current_user_admin():
         log.debug("Root User Allowed")
         return True
     else:
