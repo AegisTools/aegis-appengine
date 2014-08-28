@@ -59,7 +59,7 @@ def issue_create(actor, key=None, issue_id=None, name=undefined, active=True, **
 def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, project=undefined, 
                  status=undefined, priority=undefined, severity=undefined, reporter=undefined, 
                  assignee=undefined, verifier=undefined, cc=undefined, depends_on=undefined, 
-                 blocking=undefined, private=undefined, body="", **ignored):
+                 blocking=undefined, privacy=undefined, body="", **ignored):
     issue = issue or (key or issue_key(issue_id)).get()
     header = "**" + actor.email() + "** on " + time.strftime("%c") + "\n\n"
 
@@ -86,9 +86,6 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
 
     if is_defined(blocking):
         blocking = set([issue_key(id) for id in re.split("[\\s,;]+", blocking) if len(id) > 0])
-
-    if is_defined(private):
-        private = private in (True, "yes", "true", 1)
 
     # Update all fields
     if is_defined(summary) and summary != issue.summary:
@@ -139,9 +136,9 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
         header = header + "**Blocking:** " + ", ".join([str(iss.id()) for iss in blocking]) + "  \n"
         issue.blocking = list(blocking)
 
-    if is_defined(private) and private != issue.private:
-        header = header + "**Privacy:** " + ("private" if private else "public") + "  \n"
-        issue.private = private
+    if is_defined(privacy) and privacy != issue.privacy:
+        header = header + "**Privacy:** " + privacy + "  \n"
+        issue.privacy = privacy
 
     issue.updated_by = user_key(actor)
     issue.put()
@@ -304,7 +301,7 @@ def to_model(viewer, issue, get_related_issues=True):
              'cc'             : sorted(cc),
              'depends_on'     : sorted(depends_on),
              'blocking'       : sorted(blocking),
-             'private'        : issue.private,
+             'privacy'        : issue.privacy,
              'created_by'     : issue.created_by.id(),
              'created'        : issue.created,
              'updated_by'     : issue.updated_by.id(),
@@ -314,7 +311,7 @@ def to_model(viewer, issue, get_related_issues=True):
 class Issue(ndb.Model):
     summary = ndb.StringProperty(required=True)
     project = ndb.KeyProperty(kind=Project)
-    status = ndb.StringProperty(required=True)
+    status = ndb.StringProperty(required=True, choices=issue_transitions.keys())
     priority = ndb.IntegerProperty(required=True)
     severity = ndb.IntegerProperty(required=True)
     reporter = ndb.KeyProperty(kind=User, required=True)
@@ -323,7 +320,7 @@ class Issue(ndb.Model):
     cc = ndb.KeyProperty(kind=User, repeated=True)
     depends_on = ndb.KeyProperty(kind='Issue', repeated=True)
     blocking = ndb.KeyProperty(kind='Issue', repeated=True)
-    private = ndb.BooleanProperty(default=False, required=True)
+    privacy = ndb.StringProperty(default=False, required=True, choices=["public", "private", "secure"])
     created_by = ndb.KeyProperty(kind=User)
     created = ndb.DateTimeProperty(auto_now_add=True)
     updated_by = ndb.KeyProperty(kind=User)

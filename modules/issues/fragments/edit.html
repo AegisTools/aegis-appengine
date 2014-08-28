@@ -137,12 +137,35 @@
             </tr>
             <tr><td nowrap class="property">Privacy:</td><td class="value privacy">
               <div>
-                <input type="radio" name="private" value="yes" {% if not issue or issue.private %}checked{% endif %}>
-                <span>Private</span>
+                <input type="radio" name="privacy" value="public" 
+                    {% if issue and issue.privacy == "public" %}checked{% endif %}>
+                <span>Public</span>
+                <i class="icon-info-sign tooltip-bottom" data-delay="0" data-content="#tip-public"></i>
+                <div class="tooltip-content" id="tip-public">
+                  Public issues can be seen or edited by anyone.
+                </div>
               </div>
               <div>
-                <input type="radio" name="private" value="no" {% if issue and not issue.private %}checked{% endif %}>
-                <span>Public</span>
+                <input type="radio" name="privacy" value="private" 
+                    {% if not issue or issue.privacy == "private" %}checked{% endif %}>
+                <span>Private</span>
+                <i class="icon-info-sign tooltip-bottom" data-delay="0" data-content="#tip-private"></i>
+                <div class="tooltip-content" id="tip-private">
+                  Private issues can only be viewed and edited by people that are assigned, 
+                  verifiers, or CCed.
+                </div>
+              </div>
+              <div>
+                <input type="radio" name="privacy" value="secure" 
+                    {% if issue and issue.privacy == "secure" %}checked{% endif %}>
+                <span>Secure</span>
+                <i class="icon-info-sign tooltip-bottom" data-delay="0" data-content="#tip-secure"></i>
+                <div class="tooltip-content" id="tip-secure">
+                  <p>Secure issues can only be viewed and commented on by people that are assigned, 
+                  verifiers, or CCed. </p>
+                  <p>The only user that's allowed to edit other fields (summary, status, etc.) is the 
+                  assigned user, or the verifying user when the status is fixed, deferred, or rejected.</p>
+                </div>
               </div>
             </td></tr>
           </tbody></table>

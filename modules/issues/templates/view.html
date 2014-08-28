@@ -65,7 +65,10 @@
             {% endfor %}
           </td></tr>
           <tr><td nowrap class="property">Privacy:</td><td class="value">
-            {% if issue.private %}Private{% else %}Public{% endif %}
+            {% if issue.privacy == "private" %}Private
+            {% elif issue.privacy == "secure" %}Secure
+            {% else %}Public
+            {% endif %}
           </td></tr>
         </tbody></table>
       </div>
