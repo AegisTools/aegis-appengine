@@ -3,34 +3,50 @@
 
 {% block content %}
   <form id="search" action="/issues{% if issue %}/{{ keys.issue_id }}{% endif %}" method="GET">
-    <input type="hidden" name="b" value="or"></input>
     <input type="hidden" name="c" id="filter-count" value="0"></input>
 
+    <div class="col_12 right">
+      <select name="b" style="font-size: 1em">
+        <option value="and">All of the criteria below</option>
+        <option value="or">Any of the criteria below</option>
+      </select>
+    </div>
     <div id="search-list">
       <div id="search-template" style="display: none" class="search-line">
-        <div class="col_12">
-          Operator: <input type="text" id="operator" name="o" class="autonumber"></input>
-          Value: <input type="text" id="value"    name="v" class="autonumber"></input>
-        </div>
+        <input type="hidden" id="operator" name="o" class="autonumber"></input>
+        <input type="hidden" id="value"    name="v" class="autonumber"></input>
 
         <div class="col_1"><button type="button" id="remove" class="small"><i class="icon-minus"></i></button></div>
         <div class="col_2">
           <select id="field" name="f" class="autonumber auto-hider" style="font-size: 1em; width: 100%">
-            <option value="status"        data-target="status">Status</option>
-            <option value="summary_index" data-target="text">Summary</option>
             <option value="text_index"    data-target="text">Text</option>
-            <option value="priority"      data-target="number">Priority</option>
-            <option value="severity"      data-target="number">Severity</option>
-            <option value="assignee"      data-target="user">Assigned To</option>
-            <option value="verifier"      data-target="user">Verifier</option>
-            <option value="reporter"      data-target="user">CC</option>
-            <option value="depends_on"    data-target="issue">Depends On</option>
-            <option value="blocking"      data-target="issue">Blocking</option>
-            <option value="privacy"       data-target="privacy">Privacy</option>
-            <option value="created_by"    data-target="user">Created By</option>
-            <option value="updated_by"    data-target="user">Last Updated By</option>
-            <option value="created"       data-target="date">Created</option>
-            <option value="updated"       data-target="date">Last Updated</option>
+            <option value="summary_index" data-target="text">Summary</option>
+            <option disabled></option>
+            <optgroup label="Issue Attributes">
+              <option value="status"        data-target="status">Status</option>
+              <option value="priority"      data-target="number">Priority</option>
+              <option value="severity"      data-target="number">Severity</option>
+              <option value="privacy"       data-target="privacy">Privacy</option>
+            </optgroup>
+            <option disabled></option>
+            <optgroup label="Other Issues">
+              <option value="depends_on"    data-target="issue">Depends On</option>
+              <option value="blocking"      data-target="issue">Blocking</option>
+            </optgroup>
+            <option disabled></option>
+            <optgroup label="Users">
+              <option value="assignee"      data-target="user">Assigned To</option>
+              <option value="verifier"      data-target="user">Verifier</option>
+              <option value="reporter"      data-target="user">CC</option>
+              <option value="created_by"    data-target="user">Created By</option>
+              <option value="updated_by"    data-target="user">Last Updated By</option>
+            </optgroup>
+            <option disabled></option>
+            <!-- Dates not supported yet -->
+            <optgroup label="Dates" disabled>
+              <option value="created"       data-target="date">Created</option>
+              <option value="updated"       data-target="date">Last Updated</option>
+            </optgroup>
           </select>
         </div>
 
