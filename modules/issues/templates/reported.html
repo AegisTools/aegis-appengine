@@ -1,7 +1,9 @@
 {% set section_module = "reported" %}
-{% extends "modules/issues/templates/fragments/page.html" %}
-
-{% block content %}
-  <h3>Reported by Me</h3>
-{% endblock %}
+{% set issue_list = load("issues/issue_search", complex={
+    'boolean' : 'and',
+    'sub'     : [{ 'not'      : False,
+                   'field'    : 'reporter',
+                   'operator' : '==',
+                   'value'    : [ user ] } ] }) %}
+{% extends "modules/issues/fragments/list.html" %}
 
