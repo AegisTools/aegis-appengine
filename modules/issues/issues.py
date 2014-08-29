@@ -193,6 +193,7 @@ def issue_search(viewer, simple=None, query=None, complex=None):
                 complex = query_to_complex_search(query)
 
         result = []
+        log.debug(complex)
         ndb_query = complex_search_to_ndb_query(complex)
         log.debug(ndb_query)
         if ndb_query:
@@ -211,10 +212,10 @@ def issue_search(viewer, simple=None, query=None, complex=None):
 def query_to_complex_search(query):
     segments = []
     for i in range(int(query["c"])):
-        field, operator, value = query["f" + str(i)], query["o" + str(i)], query["v" + str(i)]
-        segments.append({ "field"    : query["f" + str(i)],
+        segments.append({ "not"      : query["n" + str(i)] == "1",
+                          "field"    : query["f" + str(i)],
                           "operator" : query["o" + str(i)],
-                          "value"    : query["v" + str(i)].split(",") })
+                          "value"    : re.split("[\\s,;]+", query["v" + str(i)]) })
 
     return { "boolean" : query["b"], "sub" : segments }
 
@@ -234,32 +235,50 @@ def complex_search_to_ndb_query(query):
             subphrases = []
             if phrase["operator"] == "=" or phrase["operator"] == "==" or phrase["operator"] == "in":
                 for value in phrase["value"]:
-                    subphrases.append(field == value)
+                    if phrase["not"]:
+                        subphrases.append(field != value)
+                    else:
+                        subphrases.append(field == value)
                 phrases.append(ndb.OR(*subphrases))
 
             elif phrase["operator"] == "!=":
                 for value in phrase["value"]:
-                    subphrases.append(field != value)
+                    if phrase["not"]:
+                        subphrases.append(field == value)
+                    else:
+                        subphrases.append(field != value)
                 phrases.append(ndb.AND(*subphrases))
 
             elif phrase["operator"] == ">":
                 for value in phrase["value"]:
-                    subphrases.append(field > value)
+                    if phrase["not"]:
+                        subphrases.append(field <= value)
+                    else:
+                        subphrases.append(field > value)
                 phrases.append(ndb.AND(*subphrases))
 
             elif phrase["operator"] == ">=":
                 for value in phrase["value"]:
-                    subphrases.append(field >= value)
+                    if phrase["not"]:
+                        subphrases.append(field < value)
+                    else:
+                        subphrases.append(field >= value)
                 phrases.append(ndb.AND(*subphrases))
 
             elif phrase["operator"] == "<":
                 for value in phrase["value"]:
-                    subphrases.append(field < value)
+                    if phrase["not"]:
+                        subphrases.append(field >= value)
+                    else:
+                        subphrases.append(field < value)
                 phrases.append(ndb.AND(*subphrases))
 
             elif phrase["operator"] == "<=":
                 for value in phrase["value"]:
-                    subphrases.append(field <= value)
+                    if phrase["not"]:
+                        subphrases.append(field > value)
+                    else:
+                        subphrases.append(field <= value)
                 phrases.append(ndb.AND(*subphrases))
 
 

@@ -1,7 +1,85 @@
 {% set section_module = "search" %}
-{% extends "modules/issues/templates/fragments/page.html" %}
+{% extends "modules/issues/fragments/page.html" %}
 
 {% block content %}
-  <h3>Search</h3>
+  <form id="search" action="/issues{% if issue %}/{{ keys.issue_id }}{% endif %}" method="GET">
+    <input type="hidden" name="b" value="or"></input>
+    <input type="hidden" name="c" id="filter-count" value="0"></input>
+
+    <div class="col_12" id="search-list">
+      <div id="search-template" style="display: none" class="search-line">
+        <div class="col_1"><button type="button" id="remove" class="small"><i class="icon-minus"></i></button></div>
+        <div class="col_2">
+          <select name="f" class="autonumber" style="font-size: 1em; width: 100%">
+            <option value="status">Status</option>
+            <option value="priority">Priority</option>
+          </select>
+        </div>
+        <div class="col_2">
+          <select name="n" class="autonumber" style="font-size: 1em; width: 100%">
+            <option value="0">Is</option>
+            <option value="1">Is Not</option>
+          </select>
+        </div>
+        <div class="col_5">
+          <input type="text" class="autonumber" name="v" value="triage" style="width: 100%"></input>
+        </div>
+        <div class="col_2">
+          <select name="o" class="autonumber" style="font-size: 1em; width: 100%">
+            <option value="="></option>
+            <option value="&gt;=">Or Greater</option>
+            <option value="&lt;=">Or Less</option>
+          </select>
+        </div>
+        <div class="clear"></div>
+      </div>
+    </div>
+
+    <div class="col_6">
+      <button type="button" id="add-row"><i class="icon-plus large"></i> Add row</button>
+    </div>
+
+    <div class="col_6 right">
+      <input type="submit" class="large blue" value="Search">
+    </div>
+  </form>
+
+  <script language="javascript">
+    var master = $("#search-template");
+    master.detach();
+
+    var filters = [];
+
+    function addFilter() {
+      var node = master.clone();
+      node.active = true;
+      filters.push(node);
+
+      node.find("#remove").click(function() {
+        node.animate({opacity: 'toggle', height: 'toggle'}, "fast", node.detach);
+        node.active = false;
+      });
+
+      node.appendTo("#search-list").animate({opacity: 'toggle', height: 'toggle'}, "fast");
+    }
+
+    addFilter();
+
+    $("#add-row").click(addFilter);
+
+    $("#search").submit(function(e) {
+      var count = 0
+      for (var i = 0; i < filters.length; i++) {
+        if (filters[i].active) {
+          var index = count++;
+          filters[i].find(".autonumber").each(function() {
+            $(this).attr("name", $(this).attr("name") + index);
+          });
+        }
+      }
+      $("#filter-count").val(count);
+    });
+    
+  </script>
 {% endblock %}
 

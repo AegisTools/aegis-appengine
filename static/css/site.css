@@ -134,5 +134,14 @@ ul.button-bar li.selected a {
     font-size: 1em;
 }
 
+.search-line button {
+    margin: 2px 0;
+}
+
+.search-line select {
+    margin: 4px 0;
+    vertical-align: middle;
+}
+
 
 
