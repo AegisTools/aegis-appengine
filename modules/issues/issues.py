@@ -91,6 +91,7 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
     if is_defined(summary) and summary != issue.summary:
         header = header + "**Summary:** " + summary + "  \n"
         issue.summary = summary
+        issue.summary_index = set(re.split("[^\\w\\d]+", summary.lower()))
 
     if is_defined(project) and project != issue.project:
         header = header + "**Project:** " + project + "  \n"
@@ -139,6 +140,8 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
     if is_defined(privacy) and privacy != issue.privacy:
         header = header + "**Privacy:** " + privacy + "  \n"
         issue.privacy = privacy
+
+    issue.text_index = set(issue.text_index) | set(issue.summary_index) | set(re.split("[^\\w\\d]+", body.lower()))
 
     issue.updated_by = user_key(actor)
     issue.put()
@@ -195,21 +198,17 @@ def issue_search(viewer, simple=None, query=None, complex=None):
                 # Status is open and assigned to me, or closing and verified by me.
                 complex = { "boolean" : "or",
                             "sub"     : [ { "boolean" : "and",
-                                            "sub"     : [ { "not"      : False,
-                                                            "field"    : "status",
+                                            "sub"     : [ { "field"    : "status",
                                                             "operator" : "in",
                                                             "value"    : [ "triage", "assigned", "working" ] },
-                                                          { "not"      : False,
-                                                            "field"    : "assignee",
+                                                          { "field"    : "assignee",
                                                             "operator" : "==",
                                                             "value"    : [ viewer ] } ] },
                                           { "boolean" : "and",
-                                            "sub"     : [ { "not"      : False,
-                                                            "field"    : "status",
+                                            "sub"     : [ { "field"    : "status",
                                                             "operator" : "in",
                                                             "value"    : [ "fixed", "rejected" ] },
-                                                          { "not"      : False,
-                                                            "field"    : "verifier",
+                                                          { "field"    : "verifier",
                                                             "operator" : "==",
                                                             "value"    : [ viewer ] } ] } ] }
 
@@ -233,10 +232,9 @@ def issue_search(viewer, simple=None, query=None, complex=None):
 def query_to_complex_search(query):
     segments = []
     for i in range(int(query["c"])):
-        segments.append({ "not"      : query["n" + str(i)] == "1",
-                          "field"    : query["f" + str(i)],
+        segments.append({ "field"    : query["f" + str(i)],
                           "operator" : query["o" + str(i)],
-                          "value"    : re.split("[\\s,;]+", query["v" + str(i)]) })
+                          "value"    : re.split("[\\s,;]+", query["v" + str(i)].strip()) })
 
     return { "boolean" : query["b"], "sub" : segments }
 
@@ -260,6 +258,8 @@ def complex_search_to_ndb_query(query):
                 values = []
             elif phrase["field"] in [ "updated_by", "created_by", "assignee", "reporter", "verifier", "cc" ]:
                 values = [ user_key(value) for value in phrase["value"] ]
+            elif phrase["field"] in [ "summary_index", "text_index" ]:
+                values = [ value.lower() for value in phrase["value"] ]
             else:
                 values = phrase["value"]
 
@@ -267,55 +267,37 @@ def complex_search_to_ndb_query(query):
             subphrases = []
             if phrase["operator"] == "=" or phrase["operator"] == "==" or phrase["operator"] == "in":
                 for value in values:
-                    if phrase["not"]:
-                        subphrases.append(field != value)
-                    else:
-                        subphrases.append(field == value)
+                    subphrases.append(field == value)
                 if len(subphrases) > 0:
                     phrases.append(ndb.OR(*subphrases))
 
             elif phrase["operator"] == "!=":
                 for value in values:
-                    if phrase["not"]:
-                        subphrases.append(field == value)
-                    else:
-                        subphrases.append(field != value)
+                    subphrases.append(field != value)
                 if len(subphrases) > 0:
                     phrases.append(ndb.AND(*subphrases))
 
             elif phrase["operator"] == ">":
                 for value in values:
-                    if phrase["not"]:
-                        subphrases.append(field <= value)
-                    else:
-                        subphrases.append(field > value)
+                    subphrases.append(field > value)
                 if len(subphrases) > 0:
                     phrases.append(ndb.AND(*subphrases))
 
             elif phrase["operator"] == ">=":
                 for value in values:
-                    if phrase["not"]:
-                        subphrases.append(field < value)
-                    else:
-                        subphrases.append(field >= value)
+                    subphrases.append(field >= value)
                 if len(subphrases) > 0:
                     phrases.append(ndb.AND(*subphrases))
 
             elif phrase["operator"] == "<":
                 for value in values:
-                    if phrase["not"]:
-                        subphrases.append(field >= value)
-                    else:
-                        subphrases.append(field < value)
+                    subphrases.append(field < value)
                 if len(subphrases) > 0:
                     phrases.append(ndb.AND(*subphrases))
 
             elif phrase["operator"] == "<=":
                 for value in values:
-                    if phrase["not"]:
-                        subphrases.append(field > value)
-                    else:
-                        subphrases.append(field <= value)
+                    subphrases.append(field <= value)
                 if len(subphrases) > 0:
                     phrases.append(ndb.AND(*subphrases))
 
@@ -369,6 +351,8 @@ def to_model(viewer, issue, get_related_issues=True):
 
 class Issue(ndb.Model):
     summary = ndb.StringProperty(required=True)
+    summary_index = ndb.StringProperty(repeated=True)
+    text_index = ndb.StringProperty(repeated=True)
     project = ndb.KeyProperty(kind=Project)
     status = ndb.StringProperty(required=True, choices=issue_transitions.keys())
     priority = ndb.IntegerProperty(required=True)

@@ -6,32 +6,99 @@
     <input type="hidden" name="b" value="or"></input>
     <input type="hidden" name="c" id="filter-count" value="0"></input>
 
-    <div class="col_12" id="search-list">
+    <div id="search-list">
       <div id="search-template" style="display: none" class="search-line">
+        <div class="col_12">
+          Operator: <input type="text" id="operator" name="o" class="autonumber"></input>
+          Value: <input type="text" id="value"    name="v" class="autonumber"></input>
+        </div>
+
         <div class="col_1"><button type="button" id="remove" class="small"><i class="icon-minus"></i></button></div>
         <div class="col_2">
-          <select name="f" class="autonumber" style="font-size: 1em; width: 100%">
-            <option value="status">Status</option>
-            <option value="priority">Priority</option>
-            <option value="created">Created</option>
+          <select id="field" name="f" class="autonumber auto-hider" style="font-size: 1em; width: 100%">
+            <option value="status"        data-target="status">Status</option>
+            <option value="summary_index" data-target="text">Summary</option>
+            <option value="text_index"    data-target="text">Text</option>
+            <option value="priority"      data-target="number">Priority</option>
+            <option value="severity"      data-target="number">Severity</option>
+            <option value="assignee"      data-target="user">Assigned To</option>
+            <option value="verifier"      data-target="user">Verifier</option>
+            <option value="reporter"      data-target="user">CC</option>
+            <option value="depends_on"    data-target="issue">Depends On</option>
+            <option value="blocking"      data-target="issue">Blocking</option>
+            <option value="privacy"       data-target="privacy">Privacy</option>
+            <option value="created_by"    data-target="user">Created By</option>
+            <option value="updated_by"    data-target="user">Last Updated By</option>
+            <option value="created"       data-target="date">Created</option>
+            <option value="updated"       data-target="date">Last Updated</option>
           </select>
         </div>
-        <div class="col_2">
-          <select name="n" class="autonumber" style="font-size: 1em; width: 100%">
+
+        <div class="col_2 auto-hidden auto-hidden-text">
+          <select id="text-not" style="font-size: 1em; width: 100%">
+            <option value="0">Contains</option>
+            <option value="1">Doesn't Contain</option>
+          </select>
+        </div>
+        <div class="col_7 auto-hidden auto-hidden-text">
+          <input type="text" id="text-value" style="width: 100%"></input>
+        </div>
+
+        <div class="col_2 auto-hidden auto-hidden-user">
+          <select id="user-not" style="font-size: 1em; width: 100%">
             <option value="0">Is</option>
             <option value="1">Is Not</option>
           </select>
         </div>
-        <div class="col_5">
-          <input type="text" class="autonumber" name="v" value="triage" style="width: 100%"></input>
+        <div class="col_7 auto-hidden auto-hidden-user">
+          <input type="text" id="user-value" style="width: 100%"></input>
         </div>
-        <div class="col_2">
-          <select name="o" class="autonumber" style="font-size: 1em; width: 100%">
-            <option value="="></option>
-            <option value="&gt;=">Or Greater</option>
-            <option value="&lt;=">Or Less</option>
+
+        <div class="col_2 auto-hidden auto-hidden-number">
+          <select id="number-not" style="font-size: 1em; width: 100%">
+            <option value="0">Is</option>
+            <option value="1">Is Not</option>
           </select>
         </div>
+        <div class="col_5 auto-hidden auto-hidden-number">
+          <input type="text" id="number-value" style="width: 100%"></input>
+        </div>
+        <div class="col_2 auto-hidden auto-hidden-number">
+          <select id="number-operator" style="font-size: 1em; width: 100%">
+            <option value="="     data-opposite="!="></option>
+            <option value="&gt;=" data-opposite="&lt;">Or Greater</option>
+            <option value="&lt;=" data-opposite="&gt;">Or Less</option>
+          </select>
+        </div>
+
+        <div class="col_2 auto-hidden auto-hidden-status">
+          <select id="status-not" style="font-size: 1em; width: 100%">
+            <option value="0">Is</option>
+            <option value="1">Is Not</option>
+          </select>
+        </div>
+        <div class="col_7 auto-hidden auto-hidden-status">
+          <input type="checkbox" class="status-value" value="triage"> Triage
+          <input type="checkbox" class="status-value" value="assigned"> Assigned
+          <input type="checkbox" class="status-value" value="working"> Working
+          <input type="checkbox" class="status-value" value="fixed"> Fixed
+          <input type="checkbox" class="status-value" value="deferred"> Deferred
+          <input type="checkbox" class="status-value" value="rejected"> Rejected
+          <input type="checkbox" class="status-value" value="closed"> Closed
+        </div>
+
+        <div class="col_2 auto-hidden auto-hidden-privacy">
+          <select id="privacy-not" style="font-size: 1em; width: 100%">
+            <option value="0">Is</option>
+            <option value="1">Is Not</option>
+          </select>
+        </div>
+        <div class="col_7 auto-hidden auto-hidden-privacy">
+          <input type="checkbox" class="privacy-value" value="public"> Public
+          <input type="checkbox" class="privacy-value" value="private"> Private
+          <input type="checkbox" class="privacy-value" value="secure"> Secure
+        </div>
+
         <div class="clear"></div>
       </div>
     </div>
@@ -56,9 +123,50 @@
       node.active = true;
       filters.push(node);
 
+      var value = node.find("#value");
+
       node.find("#remove").click(function() {
         node.animate({opacity: 'toggle', height: 'toggle'}, "fast", node.detach);
         node.active = false;
+      });
+
+      node.find(".auto-hider").change(function() {
+        node.find(".auto-hidden").hide();
+        var visible = node.find(".auto-hidden-" + $(this).find(":selected").attr("data-target"));
+        visible.show();
+        visible.find("input,select").change();
+      }).change();
+
+      node.find("#number-value,#text-value,#user-value").change(function() {
+        value.val($(this).val());
+      });
+
+      node.find("#number-not,#number-operator").change(function() {
+        var isNot = node.find("#number-not").val() == "1";
+        var operatorNode = node.find("#number-operator :selected");
+
+        node.find("#operator").val(isNot ? operatorNode.attr("data-opposite") : operatorNode.val());
+      }).change();
+
+      node.find("#text-not,#status-not,#privacy-not").change(function() {
+        var isNot = $(this).val() == "1";
+        node.find("#operator").val(isNot ? "!=" : "=");
+      });
+
+      node.find(".status-value").change(function() {
+        var statusList = "";
+        node.find(".status-value:checked").each(function() {
+          statusList += $(this).val() + " ";
+        });
+        value.val(statusList.trim());
+      });
+
+      node.find(".privacy-value").change(function() {
+        var privacyList = "";
+        node.find(".privacy-value:checked").each(function() {
+          privacyList += $(this).val() + " ";
+        });
+        value.val(privacyList.trim());
       });
 
       node.appendTo("#search-list").animate({opacity: 'toggle', height: 'toggle'}, "fast");
@@ -76,6 +184,7 @@
           filters[i].find(".autonumber").each(function() {
             $(this).attr("name", $(this).attr("name") + index);
           });
+          filters[i].find(".auto-hidden").detach();
         }
       }
       $("#filter-count").val(count);
