@@ -172,7 +172,7 @@ def issue_get(viewer, issue_id=None, key=None, issue=None, silent=False):
     result = issue or (key or issue_key(issue_id)).get()
     if result:
         if result.privacy == "public" or \
-                user_key(viewer) not in result.cc | [ result.assignee, result.reporter, result.verifier ]:
+                user_key(viewer) in set(result.cc) | set([ result.assignee, result.reporter, result.verifier ]):
             result.history = remark_list(viewer, result.key)
             return result
         elif silent:

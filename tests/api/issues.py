@@ -99,6 +99,22 @@ class ClientTests(common.AegisTestCase):
         self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_B).status_code)
 
 
+    def test_privacy_secure_view_only(self):
+        self.assertEqual(200, self.put("test_harness/issues/permission", payload='{ "user" : "a@test.com" }', auth=USER_ROOT).status_code)
+        self.assertEqual(200, self.put("test_harness/issues/permission", payload='{ "user" : "b@test.com" }', auth=USER_ROOT).status_code)
+
+        self.assertEqual(200, self.post("issues", 
+                                        payload='{ "summary" : "a", "privacy" : "secure", "cc" : "b@test.com" }', 
+                                        auth=USER_A).status_code)
+        id = str(self.get("issues", auth=USER_A).json()[0]["id"])
+
+        self.assertEqual("triage", self.get("issues/" + id, auth=USER_B).json()["status"])
+        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_B).status_code)
+        self.assertEqual("triage", self.get("issues/" + id, auth=USER_B).json()["status"])
+
+
+
+
 
 
 if __name__ == "__main__":
