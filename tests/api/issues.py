@@ -3,7 +3,7 @@ import os
 import common
 import time
 
-from common import USER_ROOT
+from common import USER_ROOT, USER_A, USER_B
 
 class ClientTests(common.AegisTestCase):
 
@@ -75,6 +75,29 @@ class ClientTests(common.AegisTestCase):
         self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "rejected" }', auth=USER_ROOT).status_code)
 
         self.assertEqual("fixed", self.get("issues/" + id, auth=USER_ROOT).json()["status"])
+
+
+    def test_privacy_private_not_allowed(self):
+        self.assertEqual(200, self.put("test_harness/issues/permission", payload='{ "user" : "a@test.com" }', auth=USER_ROOT).status_code)
+        self.assertEqual(200, self.put("test_harness/issues/permission", payload='{ "user" : "b@test.com" }', auth=USER_ROOT).status_code)
+
+        self.assertEqual(200, self.post("issues", payload='{ "summary" : "a", "privacy" : "private" }', auth=USER_A).status_code)
+        id = str(self.get("issues", auth=USER_A).json()[0]["id"])
+
+        self.assertEqual(500, self.get("issues/" + id, auth=USER_B).status_code)
+        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_B).status_code)
+
+
+    def test_privacy_secure_not_allowed(self):
+        self.assertEqual(200, self.put("test_harness/issues/permission", payload='{ "user" : "a@test.com" }', auth=USER_ROOT).status_code)
+        self.assertEqual(200, self.put("test_harness/issues/permission", payload='{ "user" : "b@test.com" }', auth=USER_ROOT).status_code)
+
+        self.assertEqual(200, self.post("issues", payload='{ "summary" : "a", "privacy" : "secure" }', auth=USER_A).status_code)
+        id = str(self.get("issues", auth=USER_A).json()[0]["id"])
+
+        self.assertEqual(500, self.get("issues/" + id, auth=USER_B).status_code)
+        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_B).status_code)
+
 
 
 

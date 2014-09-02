@@ -53,6 +53,7 @@ def issue_create(actor, key=None, issue_id=None, name=undefined, active=True, **
 
     issue = Issue()
     issue.created_by = user_key(actor)
+    issue.privacy = "public"
     return issue_update(actor, issue=issue, active=True, name=name, **kwargs)
 
 
@@ -63,85 +64,93 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
     issue = issue or (key or issue_key(issue_id)).get()
     header = "**" + actor.email() + "** on " + time.strftime("%c") + "\n\n"
 
+    is_root = permission_is_root(actor)
 
-    # Rewrite input types if necessary
-    def fix_user(field):
-        if is_undefined(field):
-            return field
-        if field == "":
-            return undefined
-        if isinstance(field, User):
-            return field
-        return user_key(field)
+    if not is_root and issue.privacy != "public" and \
+            user_key(actor) not in issue.cc | [ issue.assignee, issue.reporter, issue.verifier ]:
+        raise NotAllowedError()
 
-    reporter = fix_user(reporter)
-    assignee = fix_user(assignee)
-    verifier = fix_user(verifier)
+    if is_root or issue.privacy != "secure" or user_key(actor) in [ issue.assignee, issue.verifier ]:
+        # Rewrite input types if necessary
+        def fix_user(field):
+            if is_undefined(field):
+                return field
+            if field == "":
+                return undefined
+            if isinstance(field, User):
+                return field
+            return user_key(field)
+    
+        reporter = fix_user(reporter)
+        assignee = fix_user(assignee)
+        verifier = fix_user(verifier)
+    
+        if is_defined(cc):
+            cc = set([user_key(id) for id in re.split("[\\s,;]+", cc) if len(id) > 0])
+    
+        if is_defined(depends_on):
+            depends_on = set([issue_key(id) for id in re.split("[\\s,;]+", depends_on) if len(id) > 0])
+    
+        if is_defined(blocking):
+            blocking = set([issue_key(id) for id in re.split("[\\s,;]+", blocking) if len(id) > 0])
+    
+        # Update all fields
+        if is_defined(summary) and summary != issue.summary:
+            header = header + "**Summary:** " + summary + "  \n"
+            issue.summary = summary
+            issue.summary_index = set(re.split("[^\\w\\d]+", summary.lower()))
+    
+        if is_defined(project) and project != issue.project:
+            header = header + "**Project:** " + project + "  \n"
+            issue.project = project
 
-    if is_defined(cc):
-        cc = set([user_key(id) for id in re.split("[\\s,;]+", cc) if len(id) > 0])
+        if is_defined(status) and status != issue.status:
+            if not status in issue_transitions:
+                raise Exception("Status not recognized")
+            if not status in issue_transitions[issue.status]:
+                raise Exception("Status transition not allowed")
+            header = header + "**Status:** " + status + "  \n"
+            issue.status = status
+    
+        if is_defined(priority) and int(priority) != issue.priority:
+            header = header + "**Priority:** " + str(priority) + "  \n"
+            issue.priority = int(priority)
+    
+        if is_defined(severity) and int(severity) != issue.severity:
+            header = header + "**Severity:** " + str(severity) + "  \n"
+            issue.severity = int(severity)
+    
+        if is_defined(reporter) and reporter != issue.reporter:
+            header = header + "**Reporter:** " + reporter.id() + "  \n"
+            issue.reporter = reporter
+    
+        if is_defined(assignee) and assignee != issue.assignee:
+            header = header + "**Assignee:** " + assignee.id() + "  \n"
+            issue.assignee = assignee
+    
+        if is_defined(verifier) and verifier != issue.verifier:
+            header = header + "**Verifier:** " + verifier.id() + "  \n"
+            issue.verifier = verifier
+    
+        if is_defined(cc) and cc != set(issue.cc):
+            header = header + "**CC:** " + ", ".join([user.id() for user in cc]) + "  \n"
+            issue.cc = list(cc)
+    
+        if is_defined(depends_on) and depends_on != set(issue.depends_on):
+            header = header + "**Depends On:** " + ", ".join([str(iss.id()) for iss in depends_on]) + "  \n"
+            issue.depends_on = list(depends_on)
+    
+        if is_defined(blocking) and blocking != set(issue.blocking):
+            header = header + "**Blocking:** " + ", ".join([str(iss.id()) for iss in blocking]) + "  \n"
+            issue.blocking = list(blocking)
+    
+        if is_defined(privacy) and privacy != issue.privacy:
+            header = header + "**Privacy:** " + privacy + "  \n"
+            issue.privacy = privacy
 
-    if is_defined(depends_on):
-        depends_on = set([issue_key(id) for id in re.split("[\\s,;]+", depends_on) if len(id) > 0])
-
-    if is_defined(blocking):
-        blocking = set([issue_key(id) for id in re.split("[\\s,;]+", blocking) if len(id) > 0])
-
-    # Update all fields
-    if is_defined(summary) and summary != issue.summary:
-        header = header + "**Summary:** " + summary + "  \n"
-        issue.summary = summary
-        issue.summary_index = set(re.split("[^\\w\\d]+", summary.lower()))
-
-    if is_defined(project) and project != issue.project:
-        header = header + "**Project:** " + project + "  \n"
-        issue.project = project
-
-    if is_defined(status) and status != issue.status:
-        if not status in issue_transitions:
-            raise Exception("Status not recognized")
-        if not status in issue_transitions[issue.status]:
-            raise Exception("Status transition not allowed")
-        header = header + "**Status:** " + status + "  \n"
-        issue.status = status
-
-    if is_defined(priority) and int(priority) != issue.priority:
-        header = header + "**Priority:** " + str(priority) + "  \n"
-        issue.priority = int(priority)
-
-    if is_defined(severity) and int(severity) != issue.severity:
-        header = header + "**Severity:** " + str(severity) + "  \n"
-        issue.severity = int(severity)
-
-    if is_defined(reporter) and reporter != issue.reporter:
-        header = header + "**Reporter:** " + reporter.id() + "  \n"
-        issue.reporter = reporter
-
-    if is_defined(assignee) and assignee != issue.assignee:
-        header = header + "**Assignee:** " + assignee.id() + "  \n"
-        issue.assignee = assignee
-
-    if is_defined(verifier) and verifier != issue.verifier:
-        header = header + "**Verifier:** " + verifier.id() + "  \n"
-        issue.verifier = verifier
-
-    if is_defined(cc) and cc != set(issue.cc):
-        header = header + "**CC:** " + ", ".join([user.id() for user in cc]) + "  \n"
-        issue.cc = list(cc)
-
-    if is_defined(depends_on) and depends_on != set(issue.depends_on):
-        header = header + "**Depends On:** " + ", ".join([str(iss.id()) for iss in depends_on]) + "  \n"
-        issue.depends_on = list(depends_on)
-
-    if is_defined(blocking) and blocking != set(issue.blocking):
-        header = header + "**Blocking:** " + ", ".join([str(iss.id()) for iss in blocking]) + "  \n"
-        issue.blocking = list(blocking)
-
-    if is_defined(privacy) and privacy != issue.privacy:
-        header = header + "**Privacy:** " + privacy + "  \n"
-        issue.privacy = privacy
-
-    issue.text_index = set(issue.text_index) | set(issue.summary_index) | set(re.split("[^\\w\\d]+", body.lower()))
+    issue.text_index = set(issue.text_index) | \
+                       set(issue.summary_index) | \
+                       set(re.split("[^\\w\\d]+", body.lower()))
 
     issue.updated_by = user_key(actor)
     issue.put()
@@ -162,8 +171,14 @@ def issue_deactivate(actor, issue_id=None, key=None, issue=None, **ignored):
 def issue_get(viewer, issue_id=None, key=None, issue=None, silent=False):
     result = issue or (key or issue_key(issue_id)).get()
     if result:
-        result.history = remark_list(viewer, result.key)
-        return result
+        if result.privacy == "public" or \
+                user_key(viewer) not in result.cc | [ result.assignee, result.reporter, result.verifier ]:
+            result.history = remark_list(viewer, result.key)
+            return result
+        elif silent:
+            return None
+        else:
+            raise NotAllowedError()
     elif silent:
         return None
     else:
@@ -213,13 +228,22 @@ def issue_search(viewer, simple=None, query=None, complex=None):
                                                             "value"    : [ viewer ] } ] } ] }
 
         result = []
-        log.debug(complex)
         ndb_query = complex_search_to_ndb_query(complex)
-        log.debug(ndb_query)
-        if ndb_query:
-            dataset = Issue.query().filter(ndb_query)
+        if permission_is_root(viewer):
+            if ndb_query:
+                dataset = Issue.query().filter(ndb_query)
+            else:
+                dataset = Issue.query().filter()
         else:
-            dataset = Issue.query()
+            privacy_query = ndb.OR(Issue.privacy == "public",
+                                   Issue.assignee == user_key(viewer),
+                                   Issue.reporter == user_key(viewer),
+                                   Issue.verifier == user_key(viewer),
+                                   Issue.cc == user_key(viewer))
+            if ndb_query:
+                dataset = Issue.query().filter(ndb.AND(ndb_query, privacy_query))
+            else:
+                dataset = Issue.query().filter(privacy_query)
 
         for issue in dataset:
             issue.history = []

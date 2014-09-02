@@ -30,6 +30,16 @@ def wipe(viewer, **ignored):
     memcache.flush_all()
 
 """
+ISSUE STUBS
+"""
+
+def issue_permission(viewer, user=None):
+    permission_grant(viewer, user or viewer, "issue", "read")
+    permission_grant(viewer, user or viewer, "issue", "create")
+    permission_grant(viewer, user or viewer, "issue", "update")
+    permission_grant(viewer, user or viewer, "user", "read")
+
+"""
 PERMISSION STUBS
 """
 
@@ -112,7 +122,8 @@ actions = { "wipe"                                         : { "POST"   : { "met
             "permissions/{user}/{action}/{kind}"           : { "PUT"    : { "method" : grant_permission },
                                                                "DELETE" : { "method" : revoke_permission } },
             "permissions/{user}/{action}/{kind}/{thing}/*" : { "PUT"    : { "method" : grant_permission } },
-            "remarks/{thing}"                              : { "POST"   : { "method" : remark } } }
+            "remarks/{thing}"                              : { "POST"   : { "method" : remark } },
+            "issues/permission"                            : { "PUT"    : { "method" : issue_permission } } }
 
 
 log.warn("Test harness is enabled")

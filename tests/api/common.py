@@ -12,8 +12,13 @@ HEADERS = { "Content-Type" : "application/json",
 
 USER_ROOT = lib.requests.Session()
 USER_ANONYMOUS = lib.requests.Session()
+USER_A = lib.requests.Session()
+USER_B = lib.requests.Session()
 
 USER_ROOT.get(URL + "_ah/login?email=root%40test.com&action=Login&admin=True")
+USER_A.get(URL + "_ah/login?email=a%40test.com&action=Login&admin=")
+USER_B.get(URL + "_ah/login?email=b%40test.com&action=Login&admin=")
+
 
 class AegisTestCase(unittest.TestCase):
 
