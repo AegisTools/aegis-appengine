@@ -96,21 +96,24 @@
             <tr>
               <td nowrap class="property">Assigned To:</td>
               <td class="value">
-                <input type="text" class="full-width required" name="assignee" 
+                <input type="text" class="full-width" name="assignee" 
+                    placeholder="{% if issue %}{{ issue.assignee_email|e }}{% else %}{{ user.email()|e }}{% endif %}"
                     value="{% if issue %}{{ issue.assignee_email|e }}{% endif %}">
               </td>
             </tr>
             <tr>
               <td nowrap class="property">Reported By:</td>
               <td class="value">
-                <input type="text" class="full-width required" name="reporter"
-                    value="{% if issue %}{{ issue.reporter_email|e }}{% else %}{{ user.email()|e }}{% endif %}">
+                <input type="text" class="full-width" name="reporter"
+                    placeholder="{% if issue %}{{ issue.reporter_email|e }}{% else %}{{ user.email()|e }}{% endif %}"
+                    value="{% if issue %}{{ issue.reporter_email|e }}{% endif %}">
               </td>
             </tr>
             <tr>
               <td nowrap class="property">Verified By:</td>
               <td class="value">
-                <input type="text" class="full-width required" name="verifier"
+                <input type="text" class="full-width" name="verifier"
+                    placeholder="{% if issue %}{{ issue.verifier_email|e }}{% else %}{{ user.email()|e }}{% endif %}"
                     value="{% if issue %}{{ issue.verifier_email|e }}{% endif %}">
               </td>
             </tr>

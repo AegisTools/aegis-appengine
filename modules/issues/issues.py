@@ -43,9 +43,9 @@ def issue_http_post(actor, **kwargs):
 
 
 def issue_create(actor, key=None, issue_id=None, name=undefined, active=True, **kwargs):
-    if "reporter" not in kwargs: kwargs["reporter"] = actor
-    if "assignee" not in kwargs: kwargs["assignee"] = actor
-    if "verifier" not in kwargs: kwargs["verifier"] = actor
+    if "reporter" not in kwargs or kwargs["reporter"] == "": kwargs["reporter"] = actor
+    if "assignee" not in kwargs or kwargs["assignee"] == "": kwargs["assignee"] = actor
+    if "verifier" not in kwargs or kwargs["verifier"] == "": kwargs["verifier"] = actor
 
     if "status"   not in kwargs: kwargs["status"]   = "triage"
     if "priority" not in kwargs: kwargs["priority"] = 2
