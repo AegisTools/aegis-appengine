@@ -7,6 +7,7 @@ import re
 from issue_rules import *
 
 from google.appengine.ext import ndb
+from google.appengine.api import mail
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
@@ -15,6 +16,9 @@ from users.permissions import permission_check, permission_is_root
 from users.users import user_key, user_load, User
 from projects.projects import Project
 from remarks.remarks import remark_create, remark_list
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+import lib.markdown
 
 log = logging.getLogger("issues")
 
@@ -60,7 +64,7 @@ def issue_create(actor, key=None, issue_id=None, name=undefined, active=True, **
 def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, project=undefined, 
                  status=undefined, priority=undefined, severity=undefined, reporter=undefined, 
                  assignee=undefined, verifier=undefined, cc=undefined, depends_on=undefined, 
-                 blocking=undefined, privacy=undefined, body="", **ignored):
+                 blocking=undefined, privacy=undefined, body="", send_mail=True, **ignored):
     issue = issue or (key or issue_key(issue_id)).get()
     header = "**" + actor.email() + "** on " + time.strftime("%c") + "\n\n"
 
@@ -69,6 +73,15 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
     if not is_root and issue.privacy != "public" and \
             user_key(actor) not in issue.cc | [ issue.assignee, issue.reporter, issue.verifier ]:
         raise NotAllowedError()
+
+    to_recipients = set([])
+    if issue.assignee:
+        to_recipients.add(issue.assignee)
+    if issue.reporter:
+        to_recipients.add(issue.reporter)
+    if issue.verifier:
+        to_recipients.add(issue.verifier)
+    cc_recipients = set(issue.cc)
 
     if is_root or issue.privacy != "secure" or user_key(actor) in [ issue.assignee, issue.verifier ]:
         # Rewrite input types if necessary
@@ -123,18 +136,22 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
         if is_defined(reporter) and reporter != issue.reporter:
             header = header + "**Reporter:** " + reporter.id() + "  \n"
             issue.reporter = reporter
+            to_recipients.add(reporter)
     
         if is_defined(assignee) and assignee != issue.assignee:
             header = header + "**Assignee:** " + assignee.id() + "  \n"
             issue.assignee = assignee
+            to_recipients.add(assignee)
     
         if is_defined(verifier) and verifier != issue.verifier:
             header = header + "**Verifier:** " + verifier.id() + "  \n"
             issue.verifier = verifier
+            to_recipients.add(verifier)
     
         if is_defined(cc) and cc != set(issue.cc):
             header = header + "**CC:** " + ", ".join([user.id() for user in cc]) + "  \n"
             issue.cc = list(cc)
+            cc_recipients.update(cc)
     
         if is_defined(depends_on) and depends_on != set(issue.depends_on):
             header = header + "**Depends On:** " + ", ".join([str(iss.id()) for iss in depends_on]) + "  \n"
@@ -154,9 +171,26 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
 
     issue.updated_by = user_key(actor)
     issue.put()
-    log.debug(issue)
 
     issue.history = [ remark_create(actor, issue.key, body.strip(), header.strip()) ]
+
+    if send_mail:
+        if len(cc_recipients) > 0:
+            mail.send_mail(sender=actor,
+                           to=[user.id() for user in to_recipients],
+                           cc=[user.id() for user in cc_recipients],
+                           reply_to=actor,
+                           subject=issue.summary,
+                           body=header + "\n\n" + body,
+                           html=lib.markdown.markdown(header) + "<br><br>" + lib.markdown.markdown(body))
+        else:
+            mail.send_mail(sender=actor,
+                           to=[user.id() for user in to_recipients],
+                           reply_to=actor,
+                           subject=issue.summary,
+                           body=header + "\n\n" + body,
+                           html=lib.markdown.markdown(header) + "<br><br>" + lib.markdown.markdown(body))
+        log.debug("Email sent to %s" % (to_recipients | cc_recipients))
 
     return to_model(actor, issue)
 
