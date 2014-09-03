@@ -180,14 +180,14 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
                            to=[user.id() for user in to_recipients],
                            cc=[user.id() for user in cc_recipients],
                            reply_to=actor,
-                           subject=issue.summary,
+                           subject="[" + str(issue.key.id()) + "] " + issue.summary,
                            body=header + "\n\n" + body,
                            html=lib.markdown.markdown(header) + "<br><br>" + lib.markdown.markdown(body))
         else:
             mail.send_mail(sender=actor,
                            to=[user.id() for user in to_recipients],
                            reply_to=actor,
-                           subject=issue.summary,
+                           subject="[" + str(issue.key.id()) + "] " + issue.summary,
                            body=header + "\n\n" + body,
                            html=lib.markdown.markdown(header) + "<br><br>" + lib.markdown.markdown(body))
         log.debug("Email sent to %s" % (to_recipients | cc_recipients))
