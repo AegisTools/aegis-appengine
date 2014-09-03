@@ -12,6 +12,11 @@ indexes:
 
 - kind: Issue
   properties:
+  - name: reporter
+  - name: status
+
+- kind: Issue
+  properties:
   - name: status
   - name: priority
 

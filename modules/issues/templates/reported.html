@@ -1,9 +1,11 @@
 {% set section_module = "reported" %}
 {% set issue_list = load("issues/issue_search", complex={
     'boolean' : 'and',
-    'sub'     : [{ 'not'      : False,
-                   'field'    : 'reporter',
+    'sub'     : [{ 'field'    : 'reporter',
                    'operator' : '==',
-                   'value'    : [ user ] } ] }) %}
+                   'value'    : [ user ] },
+                 { 'field'    : 'status',
+                   'operator' : '!=',
+                   'value'    : [ 'closed' ] } ] }) %}
 {% extends "modules/issues/fragments/list.html" %}
 
