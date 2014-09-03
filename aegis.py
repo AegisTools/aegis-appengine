@@ -19,14 +19,45 @@ log = logging.getLogger("engine")
 jinja = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
 
+known_modules = {}
+known_loaders = {}
+
+
+dependencies = set()
+
+for importer, modname, ispkg in pkgutil.iter_modules(modules.__path__):
+    log.info("Importing module %s" % modname)
+    module = getattr(__import__(modules.__name__ + "." + modname), modname)
+
+    if hasattr(module, "dependencies"):
+        log.debug("    Found dependencies: %s" % module.dependencies)
+        dependencies.update(module.dependencies)
+    else:
+        log.debug("    No dependencies")
+
+    if hasattr(module, "types"):
+        log.debug("    Found types: %s" % module.types)
+        for type in module.types:
+            known_loaders[modname + "/" + type] = module.types[type]
+    else:
+        log.debug("    No types")
+
+    known_modules[modname] = module
+
+dependencies.difference_update(known_modules.keys())
+for dependency in dependencies:
+    log.warn("Dependency on '%s' not satisfied, some features may be broken" % dependency)
+
+log.info("Module loading complete")
+
+
 class RequestData:
     def __init__(self):
         self.user = None
         self.cache = {}
-        self.known_loaders = {}
 
     def load(self, type, *args, **kwargs):
-        if type not in self.known_loaders:
+        if type not in known_loaders:
             raise Exception("Loader '%s' not found" % type)
 
         # key = type + "/" + str(id)
@@ -34,7 +65,7 @@ class RequestData:
         #     log.debug("Cache hit for %s: %s" % (type, id))
         #     return self.cache[key]
 
-        loader = self.known_loaders[type]
+        loader = known_loaders[type]
         log.debug("Loading %s: %s %s (%s)" % (type, args, kwargs, loader))
         # self.cache[key] = loader(self.user, *args, **kwargs)
         # return self.cache[key]
@@ -46,9 +77,6 @@ class RequestData:
 
 
 class MainPage(webapp2.RequestHandler):
-
-    known_modules = {}
-    known_loaders = {}
 
     def put(self):
         self.execute()
@@ -66,13 +94,12 @@ class MainPage(webapp2.RequestHandler):
     def execute(self):
         request = RequestData()
         request.user = users.get_current_user()
-        request.known_loaders = self.known_loaders
+        request.known_loaders = known_loaders
 
         if not request.user:
             request.user = users.User("test@test.com")
             # return self.redirect(users.create_login_url(self.request.uri))
 
-        self.init()
         path = self.request.path
         method = self.request.method
         if "_method_" in self.request.POST:
@@ -84,35 +111,6 @@ class MainPage(webapp2.RequestHandler):
         self.render(request, path.strip("/"))
 
 
-    def init(self):
-        dependencies = set()
-
-        for importer, modname, ispkg in pkgutil.iter_modules(modules.__path__):
-            log.info("Importing module %s" % modname)
-            module = getattr(__import__(modules.__name__ + "." + modname), modname)
-
-            if hasattr(module, "dependencies"):
-                log.debug("    Found dependencies: %s" % module.dependencies)
-                dependencies.update(module.dependencies)
-            else:
-                log.debug("    No dependencies")
-
-            if hasattr(module, "types"):
-                log.debug("    Found types: %s" % module.types)
-                for type in module.types:
-                    self.known_loaders[modname + "/" + type] = module.types[type]
-            else:
-                log.debug("    No types")
-
-            self.known_modules[modname] = module
-
-        dependencies.difference_update(self.known_modules.keys())
-        for dependency in dependencies:
-            log.warn("Dependency on '%s' not satisfied, some features may be broken" % dependency)
-
-        log.info("Module loading complete")
-
-
     def action(self, method, request):
         format = self.get_data_type("Content-Type")
 
@@ -120,7 +118,7 @@ class MainPage(webapp2.RequestHandler):
 
         path_segments = self.request.path.strip("/").split("/")
         module_name, path_segments = path_segments[0], path_segments[1:]
-        module = self.known_modules[module_name]
+        module = known_modules[module_name]
 
         if format == "json":
             if self.request.body == "":
@@ -195,8 +193,8 @@ class MainPage(webapp2.RequestHandler):
 
         log.info("Rendering module '%s' path: %s (%s)" % (module_name, path_segments, format))
 
-        if module_name != "" and module_name in self.known_modules:
-            module = self.known_modules[module_name]
+        if module_name != "" and module_name in known_modules:
+            module = known_modules[module_name]
             base_path = "modules/%s/templates" % module_name
             keys = {}
 
