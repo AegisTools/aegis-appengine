@@ -8,6 +8,7 @@ from issue_rules import *
 
 from google.appengine.ext import ndb
 from google.appengine.api import mail
+from google.appengine.api import app_identity
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
@@ -175,6 +176,7 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
     issue.history = [ remark_create(actor, issue.key, body.strip(), header.strip()) ]
 
     if send_mail:
+        message_id = "<issue-%s@%s>" % (issue.key.id(), app_identity.get_application_id())
         if len(cc_recipients) > 0:
             mail.send_mail(sender=actor.email(),
                            to=[user.id() for user in to_recipients],
@@ -182,14 +184,16 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
                            reply_to=actor.email(),
                            subject="[" + str(issue.key.id()) + "] " + issue.summary,
                            body=header + "\n\n" + body,
-                           html=lib.markdown.markdown(header) + "<br><br>" + lib.markdown.markdown(body))
+                           html=lib.markdown.markdown(header) + "<br><br>" + lib.markdown.markdown(body),
+                           headers={"In-Reply-To": message_id, "References":  message_id })
         else:
             mail.send_mail(sender=actor.email(),
                            to=[user.id() for user in to_recipients],
                            reply_to=actor.email(),
                            subject="[" + str(issue.key.id()) + "] " + issue.summary,
                            body=header + "\n\n" + body,
-                           html=lib.markdown.markdown(header) + "<br><br>" + lib.markdown.markdown(body))
+                           html=lib.markdown.markdown(header) + "<br><br>" + lib.markdown.markdown(body),
+                           headers={"In-Reply-To": message_id, "References":  message_id })
         log.debug("Email sent to %s" % (to_recipients | cc_recipients))
 
     return to_model(actor, issue)
