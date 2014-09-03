@@ -97,8 +97,7 @@ class MainPage(webapp2.RequestHandler):
         request.known_loaders = known_loaders
 
         if not request.user:
-            request.user = users.User("test@test.com")
-            # return self.redirect(users.create_login_url(self.request.uri))
+            return self.redirect(users.create_login_url(self.request.uri))
 
         path = self.request.path
         method = self.request.method

@@ -176,17 +176,17 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
 
     if send_mail:
         if len(cc_recipients) > 0:
-            mail.send_mail(sender=actor,
+            mail.send_mail(sender=actor.email(),
                            to=[user.id() for user in to_recipients],
                            cc=[user.id() for user in cc_recipients],
-                           reply_to=actor,
+                           reply_to=actor.email(),
                            subject="[" + str(issue.key.id()) + "] " + issue.summary,
                            body=header + "\n\n" + body,
                            html=lib.markdown.markdown(header) + "<br><br>" + lib.markdown.markdown(body))
         else:
-            mail.send_mail(sender=actor,
+            mail.send_mail(sender=actor.email(),
                            to=[user.id() for user in to_recipients],
-                           reply_to=actor,
+                           reply_to=actor.email(),
                            subject="[" + str(issue.key.id()) + "] " + issue.summary,
                            body=header + "\n\n" + body,
                            html=lib.markdown.markdown(header) + "<br><br>" + lib.markdown.markdown(body))
