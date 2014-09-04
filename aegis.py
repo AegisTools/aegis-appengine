@@ -75,6 +75,9 @@ class RequestData:
             logging.exception("Loader Failed")
             raise
 
+    def local_time(self, target):
+        return target - datetime.timedelta(minutes=self.timezoneoffset)
+
 
 class MainPage(webapp2.RequestHandler):
 
@@ -95,6 +98,7 @@ class MainPage(webapp2.RequestHandler):
         request = RequestData()
         request.user = users.get_current_user()
         request.known_loaders = known_loaders
+        request.timezoneoffset = int(self.request.cookies.get("timezoneoffset"))
 
         if not request.user:
             return self.redirect(users.create_login_url(self.request.uri))
@@ -129,6 +133,8 @@ class MainPage(webapp2.RequestHandler):
             data = self.request.POST
         else:
             data = {}
+
+        data = dict(data.items() + self.request.cookies.items())
 
         if hasattr(module, "actions"):
             for pattern in module.actions:
@@ -173,7 +179,8 @@ class MainPage(webapp2.RequestHandler):
                    'keys'         : keys,
                    'user'         : request.user,
                    'sign_out_url' : users.create_logout_url(path),
-                   'load'         : request.load }
+                   'load'         : request.load,
+                   'local_time'   : request.local_time }
             log.debug("Rendering template %s: %s", template, obj)
             content = template.render(obj)
 

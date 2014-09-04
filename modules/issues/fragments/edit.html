@@ -93,6 +93,10 @@
                 <option value="5" {% if issue and issue.severity == 5 %}selected{% endif %}>5</option>
               </select>
             </td></tr>
+            <tr><td nowrap class="property">Due Date:</td><td class="value">
+              <input type="text" class="full-width" name="due_date"
+                    value="{% if issue and issue.due_date %}{{ local_time(issue.due_date) }}{% endif %}"></input>
+            </td></tr>
             <tr>
               <td nowrap class="property">Assigned To:</td>
               <td class="value">

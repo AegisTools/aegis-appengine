@@ -16,7 +16,7 @@
         <td nowrap>S</td>
         <td nowrap>Status</id>
         <td nowrap>Assignee</td>
-        <td nowrap>Created On</td>
+        <td nowrap>Due
         <td nowrap>Summary</td>
       </tr></thead>
       <tbody>
@@ -27,7 +27,7 @@
             <td nowrap>{{ issue.severity }}</td>
             <td nowrap>{{ issue.status|capitalize }}</td>
             <td nowrap>{{ user_link(issue.assignee_email, issue.assignee) }}</td>
-            <td nowrap>{{ issue.created.date() }}</td>
+            <td nowrap>{% if issue.due_date %}{{ local_time(issue.due_date) }}{% endif %}</td>
             <td>{{ issue.summary }}</td>
           </tr>
         {% endfor %}

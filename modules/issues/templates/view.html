@@ -40,6 +40,9 @@
           <tr><td nowrap class="property">Status:</td><td class="value">{{ issue.status|capitalize }}</td></tr>
           <tr><td nowrap class="property">Priority:</td><td class="value">{{ issue.priority }}</td></tr>
           <tr><td nowrap class="property">Severity:</td><td class="value">{{ issue.severity }}</td></tr>
+          <tr><td nowrap class="property">Due Date:</td><td class="value">
+            {% if issue.due_date %}{{ local_time(issue.due_date) }}{% endif %}
+          </td></tr>
           <tr><td nowrap class="property">Assigned To:</td><td class="value">
             {{ user_link(issue.assignee_email, issue.assignee) }}
           </td></tr>

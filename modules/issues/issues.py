@@ -3,6 +3,7 @@ import os
 import logging
 import time
 import re
+import datetime
 
 from issue_rules import *
 
@@ -20,6 +21,7 @@ from remarks.remarks import remark_create, remark_list
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 import lib.markdown
+import lib.parsedatetime
 
 log = logging.getLogger("issues")
 
@@ -65,7 +67,8 @@ def issue_create(actor, key=None, issue_id=None, name=undefined, active=True, **
 def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, project=undefined, 
                  status=undefined, priority=undefined, severity=undefined, reporter=undefined, 
                  assignee=undefined, verifier=undefined, cc=undefined, depends_on=undefined, 
-                 blocking=undefined, privacy=undefined, body="", send_mail=True, **ignored):
+                 blocking=undefined, privacy=undefined, due_date=undefined, body="", send_mail=True, 
+                 **args):
     issue = issue or (key or issue_key(issue_id)).get()
     header = "**" + actor.email() + "** on " + time.strftime("%c") + "\n\n"
 
@@ -107,6 +110,28 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
     
         if is_defined(blocking):
             blocking = set([issue_key(id) for id in re.split("[\\s,;]+", blocking) if len(id) > 0])
+
+        if is_defined(due_date):
+            if due_date == "":
+                due_date = None
+            else:
+                if "timezoneoffset" in args:
+                    offset = datetime.timedelta(minutes=int(args["timezoneoffset"]))
+                    client_time = datetime.datetime.utcnow() - offset
+                    parsed_time = lib.parsedatetime.Calendar().parse(due_date, client_time)
+                    log.debug("client_time = %s" % client_time)
+                else:
+                    offset = datetime.timedelta(0)
+                    parsed_time = lib.parsedatetime.Calendar().parse(due_date)
+
+                if parsed_time[1] == 1:
+                    due_date = datetime.datetime(*parsed_time[0][:3]) + offset
+                else:
+                    due_date = datetime.datetime(*parsed_time[0][:6]) + offset
+
+                log.debug("offset = %s" % offset)
+                log.debug("parsed_time = %s" % str(parsed_time))
+                log.debug("due_date = %s" % due_date)
     
         # Update all fields
         if is_defined(summary) and summary != issue.summary:
@@ -165,6 +190,10 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
         if is_defined(privacy) and privacy != issue.privacy:
             header = header + "**Privacy:** " + privacy + "  \n"
             issue.privacy = privacy
+
+        if is_defined(due_date) and due_date != issue.due_date:
+            header = header + "**Due Date:** " + str(due_date) + " UTC  \n"
+            issue.due_date = due_date
 
     issue.text_index = set(issue.text_index) | \
                        set(issue.summary_index) | \
@@ -409,6 +438,7 @@ def to_model(viewer, issue, get_related_issues=True):
              'depends_on'     : sorted(depends_on),
              'blocking'       : sorted(blocking),
              'privacy'        : issue.privacy,
+             'due_date'       : issue.due_date,
              'created_by'     : issue.created_by.id(),
              'created'        : issue.created,
              'updated_by'     : issue.updated_by.id(),
@@ -430,6 +460,7 @@ class Issue(ndb.Model):
     depends_on = ndb.KeyProperty(kind='Issue', repeated=True)
     blocking = ndb.KeyProperty(kind='Issue', repeated=True)
     privacy = ndb.StringProperty(default="public", required=True, choices=["public", "private", "secure"])
+    due_date = ndb.DateTimeProperty()
     created_by = ndb.KeyProperty(kind=User)
     created = ndb.DateTimeProperty(auto_now_add=True)
     updated_by = ndb.KeyProperty(kind=User)

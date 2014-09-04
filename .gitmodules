@@ -10,3 +10,9 @@
 [submodule "submodules/marked"]
 	path = submodules/marked
 	url = git@github.com:chjj/marked.git
+[submodule "submodules/parsedatetime"]
+	path = submodules/parsedatetime
+	url = git@github.com:bear/parsedatetime.git
+[submodule "submodules/jquery-cookie"]
+	path = submodules/jquery-cookie
+	url = git@github.com:carhartl/jquery-cookie.git
