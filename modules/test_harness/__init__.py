@@ -39,7 +39,7 @@ else:
     ISSUE STUBS
     """
 
-    def issue_permission(viewer, user=None):
+    def issue_permission(viewer, user=None, **ignored):
         permission_grant(viewer, user or viewer, "issue", "read")
         permission_grant(viewer, user or viewer, "issue", "create")
         permission_grant(viewer, user or viewer, "issue", "update")
@@ -59,7 +59,7 @@ else:
         permission_revoke(viewer, user, kind, action, key)
 
 
-    def check_permission(viewer, keys):
+    def check_permission(viewer, keys, **ignored):
         log.debug(keys)
         if "thing" in keys:
             key = build_thing_key(keys["kind"], keys["thing"])
@@ -83,18 +83,18 @@ else:
         tag_remove(viewer, ndb.Key('Thing', thing), tag)
 
 
-    def get_tags(viewer, thing):
+    def get_tags(viewer, thing, **ignored):
         return tag_list(viewer, ndb.Key('Thing', thing))
 
     """
     REMARK STUBS
     """
 
-    def remark(viewer, thing):
+    def remark(viewer, thing, **ignored):
         remark_create(viewer, ndb.Key('Thing', thing), "This is a dummy remark")
 
 
-    def get_remarks(viewer, thing):
+    def get_remarks(viewer, thing, **ignored):
         return remark_list(viewer, ndb.Key('Thing', thing))
 
     """
