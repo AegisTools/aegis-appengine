@@ -25,6 +25,10 @@ libraries:
   version: latest
 
 
+builtins:
+- remote_api: on
+
+
 skip_files:
 - ^(.*/)?#.*#$
 - ^(.*/)?.*~$
