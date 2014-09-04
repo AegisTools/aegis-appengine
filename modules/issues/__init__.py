@@ -13,7 +13,7 @@ types = { "issue"        : issue_load,
 
 
 actions = { None         : { "POST"   : { "method"   : issue_http_post,
-                                          "redirect" : "/issue/{id}" } },
+                                          "redirect" : "/issues/%(id)s" } },
             "{issue_id}" : { "PUT"    : { "method"   : issue_http_put },
                              "POST"   : { "method"   : issue_http_post } } }
 

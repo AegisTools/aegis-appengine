@@ -35,16 +35,16 @@ def issue_http_put(actor, issue_id, **kwargs):
     issue = key.get()
     if issue:
         if permission_check(actor, "issue", "update") or permission_is_root(actor):
-            issue_update(actor, issue=issue, **kwargs)
+            return issue_update(actor, issue=issue, **kwargs)
         else:
             raise NotAllowedError()
     else:
-        issue_http_post(actor, key=key, issue_id=issue_id, **kwargs)
+        return issue_http_post(actor, key=key, issue_id=issue_id, **kwargs)
 
 
 def issue_http_post(actor, **kwargs):
     if permission_check(actor, "issue", "create") or permission_is_root(actor):
-        issue_create(actor, **kwargs)
+        return issue_create(actor, **kwargs)
     else:
         raise NotAllowedError()
 

@@ -111,8 +111,11 @@ class MainPage(webapp2.RequestHandler):
         if "_method_" in self.request.POST:
             method = self.request.POST["_method_"]
 
+        redirect = None
         if method != "GET":
-            path = self.action(method, request) or path
+            redirect = self.action(method, request)
+            if redirect:
+                return self.redirect(redirect)
 
         self.render(request, path.strip("/"))
 
@@ -143,15 +146,24 @@ class MainPage(webapp2.RequestHandler):
             for pattern in module.actions:
                 if pattern and method in module.actions[pattern]:
                     action = module.actions[pattern][method]
-                    impl, keys = interpret_pattern(path_segments, pattern, action)
-                    if impl:
-                        args = dict(keys.items() + data.items())
-                        log.debug("Performing action: %s(%s)" % (impl, args))
-                        return impl["method"](request.user, **args)
+                    match = interpret_pattern(path_segments, pattern)
+                    if match:
+                        keys = match[1]
+                        break
+            else:
+                if None in module.actions and method in module.actions[None]:
+                    action = module.actions[None][method]
+                    keys = {}
+                else:
+                    raise Exception("action not found")
 
-            if None in module.actions and method in module.actions[None]:
-                log.debug("Performing action: %s(%s)" % (module.actions[None][method], data))
-                return module.actions[None][method]["method"](request.user, **data)
+            args = dict(keys.items() + data.items())
+            log.debug("Performing action: %s(%s)" % (action, args))
+            result = action["method"](request.user, **args)
+            if "redirect" in action:
+                return action["redirect"] % result
+            else:
+                return None
 
         raise Exception("action not found")
 
@@ -214,8 +226,9 @@ class MainPage(webapp2.RequestHandler):
 
             if not template and hasattr(module, "templates"):
                for template_pattern in module.templates:
-                    path, keys = interpret_pattern(path_segments, template_pattern, module.templates[template_pattern])
-                    if path:
+                    match = interpret_pattern(path_segments, template_pattern, module.templates[template_pattern])
+                    if match:
+                        path, keys = match
                         if path == "": path = "_index_"
                         template = load_template("%s/%s.%s" % (base_path, path, format))
                         if template:
@@ -243,7 +256,7 @@ class MainPage(webapp2.RequestHandler):
             return None, None
 
 
-def interpret_pattern(segments, pattern, template):
+def interpret_pattern(segments, pattern, template=None):
     log.debug("Checking template '%s' against '%s'" % (pattern, "/".join(segments)))
     if pattern == None:
         pattern_pieces = []
@@ -260,17 +273,17 @@ def interpret_pattern(segments, pattern, template):
             return (template or "/".join(path)), keys
         elif len(segments) <= i:
             # Pattern doesn't match
-            return None, None
+            return None
         elif key.startswith("{") and key.endswith("}"):
             last_key = key[1:-1]
             keys[last_key] = segments[i]
         elif key == segments[i]:
             path.append(key)
         else:
-            return None, None
+            return None
 
     if len(segments) != len(pattern_pieces):
-        return None, None
+        return None
 
     return (template or "/".join(path)), keys
 
