@@ -98,7 +98,10 @@ class MainPage(webapp2.RequestHandler):
         request = RequestData()
         request.user = users.get_current_user()
         request.known_loaders = known_loaders
-        request.timezoneoffset = int(self.request.cookies.get("timezoneoffset"))
+        if "timezoneoffset" in self.request.cookies:
+            request.timezoneoffset = int(self.request.cookies.get("timezoneoffset"))
+        else:
+            request.timezoneoffset = 0
 
         if not request.user:
             return self.redirect(users.create_login_url(self.request.uri))
