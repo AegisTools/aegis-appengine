@@ -177,22 +177,26 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
 
     if send_mail:
         message_id = "<issue-%s@%s>" % (issue.key.id(), app_identity.get_application_id())
+        url = "/issues/%s" % issue.key.id()
+        text = "%s\n\n%s\n\n%s" % (header, body, url)
+        html = "<div style='font-size: 0.8em'>%s</div><div>%s</div><div>%s</div>" % \
+                    (lib.markdown.markdown(header), lib.markdown.markdown(body), url)
         if len(cc_recipients) > 0:
             mail.send_mail(sender=actor.email(),
                            to=[user.id() for user in to_recipients],
                            cc=[user.id() for user in cc_recipients],
                            reply_to=actor.email(),
                            subject="[" + str(issue.key.id()) + "] " + issue.summary,
-                           body=header + "\n\n" + body,
-                           html=lib.markdown.markdown(header) + "<br><br>" + lib.markdown.markdown(body),
+                           body=text,
+                           html=html,
                            headers={"In-Reply-To": message_id, "References":  message_id })
         else:
             mail.send_mail(sender=actor.email(),
                            to=[user.id() for user in to_recipients],
                            reply_to=actor.email(),
                            subject="[" + str(issue.key.id()) + "] " + issue.summary,
-                           body=header + "\n\n" + body,
-                           html=lib.markdown.markdown(header) + "<br><br>" + lib.markdown.markdown(body),
+                           body=text,
+                           html=html,
                            headers={"In-Reply-To": message_id, "References":  message_id })
         log.debug("Email sent to %s" % (to_recipients | cc_recipients))
 
