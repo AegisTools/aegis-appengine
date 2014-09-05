@@ -1,3 +1,7 @@
+{% macro xsrf_input() %}
+  <input type="hidden" name="_xsrf_" value="{{ xsrf }}"></input>
+{% endmacro %}
+
 <!DOCTYPE html>
 <html>
   <head>

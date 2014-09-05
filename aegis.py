@@ -4,7 +4,11 @@ import pkgutil
 import logging
 import json
 import datetime
+import string
+import random
+
 import lib.markdown
+
 
 from google.appengine.api import users
 
@@ -12,6 +16,7 @@ import jinja2
 import webapp2
 
 import modules
+from modules.common.errors import *
 
 log = logging.getLogger("engine")
 
@@ -111,17 +116,45 @@ class MainPage(webapp2.RequestHandler):
         if "_method_" in self.request.POST:
             method = self.request.POST["_method_"]
 
-        redirect = None
         if method != "GET":
             redirect = self.action(method, request)
+            xsrf = self.refresh_xsrf_cookie(True)
             if redirect:
                 return self.redirect(redirect)
+        else:
+            xsrf = self.refresh_xsrf_cookie()
 
-        self.render(request, path.strip("/"))
+        self.render(request, path.strip("/"), xsrf)
+
+
+    def validate_xsrf_cookie(self):
+        if not "_xsrf_" in self.request.POST:
+            raise NotAllowedError()
+
+        if not "xsrf" in self.request.cookies:
+            raise NotAllowedError()
+
+        if self.request.cookies["xsrf"] != self.request.POST["_xsrf_"]:
+            raise NotAllowedError()
+
+        log.debug("XSRF Token Matched: %s" % self.request.POST["_xsrf_"])
+
+
+    def refresh_xsrf_cookie(self, force_replace=False):
+        if force_replace or not "xsrf" in self.request.cookies:
+            xsrf = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(32))
+            log.debug("New XSRF Token: %s" % xsrf)
+        else:
+            xsrf = self.request.cookies["xsrf"]
+            log.debug("XSRF Token: %s" % xsrf)
+
+        expires = datetime.datetime.now() + datetime.timedelta(hours=3)
+        self.response.set_cookie("xsrf", xsrf, expires=expires, path="/", httponly=True, overwrite=True)
+        return xsrf
 
 
     def action(self, method, request):
-        format = self.get_data_type("Content-Type")
+        format = self.get_data_type("Content_Type")
 
         log.info("%s %s : %s" % (method, self.request.path.strip("/"), format))
 
@@ -136,6 +169,7 @@ class MainPage(webapp2.RequestHandler):
                 log.debug(self.request.body)
                 data = json.loads(self.request.body)
         elif format == "html":
+            self.validate_xsrf_cookie()
             data = self.request.POST
         else:
             data = {}
@@ -172,6 +206,7 @@ class MainPage(webapp2.RequestHandler):
         type = "html"
         if header in self.request.headers and self.request.headers[header].startswith("application/"):
             type = self.request.headers[header][len("application/"):]
+
         if "format" in self.request.GET:
             type = self.request.GET["format"]
 
@@ -182,7 +217,7 @@ class MainPage(webapp2.RequestHandler):
 
 
 
-    def render(self, request, path):
+    def render(self, request, path, xsrf):
         format = self.get_data_type("Accept")
         template, keys = self.find_template(format, path)
         if format == "html" and not template:
@@ -195,7 +230,8 @@ class MainPage(webapp2.RequestHandler):
                    'user'         : request.user,
                    'sign_out_url' : users.create_logout_url(path),
                    'load'         : request.load,
-                   'local_time'   : request.local_time }
+                   'local_time'   : request.local_time,
+                   'xsrf'         : xsrf }
             log.debug("Rendering template %s: %s", template, obj)
             content = template.render(obj)
 
