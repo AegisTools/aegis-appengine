@@ -129,23 +129,17 @@ class MainPage(webapp2.RequestHandler):
     
             self.render(request, path.strip("/"), xsrf)
 
-        except NotAllowedError as e:
-            log.exception(request_code)
-            e.request_code = request_code
-            self.response.set_status(403)
-            self.render(request, "/errors/403", None, e)
-
-        except NotFoundError as e:
-            log.exception(request_code)
-            e.request_code = request_code
-            self.response.set_status(404)
-            self.render(request, "/errors/404", None, e)
-
         except Exception as e:
             log.exception(request_code)
+
+            if not hasattr(e, "code"):
+                e.code = 500
             e.request_code = request_code
-            self.response.set_status(500)
-            self.render(request, "/errors/500", None, e)
+            e.url = self.request.path
+            e.stack = traceback.format_exc()
+
+            self.response.set_status(e.code)
+            self.render(request, "errors/%s" % e.code, self.refresh_xsrf_cookie(), e)
 
     def validate_xsrf_cookie(self):
         if not "_xsrf_" in self.request.POST:
@@ -215,7 +209,10 @@ class MainPage(webapp2.RequestHandler):
             log.debug("Performing action: %s(%s)" % (action, args))
             result = action["method"](request.user, **args)
             if "redirect" in action:
-                return action["redirect"] % result
+                try:
+                    return action["redirect"] % result
+                except:
+                    return action["redirect"]
             else:
                 return None
 

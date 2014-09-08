@@ -1,7 +1,10 @@
 class NotAllowedError(Exception):
-    pass
+    def __init__(self):
+        self.code = 405
 
 
 class NotFoundError(Exception):
-    pass
+    def __init__(self):
+        self.code = 404
+
 

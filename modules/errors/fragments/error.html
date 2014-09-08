@@ -1,0 +1,28 @@
+{% extends "templates/fragments/page.html" %}
+
+{% block module %}
+
+<div class="grid">
+  <form action="/errors/report" method="POST">
+    {{ xsrf_input() }}
+    <div class="notice error">
+      <h5>{% block error_title %}500 - Internal Error{% endblock %}</h5>
+      {% block error_body %}
+        There was an error on this web page.  If you were trying to create or update something, it may
+        have been saved before this error.  Please double check before you try again.
+      {% endblock %}
+      <br><br>To escalate, please use the form below.<br><br>
+    </div>
+
+    <input type="hidden" name="url" value="{{ error.url|e }}"></input>
+    <input type="hidden" name="request_code" value="{{ error.request_code }}"></input>
+    <input type="hidden" name="stack" value="{{ error.stack|e }}"></input>
+    <input type="hidden" name="code" value="{{ error.code }}"></input>
+
+    <div class="col_12"><textarea name="description" placeholder="Please describe your problem..." rows="6"></textarea></div>
+    <div class="col_12 right"><button class="large blue">Submit</button></div>
+  </form>
+</div>
+
+{% endblock %}
+

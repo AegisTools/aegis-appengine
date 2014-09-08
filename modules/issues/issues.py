@@ -318,13 +318,13 @@ def issue_search(viewer, simple=None, query=None, complex=None):
             else:
                 dataset = Issue.query().filter(privacy_query)
 
-        if first_sort:
-            dataset = dataset.order(first_sort)
+        # if first_sort:
+        #     dataset = dataset.order(first_sort)
 
-        if user_sort:
-            dataset = dataset.order(user_sort)
+        # if user_sort:
+        #     dataset = dataset.order(user_sort)
 
-        dataset = dataset.order(Issue.due_date, Issue.priority, -Issue.created)
+        # dataset = dataset.order(Issue.due_date, Issue.priority, -Issue.created)
 
         for issue in dataset:
             issue.history = []
