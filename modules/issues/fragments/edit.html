@@ -43,18 +43,27 @@
                   <div><input type="radio" name="status" value="assigned"><span>Assigned</span></div>
                   <div><input type="radio" name="status" value="deferred"><span>Deferred</span></div>
                   <div><input type="radio" name="status" value="rejected"><span>Rejected</span></div>
+                  {% if user.email() == issue.verifier_email %}
+                    <div><input type="radio" name="status" value="closed"><span>Closed</span></div>
+                  {% endif %}
                 {% elif issue.status == "assigned" %}
                   <div><input type="radio" name="status" value="assigned" checked><span>Assigned</span></div>
                   <div><input type="radio" name="status" value="working"><span>Working</span></div>
                   <div><input type="radio" name="status" value="fixed"><span>Fixed</span></div>
                   <div><input type="radio" name="status" value="deferred"><span>Deferred</span></div>
                   <div><input type="radio" name="status" value="rejected"><span>Rejected</span></div>
+                  {% if user.email() == issue.verifier_email %}
+                    <div><input type="radio" name="status" value="closed"><span>Closed</span></div>
+                  {% endif %}
                 {% elif issue.status == "working" %}
                   <div><input type="radio" name="status" value="assigned"><span>Assigned</span></div>
                   <div><input type="radio" name="status" value="working" checked><span>Working</span></div>
                   <div><input type="radio" name="status" value="fixed"><span>Fixed</span></div>
                   <div><input type="radio" name="status" value="deferred"><span>Deferred</span></div>
                   <div><input type="radio" name="status" value="rejected"><span>Rejected</span></div>
+                  {% if user.email() == issue.verifier_email %}
+                    <div><input type="radio" name="status" value="closed"><span>Closed</span></div>
+                  {% endif %}
                 {% elif issue.status == "fixed" %}
                   <div><input type="radio" name="status" value="triage"><span>Triage</span></div>
                   <div><input type="radio" name="status" value="assigned"><span>Assigned</span></div>
@@ -65,6 +74,9 @@
                   <div><input type="radio" name="status" value="assigned"><span>Assigned</span></div>
                   <div><input type="radio" name="status" value="deferred" checked><span>Deferred</span></div>
                   <div><input type="radio" name="status" value="rejected"><span>Rejected</span></div>
+                  {% if user.email() == issue.verifier_email %}
+                    <div><input type="radio" name="status" value="closed"><span>Closed</span></div>
+                  {% endif %}
                 {% elif issue.status == "rejected" %}
                   <div><input type="radio" name="status" value="triage"><span>Triage</span></div>
                   <div><input type="radio" name="status" value="rejected" checked><span>Rejected</span></div>
@@ -73,7 +85,8 @@
                   <div><span>{{ issue.status|capitalize }}</span></div>
                 {% endif %}
               {% else %}
-                Triage
+                <div><input type="radio" name="status" value="triage" checked><span>Triage</span></div>
+                <div><input type="radio" name="status" value="assigned"><span>Assigned</span></div>
               {% endif %}
             </td></tr>
             <tr><td nowrap class="property">Priority:</td><td class="value">

@@ -75,7 +75,7 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
     is_root = permission_is_root(actor)
 
     if not is_root and issue.privacy != "public" and \
-            user_key(actor) not in issue.cc | [ issue.assignee, issue.reporter, issue.verifier ]:
+            user_key(actor) not in issue.cc + [ issue.assignee, issue.reporter, issue.verifier ]:
         raise NotAllowedError()
 
     to_recipients = set([])
