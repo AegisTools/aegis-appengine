@@ -10,11 +10,6 @@ def error_report(viewer, url=None, request_code=None, description=None, stack=No
     mail.send_mail_to_admins(viewer.email(), "Aegis Error - %s" % url, body)
 
 
-templates = { "{issue_id}"      : "view",
-              "{issue_id}/edit" : "edit",
-              "edit/{issue_id}" : "edit" }
-
-
 actions = { "report"     : { "POST"   : { "method"   : error_report,
                                           "redirect" : "/errors/reported" } } }
 

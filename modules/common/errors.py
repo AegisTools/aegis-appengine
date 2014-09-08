@@ -1,6 +1,6 @@
 class NotAllowedError(Exception):
     def __init__(self):
-        self.code = 405
+        self.code = 403
 
 
 class NotFoundError(Exception):
