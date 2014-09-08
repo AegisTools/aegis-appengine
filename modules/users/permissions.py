@@ -62,7 +62,7 @@ def permission_grant(viewer, user, type, action, target=None):
         else:
             log.warn("Permission already granted")
     else:
-        log.debug("Not allowed")
+        raise NotAllowedError()
 
 
 def permission_revoke(viewer, user, type, action, target=None):

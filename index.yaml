@@ -17,6 +17,11 @@ indexes:
 
 - kind: Issue
   properties:
+  - name: severity
+  - name: priority
+
+- kind: Issue
+  properties:
   - name: status
   - name: priority
 
