@@ -280,7 +280,7 @@ def issue_search(viewer, simple=None, query=None, complex=None):
     if permission_check(viewer, "issue", "read") or permission_is_root(viewer):
         if not complex:
             if query:
-                complex = query_to_complex_search(query)
+                complex, user_sort = query_to_complex_search(query)
             else:
                 # Status is open and assigned to me, or closing and verified by me.
                 complex = { "boolean" : "or",
@@ -300,7 +300,7 @@ def issue_search(viewer, simple=None, query=None, complex=None):
                                                             "value"    : [ viewer ] } ] } ] }
 
         result = []
-        ndb_query = complex_search_to_ndb_query(complex)
+        ndb_query, first_sort = complex_search_to_ndb_query(complex)
         if permission_is_root(viewer):
             if ndb_query:
                 dataset = Issue.query().filter(ndb_query)
@@ -317,6 +317,14 @@ def issue_search(viewer, simple=None, query=None, complex=None):
             else:
                 dataset = Issue.query().filter(privacy_query)
 
+        if first_sort:
+            dataset = dataset.order(first_sort)
+
+        if user_sort:
+            dataset = dataset.order(user_sort)
+
+        dataset = dataset.order(Issue.due_date, Issue.priority, -Issue.created)
+
         for issue in dataset:
             issue.history = []
             result.append(to_model(viewer, issue))
@@ -332,19 +340,25 @@ def query_to_complex_search(query):
                           "operator" : query["o" + str(i)],
                           "value"    : re.split("[\\s,;]+", query["v" + str(i)].strip()) })
 
-    return { "boolean" : query["b"], "sub" : segments }
+    sort = None
+    if "s" in query:
+        sort = getattr(Issue, query["s"])
+
+    return { "boolean" : query["b"], "sub" : segments }, sort
 
 
 def complex_search_to_ndb_query(query):
     if not query:
-        return None
+        return None, None
 
+    sort_order = None
     phrases = []
     for phrase in query["sub"]:
         if "boolean" in phrase:
-            new_phrase = complex_search_to_ndb_query(phrase)
+            new_phrase, new_order = complex_search_to_ndb_query(phrase)
             if new_phrase:
                 phrases.append(new_phrase)
+                sort_order = sort_order or new_order
         elif phrase["field"] == "text":
             pass
         else:
@@ -374,24 +388,28 @@ def complex_search_to_ndb_query(query):
                     phrases.append(ndb.AND(*subphrases))
 
             elif phrase["operator"] == ">":
+                sort_order = field
                 for value in values:
                     subphrases.append(field > value)
                 if len(subphrases) > 0:
                     phrases.append(ndb.AND(*subphrases))
 
             elif phrase["operator"] == ">=":
+                sort_order = field
                 for value in values:
                     subphrases.append(field >= value)
                 if len(subphrases) > 0:
                     phrases.append(ndb.AND(*subphrases))
 
             elif phrase["operator"] == "<":
+                sort_order = field
                 for value in values:
                     subphrases.append(field < value)
                 if len(subphrases) > 0:
                     phrases.append(ndb.AND(*subphrases))
 
             elif phrase["operator"] == "<=":
+                sort_order = field
                 for value in values:
                     subphrases.append(field <= value)
                 if len(subphrases) > 0:
@@ -399,11 +417,11 @@ def complex_search_to_ndb_query(query):
 
     if len(phrases) > 0:
         if query["boolean"] == "or":
-            return ndb.OR(*phrases)
+            return ndb.OR(*phrases), sort_order
         else:
-            return ndb.AND(*phrases)
+            return ndb.AND(*phrases), sort_order
     else:
-        return None
+        return None, None
 
 
 def to_model(viewer, issue, get_related_issues=True):

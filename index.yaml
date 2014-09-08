@@ -12,6 +12,36 @@ indexes:
 
 - kind: Issue
   properties:
+  - name: due_date
+  - name: priority
+  - name: created
+    direction: desc
+
+- kind: Issue
+  properties:
+  - name: priority
+  - name: assignee
+  - name: due_date
+  - name: created
+    direction: desc
+
+- kind: Issue
+  properties:
+  - name: priority
+  - name: due_date
+  - name: created
+    direction: desc
+
+- kind: Issue
+  properties:
+  - name: priority
+  - name: status
+  - name: due_date
+  - name: created
+    direction: desc
+
+- kind: Issue
+  properties:
   - name: reporter
   - name: status
 
@@ -19,6 +49,14 @@ indexes:
   properties:
   - name: severity
   - name: priority
+
+- kind: Issue
+  properties:
+  - name: status
+  - name: due_date
+  - name: priority
+  - name: created
+    direction: desc
 
 - kind: Issue
   properties:
