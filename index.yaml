@@ -56,6 +56,15 @@ indexes:
 
 - kind: Issue
   properties:
+  - name: reporter
+  - name: status
+  - name: due_date
+  - name: priority
+  - name: created
+    direction: desc
+
+- kind: Issue
+  properties:
   - name: severity
   - name: priority
 

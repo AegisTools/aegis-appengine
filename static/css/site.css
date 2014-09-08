@@ -44,7 +44,7 @@ ul.button-bar li.selected a {
     margin:      10px;
 }
 
-.issues textarea {
+textarea {
     width: 100%;
     height: auto;
 }

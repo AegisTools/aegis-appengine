@@ -5,7 +5,7 @@
                    'operator' : '==',
                    'value'    : [ user ] },
                  { 'field'    : 'status',
-                   'operator' : '!=',
-                   'value'    : [ 'closed' ] } ] }) %}
+                   'operator' : 'in',
+                   'value'    : [ 'triage', 'assigned', 'working', 'fixed', 'deferred', 'rejected' ] } ] }) %}
 {% extends "modules/issues/fragments/list.html" %}
 
