@@ -6,6 +6,7 @@ import json
 import datetime
 import string
 import random
+import traceback
 
 import lib.markdown
 
@@ -42,8 +43,8 @@ for importer, modname, ispkg in pkgutil.iter_modules(modules.__path__):
 
     if hasattr(module, "types"):
         log.debug("    Found types: %s" % module.types)
-        for type in module.types:
-            known_loaders[modname + "/" + type] = module.types[type]
+        for loader_type in module.types:
+            known_loaders[modname + "/" + loader_type] = module.types[loader_type]
     else:
         log.debug("    No types")
 
@@ -100,32 +101,51 @@ class MainPage(webapp2.RequestHandler):
 
 
     def execute(self):
-        request = RequestData()
-        request.user = users.get_current_user()
-        request.known_loaders = known_loaders
-        if "timezoneoffset" in self.request.cookies:
-            request.timezoneoffset = int(self.request.cookies.get("timezoneoffset"))
-        else:
-            request.timezoneoffset = 0
+        request_code = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(32))
+        try:
+            request = RequestData()
+            request.user = users.get_current_user()
+            request.known_loaders = known_loaders
+            if "timezoneoffset" in self.request.cookies:
+                request.timezoneoffset = int(self.request.cookies.get("timezoneoffset"))
+            else:
+                request.timezoneoffset = 0
+    
+            if not request.user:
+                return self.redirect(users.create_login_url(self.request.uri))
+    
+            path = self.request.path
+            method = self.request.method
+            if "_method_" in self.request.POST:
+                method = self.request.POST["_method_"]
+    
+            if method != "GET":
+                redirect = self.action(method, request)
+                xsrf = self.refresh_xsrf_cookie(True)
+                if redirect:
+                    return self.redirect(redirect)
+            else:
+                xsrf = self.refresh_xsrf_cookie()
+    
+            self.render(request, path.strip("/"), xsrf)
 
-        if not request.user:
-            return self.redirect(users.create_login_url(self.request.uri))
+        except NotAllowedError as e:
+            log.exception(request_code)
+            e.request_code = request_code
+            self.response.set_status(403)
+            self.render(request, "/errors/403", None, e)
 
-        path = self.request.path
-        method = self.request.method
-        if "_method_" in self.request.POST:
-            method = self.request.POST["_method_"]
+        except NotFoundError as e:
+            log.exception(request_code)
+            e.request_code = request_code
+            self.response.set_status(404)
+            self.render(request, "/errors/404", None, e)
 
-        if method != "GET":
-            redirect = self.action(method, request)
-            xsrf = self.refresh_xsrf_cookie(True)
-            if redirect:
-                return self.redirect(redirect)
-        else:
-            xsrf = self.refresh_xsrf_cookie()
-
-        self.render(request, path.strip("/"), xsrf)
-
+        except Exception as e:
+            log.exception(request_code)
+            e.request_code = request_code
+            self.response.set_status(500)
+            self.render(request, "/errors/500", None, e)
 
     def validate_xsrf_cookie(self):
         if not "_xsrf_" in self.request.POST:
@@ -217,7 +237,7 @@ class MainPage(webapp2.RequestHandler):
 
 
 
-    def render(self, request, path, xsrf):
+    def render(self, request, path, xsrf, error=None):
         format = self.get_data_type("Accept")
         template, keys = self.find_template(format, path)
         if format == "html" and not template:
@@ -231,7 +251,8 @@ class MainPage(webapp2.RequestHandler):
                    'sign_out_url' : users.create_logout_url(path),
                    'load'         : request.load,
                    'local_time'   : request.local_time,
-                   'xsrf'         : xsrf }
+                   'xsrf'         : xsrf,
+                   'error'        : error }
             log.debug("Rendering template %s: %s", template, obj)
             content = template.render(obj)
 
@@ -241,6 +262,7 @@ class MainPage(webapp2.RequestHandler):
             self.response.write(content)
         else:
             log.error("Template not found")
+            raise NotFoundError()
 
 
     def find_template(self, format, original_path):

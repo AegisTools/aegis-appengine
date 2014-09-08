@@ -12,7 +12,6 @@ from google.appengine.api import mail
 from google.appengine.api import app_identity
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from common.errors import *
 from common.arguments import *
 from users.permissions import permission_check, permission_is_root
 from users.users import user_key, user_load, User
@@ -20,6 +19,7 @@ from projects.projects import Project
 from remarks.remarks import remark_create, remark_list
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+from modules.common.errors import *
 import lib.markdown
 import lib.parsedatetime
 
@@ -278,6 +278,7 @@ def issue_list(viewer):
 
 def issue_search(viewer, simple=None, query=None, complex=None):
     if permission_check(viewer, "issue", "read") or permission_is_root(viewer):
+        user_sort = None
         if not complex:
             if query:
                 complex, user_sort = query_to_complex_search(query)

@@ -12,6 +12,15 @@ indexes:
 
 - kind: Issue
   properties:
+  - name: assignee
+  - name: status
+  - name: due_date
+  - name: priority
+  - name: created
+    direction: desc
+
+- kind: Issue
+  properties:
   - name: due_date
   - name: priority
   - name: created
@@ -62,6 +71,15 @@ indexes:
   properties:
   - name: status
   - name: priority
+
+- kind: Issue
+  properties:
+  - name: status
+  - name: verifier
+  - name: due_date
+  - name: priority
+  - name: created
+    direction: desc
 
 - kind: Remark
   ancestor: yes
