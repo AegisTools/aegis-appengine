@@ -61,6 +61,7 @@ class RequestData:
     def __init__(self):
         self.user = None
         self.cache = {}
+        self.redirection = None
 
     def load(self, type, *args, **kwargs):
         if type not in known_loaders:
@@ -83,6 +84,9 @@ class RequestData:
 
     def local_time(self, target):
         return target - datetime.timedelta(minutes=self.timezoneoffset)
+
+    def redirect(self, url):
+        self.redirection = url
 
 
 class MainPage(webapp2.RequestHandler):
@@ -248,10 +252,14 @@ class MainPage(webapp2.RequestHandler):
                    'sign_out_url' : users.create_logout_url(path),
                    'load'         : request.load,
                    'local_time'   : request.local_time,
+                   'redirect'     : request.redirect,
                    'xsrf'         : xsrf,
                    'error'        : error }
             log.debug("Rendering template %s: %s", template, obj)
             content = template.render(obj)
+
+            if request.redirection:
+                return self.redirect(request.redirection)
 
             if format == "md":
                 content = format_markdown(content)
@@ -276,6 +284,8 @@ class MainPage(webapp2.RequestHandler):
 
             if path_segments:
                 template = load_template("%s/%s.%s" % (base_path, "/".join(path_segments), format))
+                if not template:
+                    template = load_template("%s/%s/_index_.%s" % (base_path, "/".join(path_segments), format))
             else:
                 template = load_template("%s/_index_.%s" % (base_path, format))
 
