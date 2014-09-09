@@ -20,6 +20,8 @@ from remarks.remarks import remark_create, remark_list
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from modules.common.errors import *
+from system_settings import get_system_settings
+
 import lib.markdown
 import lib.parsedatetime
 
@@ -205,8 +207,13 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
     issue.history = [ remark_create(actor, issue.key, body.strip(), header.strip()) ]
 
     if send_mail:
+        settings = get_system_settings()
+        if "host" in settings and settings["host"] and settings["host"] != "":
+            host = settings["host"]
+        else:
+            host = "%s.appspot.com" % app_identity.get_application_id()
         message_id = "<issue-%s@%s>" % (issue.key.id(), app_identity.get_application_id())
-        url = "http://%s.appspot.com/issues/%s" % (app_identity.get_application_id(), issue.key.id())
+        url = "http://%s/issues/%s" % (host, issue.key.id())
         text = "%s\n\n%s\n\n%s" % (header, body, url)
         html = "<div style='font-size: 0.8em'>%s</div><div>%s</div><div>%s</div>" % \
                     (lib.markdown.markdown(header), lib.markdown.markdown(body), url)
@@ -228,6 +235,7 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
                            html=html,
                            headers={"In-Reply-To": message_id, "References":  message_id })
         log.debug("Email sent to %s" % (to_recipients | cc_recipients))
+        log.debug(text)
 
     return to_model(actor, issue)
 
