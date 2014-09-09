@@ -25,6 +25,11 @@
     <div><input name="oauth2_google_client_secret" id="oauth2_google_client_secret" type="text" class="full-width setting-value"
                 placeholder="[client-secret]" value="{{ settings.oauth2_google_client_secret }}"></input></div>
     <br>
+    <div><label for="oauth2_google_url">Redirect URL:</div>
+    <div><input id="oauth2_google_url" type="text" class="full-width" disabled="disabled"
+                value="https://{{ settings.host }}/settings/oauth/token"></input>
+    </div>
+    <br>
     <div><label for="oauth2_google_request_token">Request Token:</div>
     <div style="float:right;margin:2px 0 2px 20px">
       <a class="button small {% if can_get_token %}green{% else %}grey disabled{% endif %}" id="new_token"
