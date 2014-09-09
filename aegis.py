@@ -118,20 +118,23 @@ class MainPage(webapp2.RequestHandler):
             if not request.user:
                 return self.redirect(users.create_login_url(self.request.uri))
     
-            path = self.request.path
+            path = self.request.path.strip("/")
+            if path.startswith("cron/"):
+                path = path[len("cron/"):]
+
             method = self.request.method
             if "_method_" in self.request.POST:
                 method = self.request.POST["_method_"]
     
             if method != "GET":
-                redirect = self.action(method, request)
+                redirect = self.action(method, path, request)
                 xsrf = self.refresh_xsrf_cookie(True)
                 if redirect:
                     return self.redirect(redirect)
             else:
                 xsrf = self.refresh_xsrf_cookie()
     
-            self.render(request, path.strip("/"), xsrf)
+            self.render(request, path, xsrf)
 
         except Exception as e:
             log.exception(request_code)
@@ -171,12 +174,12 @@ class MainPage(webapp2.RequestHandler):
         return xsrf
 
 
-    def action(self, method, request):
+    def action(self, method, path, request):
         format = self.get_data_type("Content_Type")
 
-        log.info("%s %s : %s" % (method, self.request.path.strip("/"), format))
+        log.info("%s %s : %s" % (method, path, format))
 
-        path_segments = self.request.path.strip("/").split("/")
+        path_segments = path.split("/")
         module_name, path_segments = path_segments[0], path_segments[1:]
         module = known_modules[module_name]
 
