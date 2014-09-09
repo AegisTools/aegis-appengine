@@ -25,6 +25,11 @@ code {
     border: 0;
 }
 
+a.disabled {
+    pointer-events: none;
+    cursor: default;
+}
+
 ul.button-bar li.selected a {
     text-shadow: none;
     color: #333;
@@ -49,7 +54,7 @@ textarea {
     height: auto;
 }
 
-.issues .full-width {
+.full-width {
     width: 100%;
 }
 
@@ -99,6 +104,10 @@ textarea {
     width: 70px;
     padding: 0 10px 7px 10px;
     align: right;
+}
+
+.settings input {
+    font-size: 0.9em;
 }
 
 .clickable-row {

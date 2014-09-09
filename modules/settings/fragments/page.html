@@ -1,0 +1,17 @@
+{% set section_site = "settings" %}
+{% extends "templates/fragments/page.html" %}
+
+{% block content %}
+  <div class="col_3">
+    <ul class="menu vertical">
+      <li {% if section_settings == "site" %}class="current"{% endif %}><a href="/settings/site">Site</a></li>
+      <li {% if section_settings == "oauth" %}class="current"{% endif %}><a href="/settings/oauth">Google OAuth 2</a></li>
+      <li {% if section_settings == "users" %}class="current"{% endif %}><a href="/settings/users">Users</a></li>
+    </ul>
+  </div>
+
+  <div class="col_9 settings">
+    {% block settings %}
+    {% endblock %}
+  </div>
+{% endblock %}

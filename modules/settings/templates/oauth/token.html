@@ -1,0 +1,2 @@
+{% set junk = load("settings/oauth_token_exchange", query["code"]) %}
+{% set junk = redirect("/settings/oauth") %}

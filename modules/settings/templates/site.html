@@ -1,0 +1,28 @@
+{% set section_settings = "site" %}
+{% extends "modules/settings/fragments/page.html" %}
+
+{% block settings %}
+  {% set settings = load("settings/settings") %}
+
+  <h5>Site Settings</h5>
+
+  <div>
+    These settings control general aspects of the site.<br><br>
+  </div>
+
+  <form method="POST" action="/settings/site">
+    {{ xsrf_input() }}
+    <div><label for="host">Host:</div>
+    <div><input name="host" id="host" type="text" class="full-width setting-value"
+                placeholder="www.example.com" value="{{ settings.host }}"></input></div>
+    <div class="right"><br><button id="submit" disabled="disabled" class="large grey">Update</button></div>
+  </form>
+
+  <script language="javascript">
+    $(".setting-value").on('change keyup paste', function() {
+      $("#submit").removeAttr("disabled").addClass("blue").removeClass("grey");
+    });
+  </script>
+
+{% endblock %}
+

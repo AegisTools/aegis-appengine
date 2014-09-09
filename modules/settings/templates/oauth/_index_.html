@@ -1,0 +1,51 @@
+{% set section_settings = "oauth" %}
+{% extends "modules/settings/fragments/page.html" %}
+
+{% block settings %}
+  {% set settings = load("settings/settings") %}
+  {% set can_get_token = settings.oauth2_google_client_id != "" and
+                         settings.oauth2_google_client_id != None and 
+                         settings.oauth2_google_client_secret != "" and
+                         settings.oauth2_google_client_secret != None %}
+
+  <h5>Google OAuth 2.0 Client Settings</h5>
+
+  <div>
+    OAuth 2.0 client credentials are used to communicate with Google servers.  These settings
+    are required to enable some site functionality, such as user and group sync.<br><br>
+  </div>
+
+  <form method="POST" action="/settings/oauth">
+    {{ xsrf_input() }}
+    <div><label for="oauth2_google_client_id">Client ID:</div>
+    <div><input name="oauth2_google_client_id" id="oauth2_google_client_id" type="text" class="full-width setting-value"
+                placeholder="[client-id].apps.googleusercontent.com" value="{{ settings.oauth2_google_client_id }}"></input></div>
+    <br>
+    <div><label for="oauth2_google_client_secret">Client Secret:</div>
+    <div><input name="oauth2_google_client_secret" id="oauth2_google_client_secret" type="text" class="full-width setting-value"
+                placeholder="[client-secret]" value="{{ settings.oauth2_google_client_secret }}"></input></div>
+    <br>
+    <div><label for="oauth2_google_request_token">Request Token:</div>
+    <div style="float:right;margin:2px 0 2px 20px">
+      <a class="button small {% if can_get_token %}green{% else %}grey disabled{% endif %}" id="new_token"
+            href=" https://accounts.google.com/o/oauth2/auth?redirect_uri=http%3A%2F%2F{{ settings.host }}%2Fsettings%2Foauth%2Ftoken&response_type=code&client_id={{ settings.oauth2_google_client_id }}&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fadmin.directory.user.readonly&approval_prompt=force&access_type=offline">New Token</a>
+    </div>
+    <div style="width:auto; overflow:hidden">
+      <input name="oauth2_google_request_token" id="oauth2_google_request_token" type="text" class="full-width"
+                disabled="disabled" value="{{ settings.oauth2_google_request_token }}"></input>
+    </div>
+    <div class="clear"></div>
+    <br>
+
+    <div class="right"><br><button class="large grey" id="submit" disabled="disabled">Update</button></div>
+  </form>
+
+  <script language="javascript">
+    $(".setting-value").on('change keyup paste', function() {
+      $("#new_token").addClass("disabled").addClass("grey").removeClass("green");
+      $("#submit").removeAttr("disabled").addClass("blue").removeClass("grey");
+      $("#oauth2_google_request_token").attr("value", "")
+    });
+  </script>
+{% endblock %}
+
