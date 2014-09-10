@@ -57,6 +57,7 @@ def get_access_token_header(settings=None):
 def refresh_users(actor, force=False, **ignored):
     settings = system_settings.get_system_settings()
     if not force and settings.get("directory_sync", "disabled") != "enabled":
+        log.debug("Directory action disabled")
         return
 
     if not "directory_domain" in settings:
@@ -100,6 +101,7 @@ def refresh_users(actor, force=False, **ignored):
 def refresh_groups(actor, force=False, **ignored):
     settings = system_settings.get_system_settings()
     if not force and settings.get("directory_sync", "disabled") != "enabled":
+        log.debug("Directory action disabled")
         return
 
     if not "directory_domain" in settings:
