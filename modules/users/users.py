@@ -48,6 +48,15 @@ def user_http_delete(actor, user_id, **ignored):
         raise NotAllowedError()
 
 
+def user_create_or_update(actor, key=None, user_id=None, **kwargs):
+    key = key or user_key(user_id)
+    user = key.get()
+    if user:
+        user_update(actor, user=user, **kwargs)
+    else:
+        user_create(actor, key=key, **kwargs)
+
+
 def user_create(actor, key=None, user_id=None, active=True, **kwargs):
     key = key or user_key(user_id)
     user = User(key=key)
@@ -114,26 +123,19 @@ def user_list(viewer):
 
 
 def user_alias_create(actor, key=None, user_id=None, alias_key=None, alias_id=None):
-    if permission_check(actor, "alias", "create") or permission_is_root(actor):
-        alias_key = alias_key or ndb.Key("UserAlias", alias_id)
-        key = key or user_key(user_id)
+    alias_key = alias_key or ndb.Key("UserAlias", alias_id)
+    key = key or user_key(user_id)
 
-        alias = UserAlias(key=alias_key)
-        alias.user = key
-        alias.put()
+    alias = UserAlias(key=alias_key)
+    alias.user = key
+    alias.put()
 
-        return { 'alias': alias_key.id(),
-                 'user':  key.id() }
-    else:
-        raise NotAllowedError()
+    return { 'alias': alias_key.id(),
+             'user':  key.id() }
 
 def user_alias_delete(actor, alias_key=None, alias_id=None):
-    if permission_check(actor, "alias", "delete") or permission_is_root(actor):
-        alias_key = alias_key or ndb.Key("UserAlias", alias_id)
-        alias_key.delete()
-    else:
-        raise NotAllowedError()
-    
+    alias_key = alias_key or ndb.Key("UserAlias", alias_id)
+    alias_key.delete()
 
 
 def to_model(user):
