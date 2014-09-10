@@ -31,6 +31,12 @@ def fetch(*args, **kwargs):
 
 def get_access_token_header(settings=None):
     settings = settings or system_settings.get_system_settings()
+    if not "oauth2_google_client_id" in settings:
+        raise Exception("OAuth2 Client ID not set")
+    if not "oauth2_google_client_secret" in settings:
+        raise Exception("OAuth2 Client Secret not set")
+    if not "oauth2_google_request_token" in settings:
+        raise Exception("OAuth2 Request Token not set")
 
     url = "https://accounts.google.com/o/oauth2/token"
     payload = urllib.urlencode({ "client_id":     settings["oauth2_google_client_id"],
@@ -49,10 +55,16 @@ def get_access_token_header(settings=None):
 
 
 def refresh_users(actor, **ignored):
+    settings = system_settings.get_system_settings()
+    if settings.get("directory_sync", "disabled") != "enabled":
+        return
+
+    if not "directory_domain" in settings:
+        raise Exception("Directory domain not set")
+
     actor = actor or cron_user
     log.debug("Refreshing user list from directory: %s" % actor)
 
-    settings = system_settings.get_system_settings()
     auth_header = get_access_token_header(settings)
 
     user_count = 0
@@ -86,10 +98,16 @@ def refresh_users(actor, **ignored):
 
 
 def refresh_groups(actor, **ignored):
+    settings = system_settings.get_system_settings()
+    if settings.get("directory_sync", "disabled") != "enabled":
+        return
+
+    if not "directory_domain" in settings:
+        raise Exception("Directory domain not set")
+
     actor = actor or cron_user
     log.debug("Refreshing group list from directory: %s" % actor)
 
-    settings = system_settings.get_system_settings()
     auth_header = get_access_token_header(settings)
 
     group_count = 0

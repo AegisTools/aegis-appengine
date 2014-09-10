@@ -43,9 +43,10 @@ def settings_update_oauth(actor, oauth2_google_client_id, oauth2_google_client_s
               'oauth2_google_request_token': "" })
 
 
-def settings_update_directory(actor, directory_domain, **ignored):
+def settings_update_directory(actor, directory_domain, directory_sync, **ignored):
     system_settings.save_system_settings(actor, \
-            { 'directory_domain' : directory_domain })
+            { 'directory_domain' : directory_domain,
+              'directory_sync'   : directory_sync })
 
 
 def settings_oauth_token_exchange(actor, code):

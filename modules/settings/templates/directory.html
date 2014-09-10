@@ -14,6 +14,15 @@
 
   <form method="POST" action="/settings/directory">
     {{ xsrf_input() }}
+    <div>
+      <input name="directory_sync" id="directory_sync" type="radio" class="setting-value"
+                value="enabled" {% if settings.directory_sync == "enabled" %}checked{% endif %}></input> Enabled
+      &nbsp;&nbsp;&nbsp;
+      <input name="directory_sync" id="directory_sync" type="radio" class="setting-value"
+                value="disabled" {% if settings.directory_sync != "enabled" %}checked{% endif %}></input> Disabled
+    </div>
+    <br>
+
     <div><label for="directory_domain">Domain:</div>
     <div><input name="directory_domain" id="directory_domain" type="text" class="full-width setting-value"
                 placeholder="example.com" value="{{ settings.directory_domain }}"></input></div>
