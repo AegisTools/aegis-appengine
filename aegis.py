@@ -118,14 +118,15 @@ class MainPage(webapp2.RequestHandler):
             if not request.user:
                 return self.redirect(users.create_login_url(self.request.uri))
     
-            path = self.request.path.strip("/")
-            if path.startswith("cron/"):
-                path = path[len("cron/"):]
-
             method = self.request.method
             if "_method_" in self.request.POST:
                 method = self.request.POST["_method_"]
-    
+
+            path = self.request.path.strip("/")
+            if path.startswith("cron/"):
+                path = path[len("cron/"):]
+                method = "CRON"
+
             if method != "GET":
                 redirect = self.action(method, path, request)
                 xsrf = self.refresh_xsrf_cookie(True)
@@ -190,7 +191,8 @@ class MainPage(webapp2.RequestHandler):
                 log.debug(self.request.body)
                 data = json.loads(self.request.body)
         elif format == "html":
-            self.validate_xsrf_cookie()
+            if method != "CRON":
+                self.validate_xsrf_cookie()
             data = self.request.POST
         else:
             data = {}
