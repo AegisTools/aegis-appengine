@@ -40,8 +40,14 @@ def permission_check(user, type, action, key=None):
 
 
 def permission_is_root(user):
-    if permission_check(user, "root", "root") or users.is_current_user_admin():
-        log.debug("Root User Allowed")
+    if user.email() == "cron":
+        log.debug("Root User: cron")
+        return True
+    if users.is_current_user_admin():
+        log.debug("Root User: admin")
+        return True
+    if permission_check(user, "root", "root"):
+        log.debug("Root User: granted")
         return True
     else:
         return False
