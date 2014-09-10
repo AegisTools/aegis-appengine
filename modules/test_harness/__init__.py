@@ -112,24 +112,32 @@ else:
 
 
     templates = { "tag/{thing}"                                  : "tag_list",
-                "permissions/{user}/{action}/{kind}"           : "permission_view",
-                "permissions/{user}/{action}/{kind}/{thing}/*" : "permission_view",
-                "remarks/{thing}"                              : "remarks_view" }
+                  "permissions/{user}/{action}/{kind}"           : "permission_view",
+                  "permissions/{user}/{action}/{kind}/{thing}/*" : "permission_view",
+                  "remarks/{thing}"                              : "remarks_view" }
 
 
     types = { "permission" : check_permission,
-            "tags"       : get_tags,
-            "remarks"    : get_remarks }
+              "tags"       : get_tags,
+              "remarks"    : get_remarks }
 
 
-    actions = { "wipe"                                         : { "POST"   : { "method" : wipe } },
-                "tag/{thing}/{tag}/*"                          : { "PUT"    : { "method" : apply_tag },
-                                                                "DELETE" : { "method" : remove_tag } },
-                "permissions/{user}/{action}/{kind}"           : { "PUT"    : { "method" : grant_permission },
-                                                                "DELETE" : { "method" : revoke_permission } },
-                "permissions/{user}/{action}/{kind}/{thing}/*" : { "PUT"    : { "method" : grant_permission } },
-                "remarks/{thing}"                              : { "POST"   : { "method" : remark } },
-                "issues/permission"                            : { "PUT"    : { "method" : issue_permission } } }
+    actions = { "wipe"                                         : { "POST"   : { "method"   : wipe,
+                                                                                "redirect" : "/200" } },
+                "tag/{thing}/{tag}/*"                          : { "PUT"    : { "method"   : apply_tag,
+                                                                                "redirect" : "/200" },
+                                                                   "DELETE" : { "method"   : remove_tag,
+                                                                                "redirect" : "/200" } },
+                "permissions/{user}/{action}/{kind}"           : { "PUT"    : { "method"   : grant_permission,
+                                                                                "redirect" : "/200" },
+                                                                   "DELETE" : { "method"   : revoke_permission,
+                                                                                "redirect" : "/200" } },
+                "permissions/{user}/{action}/{kind}/{thing}/*" : { "PUT"    : { "method"   : grant_permission,
+                                                                                "redirect" : "/200" } },
+                "remarks/{thing}"                              : { "POST"   : { "method"   : remark,
+                                                                                "redirect" : "/200" } },
+                "issues/permission"                            : { "PUT"    : { "method"   : issue_permission,
+                                                                                "redirect" : "/200" } } }
 
 
 
