@@ -54,9 +54,9 @@ def get_access_token_header(settings=None):
     return { 'Authorization': "%s %s" % (token_type, access_token) }
 
 
-def refresh_users(actor, **ignored):
+def refresh_users(actor, force=False, **ignored):
     settings = system_settings.get_system_settings()
-    if settings.get("directory_sync", "disabled") != "enabled":
+    if not force and settings.get("directory_sync", "disabled") != "enabled":
         return
 
     if not "directory_domain" in settings:
@@ -97,9 +97,9 @@ def refresh_users(actor, **ignored):
     log.debug("Created or updated %s users, %s aliases" % (user_count, alias_count))
 
 
-def refresh_groups(actor, **ignored):
+def refresh_groups(actor, force=False, **ignored):
     settings = system_settings.get_system_settings()
-    if settings.get("directory_sync", "disabled") != "enabled":
+    if not force and settings.get("directory_sync", "disabled") != "enabled":
         return
 
     if not "directory_domain" in settings:
