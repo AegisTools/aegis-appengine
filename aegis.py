@@ -115,9 +115,6 @@ class MainPage(webapp2.RequestHandler):
             else:
                 request.timezoneoffset = 0
     
-            if not request.user:
-                return self.redirect(users.create_login_url(self.request.uri))
-    
             method = self.request.method
             if "_method_" in self.request.POST:
                 method = self.request.POST["_method_"]

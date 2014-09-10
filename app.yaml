@@ -12,6 +12,7 @@ handlers:
 
 - url: /static
   static_dir: static
+  login: required
 
 - url: /cron/.*
   script: aegis.app
@@ -19,6 +20,7 @@ handlers:
 
 - url: /.*
   script: aegis.app
+  login: required
 
 
 libraries:
