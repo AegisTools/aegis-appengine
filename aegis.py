@@ -190,7 +190,7 @@ class MainPage(webapp2.RequestHandler):
         elif format == "html":
             if method != "CRON":
                 self.validate_xsrf_cookie()
-            data = self.request.POST
+            data = dict(dict(self.request.GET).items() + dict(self.request.POST).items())
         else:
             data = {}
 
