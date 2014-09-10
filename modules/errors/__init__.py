@@ -1,3 +1,5 @@
+import sys
+import os
 import logging
 from google.appengine.api import mail
 
