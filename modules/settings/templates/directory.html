@@ -1,0 +1,32 @@
+{% set section_settings = "directory" %}
+{% extends "modules/settings/fragments/page.html" %}
+
+{% block settings %}
+  {% set settings = load("settings/settings") %}
+
+  <h5>Google Directory Sync Settings</h5>
+
+  <div>
+    These settings control how your Google directory information is synced.<br><br>
+    Note: Directory sync is dependent on having a valid <a href="/settings/oauth">Google OAuth2</a> 
+    Refresh Token.<br><br>
+  </div>
+
+  <form method="POST" action="/settings/directory">
+    {{ xsrf_input() }}
+    <div><label for="directory_domain">Domain:</div>
+    <div><input name="directory_domain" id="directory_domain" type="text" class="full-width setting-value"
+                placeholder="example.com" value="{{ settings.directory_domain }}"></input></div>
+
+    <br>
+    <div class="right"><br><button id="submit" disabled="disabled" class="large grey">Update</button></div>
+  </form>
+
+  <script language="javascript">
+    $(".setting-value").on('change keyup paste', function() {
+      $("#submit").removeAttr("disabled").addClass("blue").removeClass("grey");
+    });
+  </script>
+
+{% endblock %}
+

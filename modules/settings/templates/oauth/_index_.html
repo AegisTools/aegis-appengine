@@ -20,25 +20,29 @@
     <div><label for="oauth2_google_client_id">Client ID:</div>
     <div><input name="oauth2_google_client_id" id="oauth2_google_client_id" type="text" class="full-width setting-value"
                 placeholder="[client-id].apps.googleusercontent.com" value="{{ settings.oauth2_google_client_id }}"></input></div>
+
     <br>
     <div><label for="oauth2_google_client_secret">Client Secret:</div>
     <div><input name="oauth2_google_client_secret" id="oauth2_google_client_secret" type="text" class="full-width setting-value"
                 placeholder="[client-secret]" value="{{ settings.oauth2_google_client_secret }}"></input></div>
+
     <br>
     <div><label for="oauth2_google_url">Redirect URL:</div>
     <div><input id="oauth2_google_url" type="text" class="full-width" disabled="disabled"
                 value="http://{{ settings.host }}/settings/oauth/token"></input>
     </div>
+
     <br>
     <div><label for="oauth2_google_request_token">Request Token:</div>
     <div style="float:right;margin:2px 0 2px 20px">
       <a class="button small {% if can_get_token %}green{% else %}grey disabled{% endif %}" id="new_token"
-            href="https://accounts.google.com/o/oauth2/auth?redirect_uri=http%3A%2F%2F{{ settings.host }}%2Fsettings%2Foauth%2Ftoken&response_type=code&client_id={{ settings.oauth2_google_client_id }}&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fadmin.directory.user.readonly&approval_prompt=force&access_type=offline">New Token</a>
+            href="{{ load("settings/oauth2_google_url") }}">New Token</a>
     </div>
     <div style="width:auto; overflow:hidden">
       <input name="oauth2_google_request_token" id="oauth2_google_request_token" type="text" class="full-width"
                 disabled="disabled" value="{{ settings.oauth2_google_request_token }}"></input>
     </div>
+
     <div class="clear"></div>
     <br>
 

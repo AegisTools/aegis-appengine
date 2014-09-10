@@ -1,0 +1,9 @@
+cron:
+- description: Refresh users from domain directory
+  url: /cron/directory/refresh_users
+  schedule: every 1 hours
+
+- description: Refresh groups from domain directory
+  url: /cron/directory/refresh_groups
+  schedule: every 1 hours
+
