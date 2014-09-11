@@ -124,6 +124,10 @@ class MainPage(webapp2.RequestHandler):
                 path = path[len("cron/"):]
                 method = "CRON"
 
+            if path.startswith("json/"):
+                path = path[len("json/"):]
+                request.format = "json"
+
             if method != "GET":
                 redirect = self.action(method, path, request)
                 xsrf = self.refresh_xsrf_cookie(True)
@@ -173,7 +177,7 @@ class MainPage(webapp2.RequestHandler):
 
 
     def action(self, method, path, request):
-        format = self.get_data_type("Content_Type")
+        format = self.get_data_type("Content_Type", request)
 
         log.info("%s %s : %s" % (method, path, format))
 
@@ -225,7 +229,7 @@ class MainPage(webapp2.RequestHandler):
         raise Exception("action not found")
 
 
-    def get_data_type(self, header):
+    def get_data_type(self, header, request):
         type = "html"
         if header in self.request.headers and self.request.headers[header].startswith("application/"):
             type = self.request.headers[header][len("application/"):]
@@ -233,15 +237,21 @@ class MainPage(webapp2.RequestHandler):
         if "format" in self.request.GET:
             type = self.request.GET["format"]
 
+        if "_format_" in self.request.GET:
+            type = self.request.GET["format"]
+
         if type == "x-www-form-urlencoded":
             type = "html"
+
+        if request and hasattr(request, "format"):
+            type = request.format
 
         return type
 
 
 
     def render(self, request, path, xsrf, error=None):
-        format = self.get_data_type("Accept")
+        format = self.get_data_type("Accept", request)
         template, keys = self.find_template(format, path)
         if format == "html" and not template:
             format = "md"
