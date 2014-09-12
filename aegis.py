@@ -148,7 +148,9 @@ class MainPage(webapp2.RequestHandler):
             e.stack = traceback.format_exc()
 
             self.response.set_status(e.code)
-            self.render(request, "errors/%s" % e.code, self.refresh_xsrf_cookie(), e)
+            self.render(request, "errors/%s" % e.code, self.refresh_xsrf_cookie(), \
+                    { 'code':         e.code,
+                      'request_code': e.request_code })
 
     def validate_xsrf_cookie(self):
         if not "_xsrf_" in self.request.POST:
