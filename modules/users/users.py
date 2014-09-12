@@ -7,7 +7,7 @@ def user_create_or_update(actor, user_id=None, user_key=None, **kwargs):
     if user:
         return user_update(actor, user=user, **kwargs)
     else:
-        return user_create(actor, user_key=user_key, **kwargs)
+        return user_create(actor, user_id=user_id, user_key=user_key, **kwargs)
 
 
 def user_create(actor, *args, **kwargs):

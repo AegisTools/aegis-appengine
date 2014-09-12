@@ -145,9 +145,9 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
 
         if is_defined(status) and status != issue.status:
             if not status in issue_transitions:
-                raise Exception("Status not recognized")
+                raise IllegalError("Status not recognized")
             if not status in issue_transitions[issue.status]:
-                raise Exception("Status transition not allowed")
+                raise IllegalError("Status transition not allowed")
             header = header + "**Status:** " + status + "  \n"
             issue.status = status
     
@@ -445,7 +445,7 @@ def to_model(viewer, issue, get_related_issues=True):
         blocking   = { key.id(): None for key in issue.blocking }
         depends_on = { key.id(): None for key in issue.depends_on }
 
-    cc = { key.id(): user_load(viewer, key=key) for key in issue.cc }
+    cc = { key.id(): user_load(viewer, user_key=key, silent=True) for key in issue.cc }
 
     return { 'id'             : issue.key.id(),
              'summary'        : issue.summary,
@@ -457,9 +457,9 @@ def to_model(viewer, issue, get_related_issues=True):
              'reporter_email' : issue.reporter.id(),
              'assignee_email' : issue.assignee.id(),
              'verifier_email' : issue.verifier.id(),
-             'reporter'       : user_load(viewer, key=issue.reporter),
-             'assignee'       : user_load(viewer, key=issue.assignee),
-             'verifier'       : user_load(viewer, key=issue.verifier),
+             'reporter'       : user_load(viewer, user_key=issue.reporter, silent=True),
+             'assignee'       : user_load(viewer, user_key=issue.assignee, silent=True),
+             'verifier'       : user_load(viewer, user_key=issue.verifier, silent=True),
              'cc'             : sorted(cc),
              'depends_on'     : sorted(depends_on),
              'blocking'       : sorted(blocking),

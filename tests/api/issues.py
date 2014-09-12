@@ -5,7 +5,7 @@ import time
 
 from common import USER_ROOT, USER_A, USER_B
 
-class ClientTests(common.AegisTestCase):
+class IssueTests(common.AegisTestCase):
 
     def test_wipe_cleared_data(self):
         time.sleep(0.5)
@@ -50,29 +50,26 @@ class ClientTests(common.AegisTestCase):
         self.assertEqual(200, self.post("issues", payload='{ "summary" : "a" }', auth=USER_ROOT).status_code)
         id = str(self.get("issues", auth=USER_ROOT).json()[0]["id"])
 
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_ROOT).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "fixed" }', auth=USER_ROOT).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "closed" }', auth=USER_ROOT).status_code)
+        self.assertEqual(400, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_ROOT).status_code)
+        self.assertEqual(400, self.put("issues/" + id, payload='{ "status" : "fixed" }', auth=USER_ROOT).status_code)
 
         self.assertEqual(200, self.put("issues/" + id, payload='{ "status" : "rejected" }', auth=USER_ROOT).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "fixed" }', auth=USER_ROOT).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "assigned" }', auth=USER_ROOT).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "deferred" }', auth=USER_ROOT).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_ROOT).status_code)
+        self.assertEqual(400, self.put("issues/" + id, payload='{ "status" : "fixed" }', auth=USER_ROOT).status_code)
+        self.assertEqual(400, self.put("issues/" + id, payload='{ "status" : "assigned" }', auth=USER_ROOT).status_code)
+        self.assertEqual(400, self.put("issues/" + id, payload='{ "status" : "deferred" }', auth=USER_ROOT).status_code)
+        self.assertEqual(400, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_ROOT).status_code)
 
         self.assertEqual(200, self.put("issues/" + id, payload='{ "status" : "triage" }', auth=USER_ROOT).status_code)
         self.assertEqual(200, self.put("issues/" + id, payload='{ "status" : "deferred" }', auth=USER_ROOT).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "fixed" }', auth=USER_ROOT).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "closed" }', auth=USER_ROOT).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_ROOT).status_code)
+        self.assertEqual(400, self.put("issues/" + id, payload='{ "status" : "fixed" }', auth=USER_ROOT).status_code)
+        self.assertEqual(400, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_ROOT).status_code)
 
         self.assertEqual(200, self.put("issues/" + id, payload='{ "status" : "assigned" }', auth=USER_ROOT).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "closed" }', auth=USER_ROOT).status_code)
 
         self.assertEqual(200, self.put("issues/" + id, payload='{ "status" : "fixed" }', auth=USER_ROOT).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_ROOT).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "deferred" }', auth=USER_ROOT).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "rejected" }', auth=USER_ROOT).status_code)
+        self.assertEqual(400, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_ROOT).status_code)
+        self.assertEqual(400, self.put("issues/" + id, payload='{ "status" : "deferred" }', auth=USER_ROOT).status_code)
+        self.assertEqual(400, self.put("issues/" + id, payload='{ "status" : "rejected" }', auth=USER_ROOT).status_code)
 
         self.assertEqual("fixed", self.get("issues/" + id, auth=USER_ROOT).json()["status"])
 
@@ -84,8 +81,8 @@ class ClientTests(common.AegisTestCase):
         self.assertEqual(200, self.post("issues", payload='{ "summary" : "a", "privacy" : "private" }', auth=USER_A).status_code)
         id = str(self.get("issues", auth=USER_A).json()[0]["id"])
 
-        self.assertEqual(500, self.get("issues/" + id, auth=USER_B).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_B).status_code)
+        self.assertEqual(403, self.get("issues/" + id, auth=USER_B).status_code)
+        self.assertEqual(403, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_B).status_code)
 
 
     def test_privacy_secure_not_allowed(self):
@@ -95,8 +92,8 @@ class ClientTests(common.AegisTestCase):
         self.assertEqual(200, self.post("issues", payload='{ "summary" : "a", "privacy" : "secure" }', auth=USER_A).status_code)
         id = str(self.get("issues", auth=USER_A).json()[0]["id"])
 
-        self.assertEqual(500, self.get("issues/" + id, auth=USER_B).status_code)
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_B).status_code)
+        self.assertEqual(403, self.get("issues/" + id, auth=USER_B).status_code)
+        self.assertEqual(403, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_B).status_code)
 
 
     def test_privacy_secure_view_only(self):
@@ -109,7 +106,7 @@ class ClientTests(common.AegisTestCase):
         id = str(self.get("issues", auth=USER_A).json()[0]["id"])
 
         self.assertEqual("triage", self.get("issues/" + id, auth=USER_B).json()["status"])
-        self.assertEqual(500, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_B).status_code)
+        self.assertEqual(200, self.put("issues/" + id, payload='{ "status" : "working" }', auth=USER_B).status_code)
         self.assertEqual("triage", self.get("issues/" + id, auth=USER_B).json()["status"])
 
 

@@ -38,10 +38,10 @@ def deactivate(actor, user_id=None, user_key=None, user=None, **ignored):
     if not permission_check(actor, "user", "update") and not permission_is_root(actor):
         raise NotAllowedError()
 
-    return set(get(actor, user_id, user_key, user), active=False)
+    return set(actor, get(actor, user_id, user_key, user), active=False)
 
 
-def set(actor, user=None, first_name=undefined, last_name=undefined, active=undefined, 
+def set(actor, user, first_name=undefined, last_name=undefined, active=undefined, 
         notes=undefined, **ignored):
     if is_defined(first_name):
         user.first_name = first_name

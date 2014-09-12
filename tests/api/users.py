@@ -7,8 +7,8 @@ from common import USER_ROOT
 class UserTests(common.AegisTestCase):
 
     def test_wipe_cleared_data(self):
-        self.assertIsNone(self.get("users/a", auth=USER_ROOT).json())
         self.assertEqual(0, len(self.get("users", auth=USER_ROOT).json()))
+        self.assertEqual(404, self.get("users/a", auth=USER_ROOT).status_code)
 
 
     def test_root_create_user(self):

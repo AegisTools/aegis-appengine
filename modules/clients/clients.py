@@ -48,7 +48,7 @@ def client_create(actor, key=None, client_id=None, name=undefined, active=True, 
     key = key or client_key(client_id or name)
     client = Client(key=key)
     client.name = client_id
-    client.created_by = user_key(actor)
+    client.created_by = build_user_key(actor)
     return client_update(actor, client=client, active=True, name=name, **kwargs)
 
 
@@ -61,7 +61,7 @@ def client_update(actor, client_id=None, key=None, client=None, name=undefined, 
     if is_defined(active):
         client.active = active
 
-    client.updated_by = user_key(actor)
+    client.updated_by = build_user_key(actor)
     client.put()
 
     return to_model(client)
@@ -69,7 +69,7 @@ def client_update(actor, client_id=None, key=None, client=None, name=undefined, 
 
 def client_deactivate(actor, client_id=None, key=None, client=None, **ignored):
     client = client_get(client_id, key, client)
-    client.updated_by = user_key(actor)
+    client.updated_by = build_user_key(actor)
     client.active = False
     client.put()
 

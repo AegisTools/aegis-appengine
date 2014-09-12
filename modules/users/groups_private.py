@@ -41,10 +41,10 @@ def deactivate(actor, group_id=None, group_key=None, group=None, **ignored):
     if not permission_check(actor, "group", "update") and not permission_is_root(actor):
         raise NotAllowedError()
 
-    return set(get(actor, group_id, group_key, group), active=False)
+    return set(actor, get(actor, group_id, group_key, group), active=False)
 
 
-def set(actor, group=None, name=undefined, active=undefined, notes=undefined, **ignored):
+def set(actor, group, name=undefined, active=undefined, notes=undefined, **ignored):
     if is_defined(name):
         group.name = name
 
