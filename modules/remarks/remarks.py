@@ -7,7 +7,7 @@ from google.appengine.ext import ndb
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
 from common.arguments import *
-from users.users import user_key
+from users.users import build_user_key
 
 
 log = logging.getLogger("remarks")
@@ -22,7 +22,7 @@ def remark_create(actor, target_key, text, subtext=None):
     remark.target = target_key
     remark.text = text
     remark.subtext = subtext
-    remark.created_by = user_key(actor)
+    remark.created_by = build_user_key(actor)
     remark.put()
 
     return to_model(remark)

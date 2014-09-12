@@ -8,7 +8,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
 from common.arguments import *
 from users.permissions import permission_check, permission_is_root
-from users.users import user_key
+from users.users import build_user_key
 
 
 log = logging.getLogger("clients")

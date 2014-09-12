@@ -8,3 +8,7 @@ class NotFoundError(Exception):
         self.code = 404
 
 
+class IllegalError(Exception):
+    def __init__(self, message):
+        super(IllegalError, self).__init__(message)
+        self.code = 400

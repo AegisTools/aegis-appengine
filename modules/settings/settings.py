@@ -20,14 +20,16 @@ def settings_load(viewer):
 
 def settings_oauth2_google_url(viewer):
     settings = system_settings.get_system_settings()
-    return "https://accounts.google.com/o/oauth2/auth?%s" % \
-            urllib.urlencode({ "client_id":       settings["oauth2_google_client_id"],
-                               "redirect_uri":    "http://%s/settings/oauth/token" % settings["host"],
-                               "scope":           " ".join([ "https://www.googleapis.com/auth/admin.directory.user.readonly",
-                                                             "https://www.googleapis.com/auth/admin.directory.group.readonly" ]),
-                               "response_type":   "code",
-                               "approval_prompt": "force",
-                               "access_type":     "offline" })
+    scopes = [ "https://www.googleapis.com/auth/admin.directory.user.readonly",
+               "https://www.googleapis.com/auth/admin.directory.group.readonly" ]
+
+    return "https://accounts.google.com/o/oauth2/auth?%s" % urllib.urlencode( \
+            { "client_id":       settings.get("oauth2_google_client_id"),
+              "redirect_uri":    "http://%s/settings/oauth/token" % settings.get("host"),
+              "scope":           " ".join(scopes),
+              "response_type":   "code",
+              "approval_prompt": "force",
+              "access_type":     "offline" })
 
 
 def settings_update_site(actor, host, email_admin, **ignored):

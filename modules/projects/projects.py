@@ -9,7 +9,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
 from common.arguments import *
 from users.permissions import permission_check, permission_is_root
-from users.users import user_key
+from users.users import build_user_key
 from clients.clients import client_key
 
 
@@ -58,7 +58,7 @@ def project_create(actor, key=None, client_id=None, project_ids=None, name=undef
     project = Project(key=key)
     project.name = project_ids[-1]
     project.parent = key.parent()
-    project.created_by = user_key(actor)
+    project.created_by = build_user_key(actor)
     return project_update(actor, project=project, active=True, name=name, **kwargs)
 
 
@@ -71,7 +71,7 @@ def project_update(actor, client_id=None, project_ids=None, key=None, project=No
     if is_defined(active):
         project.active = active
 
-    project.updated_by = user_key(actor)
+    project.updated_by = build_user_key(actor)
     project.put()
 
     return to_model(project)
@@ -79,7 +79,7 @@ def project_update(actor, client_id=None, project_ids=None, key=None, project=No
 
 def project_deactivate(actor, client_id=None, project_ids=None, key=None, project=None, **ignored):
     project = project_get(client_id, project_ids, key, project)
-    project.updated_by = user_key(actor)
+    project.updated_by = build_user_key(actor)
     project.active = False
     project.put()
 

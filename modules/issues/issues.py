@@ -14,7 +14,7 @@ from google.appengine.api import app_identity
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.arguments import *
 from users.permissions import permission_check, permission_is_root
-from users.users import user_key, user_load, User
+from users.users import build_user_key, user_load
 from projects.projects import Project
 from remarks.remarks import remark_create, remark_list
 
@@ -61,7 +61,7 @@ def issue_create(actor, key=None, issue_id=None, name=undefined, active=True, **
     if "severity" not in kwargs: kwargs["severity"] = 2
 
     issue = Issue()
-    issue.created_by = user_key(actor)
+    issue.created_by = build_user_key(actor)
     issue.privacy = "public"
     return issue_update(actor, issue=issue, active=True, name=name, **kwargs)
 
@@ -77,7 +77,7 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
     is_root = permission_is_root(actor)
 
     if not is_root and issue.privacy != "public" and \
-            user_key(actor) not in issue.cc + [ issue.assignee, issue.reporter, issue.verifier ]:
+            build_user_key(actor) not in issue.cc + [ issue.assignee, issue.reporter, issue.verifier ]:
         raise NotAllowedError()
 
     to_recipients = set([])
@@ -89,23 +89,21 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
         to_recipients.add(issue.verifier)
     cc_recipients = set(issue.cc)
 
-    if is_root or issue.privacy != "secure" or user_key(actor) in [ issue.assignee, issue.verifier ]:
+    if is_root or issue.privacy != "secure" or build_user_key(actor) in [ issue.assignee, issue.verifier ]:
         # Rewrite input types if necessary
         def fix_user(field):
             if is_undefined(field):
-                return field
+                return undefined
             if field == "":
                 return undefined
-            if isinstance(field, User):
-                return field
-            return user_key(field)
+            return build_user_key(field)
     
         reporter = fix_user(reporter)
         assignee = fix_user(assignee)
         verifier = fix_user(verifier)
     
         if is_defined(cc):
-            cc = set([user_key(id) for id in re.split("[\\s,;]+", cc) if len(id) > 0])
+            cc = set([build_user_key(id) for id in re.split("[\\s,;]+", cc) if len(id) > 0])
     
         if is_defined(depends_on):
             depends_on = set([issue_key(id) for id in re.split("[\\s,;]+", depends_on) if len(id) > 0])
@@ -201,7 +199,7 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
                        set(issue.summary_index) | \
                        set(re.split("[^\\w\\d]+", body.lower()))
 
-    issue.updated_by = user_key(actor)
+    issue.updated_by = build_user_key(actor)
     issue.put()
 
     issue.history = [ remark_create(actor, issue.key, body.strip(), header.strip()) ]
@@ -242,7 +240,7 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
 
 def issue_deactivate(actor, issue_id=None, key=None, issue=None, **ignored):
     issue = issue_get(actor, issue_id, key, issue)
-    issue.updated_by = user_key(actor)
+    issue.updated_by = build_user_key(actor)
     issue.active = False
     issue.put()
 
@@ -251,7 +249,7 @@ def issue_get(viewer, issue_id=None, key=None, issue=None, silent=False):
     result = issue or (key or issue_key(issue_id)).get()
     if result:
         if result.privacy == "public" or \
-                user_key(viewer) in set(result.cc) | set([ result.assignee, result.reporter, result.verifier ]) or \
+                build_user_key(viewer) in set(result.cc) | set([ result.assignee, result.reporter, result.verifier ]) or \
                 permission_is_root(viewer):
             result.history = remark_list(viewer, result.key)
             return result
@@ -317,10 +315,10 @@ def issue_search(viewer, simple=None, query=None, complex=None):
                 dataset = Issue.query().filter()
         else:
             privacy_query = ndb.OR(Issue.privacy == "public",
-                                   Issue.assignee == user_key(viewer),
-                                   Issue.reporter == user_key(viewer),
-                                   Issue.verifier == user_key(viewer),
-                                   Issue.cc == user_key(viewer))
+                                   Issue.assignee == build_user_key(viewer),
+                                   Issue.reporter == build_user_key(viewer),
+                                   Issue.verifier == build_user_key(viewer),
+                                   Issue.cc == build_user_key(viewer))
             if ndb_query:
                 dataset = Issue.query().filter(ndb.AND(ndb_query, privacy_query))
             else:
@@ -376,7 +374,7 @@ def complex_search_to_ndb_query(query):
             elif phrase["field"] in [ "created", "updated" ]:
                 values = []
             elif phrase["field"] in [ "updated_by", "created_by", "assignee", "reporter", "verifier", "cc" ]:
-                values = [ user_key(value) for value in phrase["value"] ]
+                values = [ build_user_key(value) for value in phrase["value"] ]
             elif phrase["field"] in [ "summary_index", "text_index" ]:
                 values = [ value.lower() for value in phrase["value"] ]
             else:
@@ -481,17 +479,17 @@ class Issue(ndb.Model):
     status = ndb.StringProperty(required=True, choices=issue_transitions.keys())
     priority = ndb.IntegerProperty(required=True)
     severity = ndb.IntegerProperty(required=True)
-    reporter = ndb.KeyProperty(kind=User, required=True)
-    assignee = ndb.KeyProperty(kind=User, required=True)
-    verifier = ndb.KeyProperty(kind=User, required=True)
-    cc = ndb.KeyProperty(kind=User, repeated=True)
+    reporter = ndb.KeyProperty(kind='User', required=True)
+    assignee = ndb.KeyProperty(kind='User', required=True)
+    verifier = ndb.KeyProperty(kind='User', required=True)
+    cc = ndb.KeyProperty(kind='User', repeated=True)
     depends_on = ndb.KeyProperty(kind='Issue', repeated=True)
     blocking = ndb.KeyProperty(kind='Issue', repeated=True)
     privacy = ndb.StringProperty(default="public", required=True, choices=["public", "private", "secure"])
     due_date = ndb.DateTimeProperty()
-    created_by = ndb.KeyProperty(kind=User)
+    created_by = ndb.KeyProperty(kind='User')
     created = ndb.DateTimeProperty(auto_now_add=True)
-    updated_by = ndb.KeyProperty(kind=User)
+    updated_by = ndb.KeyProperty(kind='User')
     updated = ndb.DateTimeProperty(auto_now=True)
 
 

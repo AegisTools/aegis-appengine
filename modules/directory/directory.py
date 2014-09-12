@@ -8,7 +8,8 @@ from google.appengine.api import users
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 import system_settings
-from modules.users.users import user_create_or_update, user_alias_create
+from modules.users.users import user_create_or_update
+from modules.users.aliases import alias_create
 
 
 import logging
@@ -88,7 +89,7 @@ def refresh_users(actor, force=False, **ignored):
 
             alias_count += len(user["emails"])
             for alias in user["emails"]:
-                user_alias_create(actor, user_id=user["primaryEmail"], alias_id=alias["address"])
+                alias_create(actor, user_id=user["primaryEmail"], alias_id=alias["address"])
 
         if not "nextPageToken" in result:
             break

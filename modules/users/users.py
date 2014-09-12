@@ -1,144 +1,36 @@
-import sys
-import os
-import logging
-
-from google.appengine.ext import ndb
-from google.appengine.api import users
-
-from shared import *
-from permissions import permission_check, permission_is_root
-
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from common.errors import *
-from common.arguments import *
+def build_user_key(user_id):
+    return users_private.key(user_id)
 
 
-log = logging.getLogger("users")
-
-
-def user_http_put(actor, user_id, **kwargs):
-    if "user" in kwargs:
-        del kwargs["user"]
-
-    key = user_key(user_id)
-    user = key.get()
+def user_create_or_update(actor, user_id=None, user_key=None, **kwargs):
+    user = users_private.get(actor, user_id, user_key, silent=True)
     if user:
-        if permission_check(actor, "user", "update") or permission_is_root(actor):
-            user_update(actor, user=user, **kwargs)
-        else:
-            raise NotAllowedError()
+        return user_update(actor, user=user, **kwargs)
     else:
-        user_http_post(actor, key=key, user_id=user_id, **kwargs)
+        return user_create(actor, user_key=user_key, **kwargs)
 
 
-def user_http_post(actor, **kwargs):
-    if "user" in kwargs:
-        del kwargs["user"]
-    
-    if permission_check(actor, "user", "create") or permission_is_root(actor):
-        user_create(actor, **kwargs)
-    else:
-        raise NotAllowedError()
+def user_create(actor, *args, **kwargs):
+    return user_to_model(actor, users_private.create(actor, *args, **kwargs))
 
 
-def user_http_delete(actor, user_id, **ignored):
-    if permission_check(actor, "user", "delete") or permission_is_root(actor):
-        user_deactivate(actor, user_id=user_id)
-    else:
-        raise NotAllowedError()
+def user_update(actor, *args, **kwargs):
+    return user_to_model(actor, users_private.update(actor, *args, **kwargs))
 
 
-def user_create_or_update(actor, key=None, user_id=None, **kwargs):
-    key = key or user_key(user_id)
-    user = key.get()
-    if user:
-        user_update(actor, user=user, **kwargs)
-    else:
-        user_create(actor, key=key, **kwargs)
+def user_deactivate(actor, *args, **kwargs):
+    return user_to_model(actor, users_private.deactivate(actor, *args, **kwargs))
 
 
-def user_create(actor, key=None, user_id=None, active=True, **kwargs):
-    key = key or user_key(user_id)
-    user = User(key=key)
-    user.user = users.User(user.key.id())
-    user.created_by = user_key(actor)
-
-    return user_update(actor, user=user, active=True, **kwargs)
+def user_load(actor, user_id=None, user_key=None, silent=False):
+    return user_to_model(actor, users_private.get(actor, user_id, user_key, silent=silent))
 
 
-def user_update(actor, user_id=None, key=None, user=None,
-                first_name=undefined, last_name=undefined, active=undefined, notes=undefined,
-                **ignored):
-    user = user or (key or user_key(user_id)).get()
-
-    if is_defined(first_name):
-        user.first_name = first_name
-
-    if is_defined(last_name):
-        user.last_name = last_name
-
-    if is_defined(active):
-        user.active = active
-
-    if is_defined(notes):
-        user.notes = notes
-
-    user.updated_by = user_key(actor)
-    user.put()
-
-    return to_model(user)
+def user_list(actor):
+    return [user_to_model(actor, user) for user in users_private.list(actor)]
 
 
-def user_deactivate(actor, user_id=None, key=None, user=None, **ignored):
-    user = user_get(user_id, key, user)
-    user.updated_by = user_key(actor)
-    user.active = False
-    user.put()
-
-
-def user_get(user_id=None, key=None, user=None):
-    result = user or (key or user_key(user_id)).get()
-    if result:
-        return result
-    else:
-        raise NotFoundError()
-
-
-def user_load(viewer, user_id=None, key=None):
-    if permission_check(viewer, "user", "read") or permission_is_root(viewer):
-        return to_model((key or user_key(user_id)).get())
-    else:
-        raise NotAllowedError()
-
-
-def user_list(viewer):
-    if permission_check(viewer, "user", "read") or permission_is_root(viewer):
-        result = []
-        for user in User.query().filter(User.active == True):
-            result.append(to_model(user))
-
-        return result
-    else:
-        raise NotAllowedError()
-
-
-def user_alias_create(actor, key=None, user_id=None, alias_key=None, alias_id=None):
-    alias_key = alias_key or ndb.Key("UserAlias", alias_id)
-    key = key or user_key(user_id)
-
-    alias = UserAlias(key=alias_key)
-    alias.user = key
-    alias.put()
-
-    return { 'alias': alias_key.id(),
-             'user':  key.id() }
-
-def user_alias_delete(actor, alias_key=None, alias_id=None):
-    alias_key = alias_key or ndb.Key("UserAlias", alias_id)
-    alias_key.delete()
-
-
-def to_model(user):
+def user_to_model(actor, user):
     if not user:
         return None
 
@@ -153,21 +45,5 @@ def to_model(user):
              'updated'      : user.updated }
 
 
-class User(ndb.Model):
-    user = ndb.UserProperty()
-    first_name = ndb.StringProperty()
-    last_name = ndb.StringProperty()
-    notes = ndb.TextProperty()
-    active = ndb.BooleanProperty(default=True, required=True)
-    created_by = ndb.KeyProperty(kind='User')
-    created = ndb.DateTimeProperty(auto_now_add=True)
-    updated_by = ndb.KeyProperty(kind='User')
-    updated = ndb.DateTimeProperty(auto_now=True)
-
-
-class UserAlias(ndb.Model):
-    user = ndb.KeyProperty(kind=User)
-
-
-
+import users_private
 

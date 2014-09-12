@@ -9,7 +9,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
 from common.arguments import *
 from users.permissions import permission_check, permission_is_root
-from users.users import user_key
+from users.users import build_user_key
 
 
 log = logging.getLogger("tags")
@@ -58,7 +58,7 @@ def tag_create(actor, key=None, tag_ids=None, name=undefined, active=True, **kwa
     tag = Tag(key=key)
     tag.name = tag_ids[-1]
     tag.parent = key.parent()
-    tag.created_by = user_key(actor)
+    tag.created_by = build_user_key(actor)
     return tag_update(actor, tag=tag, active=True, name=name, **kwargs)
 
 
@@ -71,7 +71,7 @@ def tag_update(actor, tag_ids=None, key=None, tag=None, name=undefined, active=u
     if is_defined(active):
         tag.active = active
 
-    tag.updated_by = user_key(actor)
+    tag.updated_by = build_user_key(actor)
     tag.put()
 
     return to_model(tag)
@@ -79,7 +79,7 @@ def tag_update(actor, tag_ids=None, key=None, tag=None, name=undefined, active=u
 
 def tag_deactivate(actor, tag_ids=None, key=None, tag=None, **ignored):
     tag = tag_get(tag_ids, key, tag)
-    tag.updated_by = user_key(actor)
+    tag.updated_by = build_user_key(actor)
     tag.active = False
     tag.put()
 
@@ -120,7 +120,7 @@ def tag_apply(viewer, target, tag, **ignored):
         key = tag_key(tag)
         if not AppliedTag.query(AppliedTag.tag == key, AppliedTag.target == target, ancestor=target).get():
             new_tag = AppliedTag(parent=target)
-            new_tag.applied_by = user_key(viewer)
+            new_tag.applied_by = build_user_key(viewer)
             new_tag.tag = key
             new_tag.target = target
             new_tag.put()

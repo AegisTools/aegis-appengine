@@ -1,9 +1,7 @@
 import logging
 
 from google.appengine.ext import ndb
-
-from shared import *
-
+from google.appengine.api import users
 
 log = logging.getLogger("permissions")
 
@@ -12,7 +10,7 @@ def permission_key(user, type, action, key=None):
     if not type:
         type = key.kind()
 
-    type_key = ndb.Key("Permission_Type", type, parent=user_key(user))
+    type_key = ndb.Key("Permission_Type", type, parent=build_user_key(user))
     if key:
         return ndb.Key("Permission", key.urlsafe(), 
                        parent=ndb.Key("Permission_Action", action, parent=type_key))
@@ -50,6 +48,7 @@ def permission_is_root(user):
         log.debug("Root User: granted")
         return True
     else:
+        log.debug("Not Root User")
         return False
 
 
@@ -57,11 +56,11 @@ def permission_grant(viewer, user, type, action, target=None):
     if permission_check(viewer, "permissions", "grant") or permission_is_root(viewer):
         if not permission_key(user, type, action, target).get():
             permission = Permission(key=permission_key(user, type, action, target))
-            permission.user = user_key(user)
+            permission.user = build_user_key(user)
             permission.type = type or target.kind()
             permission.action = action
             permission.target = target
-            permission.granted_by = user_key(viewer)
+            permission.granted_by = build_user_key(viewer)
             permission.put()
 
             log.debug("Permission granted")
@@ -82,7 +81,7 @@ def permission_revoke(viewer, user, type, action, target=None):
 def permission_list(viewer, user):
     if permission_check(viewer, "permissions", "view") or permission_is_root(viewer):
         result = []
-        for permission in Permission.query(ancestor=user_key(user)).fetch():
+        for permission in Permission.query(ancestor=build_user_key(user)).fetch():
             result.append({ 'user'   : permission.user.email(),
                             'type'   : permission.type,
                             'id'     : permission.id,
@@ -99,4 +98,5 @@ class Permission(ndb.Model):
     granted_by = ndb.KeyProperty(kind='User')
 
 
+from users import build_user_key
 

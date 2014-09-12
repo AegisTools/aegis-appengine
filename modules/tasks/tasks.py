@@ -9,7 +9,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
 from common.arguments import *
 from users.permissions import permission_check, permission_is_root
-from users.users import user_key
+from users.users import build_user_key
 
 
 log = logging.getLogger("tasks")
@@ -57,7 +57,7 @@ def task_create(actor, key=None, task_ids=None, name=undefined, active=True, **k
     task = Task(key=key)
     task.name = task_ids[-1]
     task.parent = key.parent()
-    task.created_by = user_key(actor)
+    task.created_by = build_user_key(actor)
     return task_update(actor, task=task, active=True, name=name, **kwargs)
 
 
@@ -70,7 +70,7 @@ def task_update(actor, task_ids=None, key=None, task=None, name=undefined, activ
     if is_defined(active):
         task.active = active
 
-    task.updated_by = user_key(actor)
+    task.updated_by = build_user_key(actor)
     task.put()
 
     return to_model(task)
@@ -78,7 +78,7 @@ def task_update(actor, task_ids=None, key=None, task=None, name=undefined, activ
 
 def task_deactivate(actor, task_ids=None, key=None, task=None, **ignored):
     task = task_get(task_ids, key, task)
-    task.updated_by = user_key(actor)
+    task.updated_by = build_user_key(actor)
     task.active = False
     task.put()
 
