@@ -10,6 +10,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 import system_settings
 from modules.users.users import user_create_or_update
 from modules.users.aliases import alias_create
+from modules.users.groups import group_create_or_update
+from modules.users.members import group_members_add, group_members_clear
 
 
 import logging
@@ -89,7 +91,7 @@ def refresh_users(actor, force=False, **ignored):
 
             alias_count += len(user["emails"])
             for alias in user["emails"]:
-                alias_create(actor, user_id=user["primaryEmail"], alias_id=alias["address"])
+                alias_create(actor, alias_id=alias["address"], user_id=user["primaryEmail"])
 
         if not "nextPageToken" in result:
             break
@@ -133,8 +135,8 @@ def refresh_groups(actor, force=False, **ignored):
         group_count += len(result["groups"])
         alias_count += len(result["groups"])
         for group in result["groups"]:
-            log.warn("TODO: Create group: %s %s" % (group["email"], group["name"]))
-            log.warn("TODO: Create group alias: %s %s" % (group["email"], group["email"]))
+            group_create_or_update(actor, group_id=group["email"], name=group["name"], active=True)
+            alias_create(actor, alias_id=group["email"], group_id=group["email"])
 
             if "aliases" in group:
                 alias_count += len(group["aliases"])

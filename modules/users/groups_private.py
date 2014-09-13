@@ -16,21 +16,19 @@ from common.arguments import *
 log = logging.getLogger("groups")
 
 
-def create(actor, group_key=None, group_id=None, active=True, **kwargs):
+def create(actor, group_id=None, group_key=None, active=True, **kwargs):
     if not permission_check(actor, "group", "create") and not permission_is_root(actor):
         raise NotAllowedError()
 
     group_key = group_key or key(group_id)
     group = Group(key=group_key)
     group.group = users.User(group_key.id())
-    group.created_by = user_key(actor)
+    group.created_by = build_user_key(actor)
 
     return set(actor, group, active=True, **kwargs)
 
 
-def update(actor, group_id=None, group_key=None, group=None,
-                first_name=undefined, last_name=undefined, active=undefined, notes=undefined,
-                **ignored):
+def update(actor, group_id=None, group_key=None, group=None, **kwargs):
     if not permission_check(actor, "group", "update") and not permission_is_root(actor):
         raise NotAllowedError()
 
@@ -54,7 +52,7 @@ def set(actor, group, name=undefined, active=undefined, notes=undefined, **ignor
     if is_defined(notes):
         group.notes = notes
 
-    group.updated_by = user_key(actor)
+    group.updated_by = build_user_key(actor)
     group.put()
 
     return group
@@ -87,13 +85,18 @@ def list(actor):
 
 
 def key(group):
+    log.debug(group)
     if not group:
+        log.debug("none")
         return None
     elif isinstance(group, Group):
+        log.debug("Group")
         return ndb.Key('Group', group.key)
     elif isinstance(group, ndb.Key):
+        log.debug("Key")
         return group
     else:
+        log.debug("unicode")
         return ndb.Key('Group', group)
 
 

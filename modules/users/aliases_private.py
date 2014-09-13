@@ -21,9 +21,14 @@ def create(actor, alias_key=None, alias_id=None, user_id=None, user_key=None, us
            group_id=None, group_key=None, group=None, **kwargs):
     if not permission_check(actor, "alias", "create") and not permission_is_root(actor):
         raise NotAllowedError()
+    log.debug("aliases.create")
 
     user_key = user_key or build_user_key(user or user_id)
     group_key = group_key or build_group_key(group or group_id)
+
+    log.debug(group_key)
+    log.debug(group_id)
+    log.debug(group)
 
     if not user_key and not group_key:
         raise IllegalError("Aliases must specify either a user or a group")

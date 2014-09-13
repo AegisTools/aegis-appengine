@@ -1,13 +1,13 @@
 def build_group_key(group_id):
-    groups_private.key(group_id)
+    return groups_private.key(group_id)
 
 
-def group_create_or_update(actor, group_key=None, group_id=None, **kwargs):
+def group_create_or_update(actor, group_id=None, group_key=None, **kwargs):
     group = groups_private.get(actor, group_id, group_key, silent=True)
     if group:
         return group_update(actor, group=group, **kwargs)
     else:
-        return group_create(actor, key=group_key, **kwargs)
+        return group_create(actor, group_id=group_id, group_key=group_key, **kwargs)
 
 
 def group_create(*args, **kwargs):
