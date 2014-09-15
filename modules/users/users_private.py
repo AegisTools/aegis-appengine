@@ -5,7 +5,7 @@ import logging
 from google.appengine.ext import ndb
 from google.appengine.api import users
 
-from permissions import permission_check, permission_is_root
+from permissions import permission_verify
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
@@ -16,8 +16,7 @@ log = logging.getLogger("users")
 
 
 def create(actor, user_key=None, user_id=None, active=True, **kwargs):
-    if not permission_check(actor, "user", "create") and not permission_is_root(actor):
-        raise NotAllowedError()
+    permission_verify(actor, ("user", "create"))
 
     user_key = user_key or key(user_id)
     user = User(key=user_key)
@@ -28,16 +27,12 @@ def create(actor, user_key=None, user_id=None, active=True, **kwargs):
 
 
 def update(actor, user_id=None, user_key=None, user=None, **kwargs):
-    if not permission_check(actor, "user", "update") and not permission_is_root(actor):
-        raise NotAllowedError()
-
+    permission_verify(actor, ("user", "update"))
     return set(actor, get(actor, user_id, user_key, user), **kwargs)
 
 
 def deactivate(actor, user_id=None, user_key=None, user=None, **ignored):
-    if not permission_check(actor, "user", "update") and not permission_is_root(actor):
-        raise NotAllowedError()
-
+    permission_verify(actor, ("user", "update"))
     return set(actor, get(actor, user_id, user_key, user), active=False)
 
 
@@ -62,8 +57,7 @@ def set(actor, user, first_name=undefined, last_name=undefined, active=undefined
 
 
 def get(actor, user_id=None, user_key=None, user=None, silent=False):
-    if not permission_check(actor, "user", "read") and not permission_is_root(actor):
-        raise NotAllowedError()
+    permission_verify(actor, ("user", "read"))
 
     if user:
         return user
@@ -81,9 +75,7 @@ def get(actor, user_id=None, user_key=None, user=None, silent=False):
 
 
 def list(actor):
-    if not permission_check(actor, "user", "read") and not permission_is_root(actor):
-        raise NotAllowedError()
-
+    permission_verify(actor, ("user", "read"))
     return User.query().filter(User.active == True)
 
 
@@ -105,6 +97,7 @@ class User(ndb.Model):
     first_name = ndb.StringProperty()
     last_name = ndb.StringProperty()
     notes = ndb.TextProperty()
+    groups = ndb.KeyProperty(kind='Group', repeated=True)
     active = ndb.BooleanProperty(default=True, required=True)
     created_by = ndb.KeyProperty(kind='User')
     created = ndb.DateTimeProperty(auto_now_add=True)

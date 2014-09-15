@@ -6,7 +6,7 @@ from google.appengine.ext import ndb
 from google.appengine.api import users
 
 from users import build_user_key
-from permissions import permission_check, permission_is_root
+from permissions import permission_verify
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
@@ -17,8 +17,7 @@ log = logging.getLogger("groups")
 
 
 def create(actor, group_id=None, group_key=None, active=True, **kwargs):
-    if not permission_check(actor, "group", "create") and not permission_is_root(actor):
-        raise NotAllowedError()
+    permission_verify(actor, ("group", "create"))
 
     group_key = group_key or key(group_id)
     group = Group(key=group_key)
@@ -29,16 +28,12 @@ def create(actor, group_id=None, group_key=None, active=True, **kwargs):
 
 
 def update(actor, group_id=None, group_key=None, group=None, **kwargs):
-    if not permission_check(actor, "group", "update") and not permission_is_root(actor):
-        raise NotAllowedError()
-
+    permission_verify(actor, ("group", "update"))
     return set(actor, get(actor, group_id, group_key, group), **kwargs)
 
 
 def deactivate(actor, group_id=None, group_key=None, group=None, **ignored):
-    if not permission_check(actor, "group", "update") and not permission_is_root(actor):
-        raise NotAllowedError()
-
+    permission_verify(actor, ("group", "update"))
     return set(actor, get(actor, group_id, group_key, group), active=False)
 
 
@@ -59,8 +54,7 @@ def set(actor, group, name=undefined, active=undefined, notes=undefined, **ignor
 
 
 def get(actor, group_id=None, group_key=None, group=None, silent=False):
-    if not permission_check(actor, "group", "read") and not permission_is_root(actor):
-        raise NotAllowedError()
+    permission_verify(actor, ("group", "read"))
 
     if group:
         return group
@@ -78,25 +72,18 @@ def get(actor, group_id=None, group_key=None, group=None, silent=False):
 
 
 def list(actor):
-    if not permission_check(actor, "group", "read") and not permission_is_root(actor):
-        raise NotAllowedError()
-
+    permission_verify(actor, ("group", "read"))
     return Group.query().filter(Group.active == True)
 
 
 def key(group):
-    log.debug(group)
     if not group:
-        log.debug("none")
         return None
     elif isinstance(group, Group):
-        log.debug("Group")
         return ndb.Key('Group', group.key)
     elif isinstance(group, ndb.Key):
-        log.debug("Key")
         return group
     else:
-        log.debug("unicode")
         return ndb.Key('Group', group)
 
 
@@ -104,6 +91,7 @@ class Group(ndb.Model):
     group = ndb.UserProperty()
     name = ndb.StringProperty()
     notes = ndb.TextProperty()
+    users = ndb.KeyProperty(kind='User', repeated=True)
     active = ndb.BooleanProperty(default=True, required=True)
     created_by = ndb.KeyProperty(kind='User')
     created = ndb.DateTimeProperty(auto_now_add=True)

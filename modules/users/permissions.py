@@ -1,7 +1,12 @@
+import sys
+import os
 import logging
 
 from google.appengine.ext import ndb
 from google.appengine.api import users
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from common.errors import *
 
 log = logging.getLogger("permissions")
 
@@ -16,6 +21,27 @@ def permission_key(user, type, action, key=None):
                        parent=ndb.Key("Permission_Action", action, parent=type_key))
     else:
         return ndb.Key("Permission", action, parent=type_key)
+
+
+def permission_verify(user, *permission_sets, **kwargs):
+    root_ok = not "root_ok" in kwargs or kwargs["root_ok"]
+
+    for permission_set in permission_sets:
+        if len(permission_set) == 2:
+            permission_set = permission_set + (None,)
+
+        type, action, key = permission_set
+        if permission_key(user, *permission_set).get():
+            return
+
+        if permission_set[2] and permission_key(user *permission_set[:2]).get():
+            return
+
+    if root_ok and permission_is_root(user):
+        return
+
+    log.error("Permission denied.  Requires one of %s", permission_sets)
+    raise NotAllowedError()
 
 
 def permission_check(user, type, action, key=None):
@@ -39,16 +65,12 @@ def permission_check(user, type, action, key=None):
 
 def permission_is_root(user):
     if user.email() == "cron":
-        log.debug("Root User: cron")
         return True
     if users.is_current_user_admin():
-        log.debug("Root User: admin")
         return True
     if permission_check(user, "root", "root"):
-        log.debug("Root User: granted")
         return True
     else:
-        log.debug("Not Root User")
         return False
 
 

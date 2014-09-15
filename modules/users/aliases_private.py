@@ -7,7 +7,7 @@ from google.appengine.api import users
 
 from users import build_user_key
 from groups import build_group_key
-from permissions import permission_check, permission_is_root
+from permissions import permission_verify
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
@@ -19,16 +19,10 @@ log = logging.getLogger("aliases")
 
 def create(actor, alias_key=None, alias_id=None, user_id=None, user_key=None, user=None, 
            group_id=None, group_key=None, group=None, **kwargs):
-    if not permission_check(actor, "alias", "create") and not permission_is_root(actor):
-        raise NotAllowedError()
-    log.debug("aliases.create")
+    permission_verify(actor, ("alias", "create"))
 
     user_key = user_key or build_user_key(user or user_id)
     group_key = group_key or build_group_key(group or group_id)
-
-    log.debug(group_key)
-    log.debug(group_id)
-    log.debug(group)
 
     if not user_key and not group_key:
         raise IllegalError("Aliases must specify either a user or a group")
@@ -47,15 +41,12 @@ def create(actor, alias_key=None, alias_id=None, user_id=None, user_key=None, us
 
 
 def delete(actor, alias_id=None, alias_key=None, alias=None, **ignored):
-    if not permission_check(actor, "alias", "update") and not permission_is_root(actor):
-        raise NotAllowedError()
-
+    permission_verify(actor, ("alias", "delete"))
     return get(alias_id, alias_key, alias).delete()
 
 
 def get(alias_id=None, alias_key=None, alias=None):
-    if not permission_check(actor, "alias", "read") and not permission_is_root(actor):
-        raise NotAllowedError()
+    permission_verify(actor, ("alias", "read"))
 
     result = alias or (alias_key or key(alias_id)).get()
     if result:
@@ -65,9 +56,7 @@ def get(alias_id=None, alias_key=None, alias=None):
 
 
 def list(actor):
-    if not permission_check(actor, "alias", "read") and not permission_is_root(actor):
-        raise NotAllowedError()
-
+    permission_verify(actor, ("alias", "read"))
     return Alias.query().get()
 
 

@@ -6,7 +6,8 @@ from google.appengine.ext import ndb
 from google.appengine.api import users
 
 from users import build_user_key
-from permissions import permission_check, permission_is_root
+from permissions import permission_verify
+from groups import build_group_key
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
@@ -17,28 +18,45 @@ log = logging.getLogger("members")
 
 
 def members_add(actor, group_id=None, group_key=None, group=None, user_id=None, user_key=None, user=None):
-    if not permission_check(actor, "member", "update") and not permission_is_root(actor):
-        raise NotAllowedError()
+    permission_verify(actor, ("member", "update"))
 
-    group = group or (group_key or build_group_key(group_id)).get()
-    user  = user  or (user_key  or build_user_key( user_id )).get()
+    user_key  = user_key  or build_user_key( user_id ) or user.key
+    group_key = group_key or build_group_key(group_id) or group.key
 
-    group.users.append(user.key)
-    user.groups.append(group.key)
+    user  = user  or user_key.get()
+    group = group or group_key.get()
+
+    if not group.users:
+        group.users = [ user_key ]
+    else:
+        users = set(group.users)
+        users.add(user_key)
+        group.users = users
 
     group.put()
-    user.put()
+
+    if user:
+        if not user.groups:
+            user.groups = [ group.key ]
+        else:
+            groups = set(user.groups)
+            groups.add(group.key)
+            user.groups = groups
+
+        user.put()
 
 
 def members_remove(actor, group_id=None, group_key=None, group=None, user_id=None, user_key=None, user=None):
-    if not permission_check(actor, "member", "update") and not permission_is_root(actor):
-        raise NotAllowedError()
+    permission_verify(actor, ("member", "update"))
 
-    group = group or (group_key or build_group_key(group_id)).get()
-    user  = user  or (user_key  or build_user_key( user_id )).get()
+    user_key  = user_key  or build_user_key( user_id ) or user.key
+    group_key = group_key or build_group_key(group_id) or group.key
 
-    group.users.remove(user.key)
-    user.groups.remove(group.key)
+    user  = user  or user_key.get()
+    group = group or group_key.get()
+
+    if group.users: group.users.remove(user_key)
+    if user and user.groups: user.groups.remove(group_key)
 
     group.put()
     user.put()
@@ -46,14 +64,14 @@ def members_remove(actor, group_id=None, group_key=None, group=None, user_id=Non
 
 
 def members_clear(actor, group_id=None, group_key=None, group=None):
-    if not permission_check(actor, "member", "update") and not permission_is_root(actor):
-        raise NotAllowedError()
+    permission_verify(actor, ("member", "update"))
 
     group = group or (group_key or build_group_key(group_id)).get()
     for user_key in group.users:
         user = user_key.get()
-        user.groups.remove(group.key)
-        user.put()
+        if user and user.groups:
+            user.groups.remove(group.key)
+            user.put()
 
     group.users = []
     group.put()

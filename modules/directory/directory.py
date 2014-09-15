@@ -119,6 +119,7 @@ def refresh_groups(actor, force=False, **ignored):
     alias_count = 0
     member_count = 0
     page_token = ""
+    all_groups = {}
     while (True):
         result = fetch("https://www.googleapis.com/admin/directory/v1/groups?%s" % \
                     urllib.urlencode({ "domain":     settings["directory_domain"],
@@ -132,47 +133,69 @@ def refresh_groups(actor, force=False, **ignored):
                                                                 "groups/directMembersCount" ]) }), \
                     headers=auth_header)
 
-        group_count += len(result["groups"])
-        alias_count += len(result["groups"])
         for group in result["groups"]:
-            group_create_or_update(actor, group_id=group["email"], name=group["name"], active=True)
-            alias_create(actor, alias_id=group["email"], group_id=group["email"])
+            group_data = { 'email':   group["email"],
+                           'name':    group["name"],
+                           'aliases': [],
+                           'members': [] }
+
+            all_groups[group["email"]] = group_data
 
             if "aliases" in group:
-                alias_count += len(group["aliases"])
-                for alias in group["aliases"]:
-                    log.warn("TODO: Create group alias: %s %s" % (group["email"], alias))
+                group_data["aliases"] = group["aliases"]
 
-            log.warn("TODO: Remove all users from group: %s" % group["email"])
-
-            log.debug(group)
+            log.debug("Getting members of group %s" % group["email"])
             if int(group["directMembersCount"]) > 0:
                 member_page_token = ""
                 while (True):
                     member_result = fetch("https://www.googleapis.com/admin/directory/v1/groups/%s/members?%s" % (group["id"], \
-                                urllib.urlencode({ "pageToken": page_token,
+                                urllib.urlencode({ "pageToken": member_page_token,
                                                    "fields":    ",".join([ "nextPageToken",
                                                                            "members/email",
                                                                            "members/type" ]) })), \
                                 headers=auth_header)
 
-                    log.debug(member_result)
                     if "members" in member_result:
-                        member_count += len(member_result["members"])
-                        for member in member_result["members"]:
-                            if "email" in member:
-                                log.warn("TODO: Add group member: %s %s (%s)" % (group["email"], member["email"], member["type"]))
+                        group_data["members"].extend(member_result["members"])
 
                     if not "nextPageToken" in member_result:
                         break
 
                     member_page_token = member_result["nextPageToken"]
 
-
         if not "nextPageToken" in result:
             break
 
         page_token = result["nextPageToken"]
+
+    def add_group_members(group_id, members):
+        for member in members:
+            if member["type"] == "GROUP":
+                if member["email"] in all_groups:
+                    add_group_members(group_id, all_groups[member["email"]]["members"])
+                else:
+                    log.warn("Could not find group: %s" % member["email"])
+            elif member["type"] == "USER":
+                member_count += 1
+                group_members_add(actor, group_id=group_id, user_id = member["email"])
+            else:
+                log.debug("%s" % member)
+        pass
+
+    group_count += len(all_groups)
+    for group_name in all_groups:
+        log.debug("Creating or updating group %s" % group_name)
+
+        group = all_groups[group_name]
+        group_create_or_update(actor, group_id=group["email"], name=group["name"], active=True)
+        alias_create(actor, alias_id=group["email"], group_id=group["email"])
+        group_members_clear(actor, group_id=group["email"])
+
+        alias_count += len(group["aliases"]) + 1
+        for alias in group["aliases"]:
+            alias_create(actor, alias_id=alias, group_id=group["email"])
+
+        add_group_members(group["email"], group["members"])
 
     log.debug("Created or updated %s groups, %s aliases, %s members" % (group_count, alias_count, member_count))
 

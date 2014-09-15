@@ -13,7 +13,7 @@ from google.appengine.api import app_identity
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.arguments import *
-from users.permissions import permission_check, permission_is_root
+from users.permissions import permission_check, permission_is_root, permission_verify
 from users.users import build_user_key, user_load
 from projects.projects import Project
 from remarks.remarks import remark_create, remark_list
@@ -283,61 +283,61 @@ def issue_list(viewer):
 
 
 def issue_search(viewer, simple=None, query=None, complex=None):
-    if permission_check(viewer, "issue", "read") or permission_is_root(viewer):
-        user_sort = None
-        if not complex:
-            if query:
-                complex, user_sort = query_to_complex_search(query)
-            else:
-                # Status is open and assigned to me, or closing and verified by me.
-                complex = { "boolean" : "or",
-                            "sub"     : [ { "boolean" : "and",
-                                            "sub"     : [ { "field"    : "status",
-                                                            "operator" : "in",
-                                                            "value"    : [ "triage", "assigned", "working" ] },
-                                                          { "field"    : "assignee",
-                                                            "operator" : "==",
-                                                            "value"    : [ viewer ] } ] },
-                                          { "boolean" : "and",
-                                            "sub"     : [ { "field"    : "status",
-                                                            "operator" : "in",
-                                                            "value"    : [ "fixed", "rejected" ] },
-                                                          { "field"    : "verifier",
-                                                            "operator" : "==",
-                                                            "value"    : [ viewer ] } ] } ] }
+    permission_verify(viewer, ("issue", "read"))
 
-        result = []
-        ndb_query, first_sort = complex_search_to_ndb_query(complex)
-        if permission_is_root(viewer):
-            if ndb_query:
-                dataset = Issue.query().filter(ndb_query)
-            else:
-                dataset = Issue.query().filter()
+    user_sort = None
+    if not complex:
+        if query:
+            complex, user_sort = query_to_complex_search(query)
         else:
-            privacy_query = ndb.OR(Issue.privacy == "public",
-                                   Issue.assignee == build_user_key(viewer),
-                                   Issue.reporter == build_user_key(viewer),
-                                   Issue.verifier == build_user_key(viewer),
-                                   Issue.cc == build_user_key(viewer))
-            if ndb_query:
-                dataset = Issue.query().filter(ndb.AND(ndb_query, privacy_query))
-            else:
-                dataset = Issue.query().filter(privacy_query)
+            # Status is open and assigned to me, or closing and verified by me.
+            complex = { "boolean" : "or",
+                        "sub"     : [ { "boolean" : "and",
+                                        "sub"     : [ { "field"    : "status",
+                                                        "operator" : "in",
+                                                        "value"    : [ "triage", "assigned", "working" ] },
+                                                      { "field"    : "assignee",
+                                                        "operator" : "==",
+                                                        "value"    : [ viewer ] } ] },
+                                      { "boolean" : "and",
+                                        "sub"     : [ { "field"    : "status",
+                                                        "operator" : "in",
+                                                        "value"    : [ "fixed", "rejected" ] },
+                                                      { "field"    : "verifier",
+                                                        "operator" : "==",
+                                                        "value"    : [ viewer ] } ] } ] }
 
-        # if first_sort:
-        #     dataset = dataset.order(first_sort)
+    result = []
+    ndb_query, first_sort = complex_search_to_ndb_query(complex)
+    if permission_is_root(viewer):
+        if ndb_query:
+            dataset = Issue.query().filter(ndb_query)
+        else:
+            dataset = Issue.query().filter()
+    else:
+        privacy_query = ndb.OR(Issue.privacy == "public",
+                               Issue.assignee == build_user_key(viewer),
+                               Issue.reporter == build_user_key(viewer),
+                               Issue.verifier == build_user_key(viewer),
+                               Issue.cc == build_user_key(viewer))
+        if ndb_query:
+            dataset = Issue.query().filter(ndb.AND(ndb_query, privacy_query))
+        else:
+            dataset = Issue.query().filter(privacy_query)
 
-        # if user_sort:
-        #     dataset = dataset.order(user_sort)
+    # if first_sort:
+    #     dataset = dataset.order(first_sort)
 
-        # dataset = dataset.order(Issue.due_date, Issue.priority, -Issue.created)
+    # if user_sort:
+    #     dataset = dataset.order(user_sort)
 
-        for issue in dataset:
-            issue.history = []
-            result.append(to_model(viewer, issue))
+    # dataset = dataset.order(Issue.due_date, Issue.priority, -Issue.created)
 
-        return result
-    raise NotAllowedError()
+    for issue in dataset:
+        issue.history = []
+        result.append(to_model(viewer, issue))
+
+    return result
 
 
 def query_to_complex_search(query):
