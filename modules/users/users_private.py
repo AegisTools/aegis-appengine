@@ -76,7 +76,7 @@ def get(actor, user_id=None, user_key=None, user=None, silent=False):
 
 def list(actor):
     permission_verify(actor, ("user", "read"))
-    return User.query().filter(User.active == True)
+    return User.query().filter(User.active == True).fetch()
 
 
 def key(user):

@@ -30,6 +30,10 @@ def user_list(actor):
     return [user_to_model(actor, user) for user in users_private.list(actor)]
 
 
+def user_list_raw(actor):
+    return users_private.list(actor)
+
+
 def user_to_model(actor, user):
     if not user:
         return None

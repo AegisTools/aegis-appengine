@@ -8,7 +8,7 @@ from google.appengine.api import users
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 import system_settings
-from modules.users.users import user_create_or_update
+from modules.users.users import user_create_or_update, user_list_raw
 from modules.users.aliases import alias_create
 from modules.users.groups import group_create_or_update
 from modules.users.members import group_members_add, group_members_clear
@@ -168,19 +168,26 @@ def refresh_groups(actor, force=False, **ignored):
 
         page_token = result["nextPageToken"]
 
+    all_users = user_list_raw(actor)
+
     def add_group_members(group_id, members):
+        count = 0
         for member in members:
             if member["type"] == "GROUP":
                 if member["email"] in all_groups:
-                    add_group_members(group_id, all_groups[member["email"]]["members"])
+                    count += add_group_members(group_id, all_groups[member["email"]]["members"])
                 else:
                     log.warn("Could not find group: %s" % member["email"])
             elif member["type"] == "USER":
-                member_count += 1
-                group_members_add(actor, group_id=group_id, user_id = member["email"])
+                count += 1
+                group_members_add(actor, group_id=group_id, user_id=member["email"])
+            elif member["type"] == "CUSTOMER":
+                count += len(all_users)
+                for user in all_users:
+                    group_members_add(actor, group_id=group_id, user=user)
             else:
                 log.debug("%s" % member)
-        pass
+        return count
 
     group_count += len(all_groups)
     for group_name in all_groups:
@@ -195,7 +202,7 @@ def refresh_groups(actor, force=False, **ignored):
         for alias in group["aliases"]:
             alias_create(actor, alias_id=alias, group_id=group["email"])
 
-        add_group_members(group["email"], group["members"])
+        member_count += add_group_members(group["email"], group["members"])
 
     log.debug("Created or updated %s groups, %s aliases, %s members" % (group_count, alias_count, member_count))
 
