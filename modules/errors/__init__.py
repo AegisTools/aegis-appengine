@@ -11,7 +11,7 @@ log = logging.getLogger("issues")
 def error_report(viewer, url=None, request_code=None, description=None, stack=None, **ignored):
     settings = system_settings.get_system_settings()
 
-    sender = viewer.email()
+    sender = viewer.user.email()
     if "email_admin" in settings:
         sender = settings["email_admin"]
     
