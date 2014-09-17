@@ -6,6 +6,7 @@ from google.appengine.ext import ndb
 from google.appengine.api import memcache
 from google.appengine.api import users
 
+from modules.users.users import build_user_key
 from modules.users.permissions import permission_check, permission_is_root
 
 
@@ -36,7 +37,7 @@ def save_system_settings(actor, settings):
         for key in settings:
             setattr(old_settings, key, settings[key])
 
-        old_settings.updated_by = actor
+        old_settings.updated_by = build_user_key(actor)
         old_settings.put()
 
         memcache.delete("settings", namespace="aegis")
@@ -46,6 +47,6 @@ def save_system_settings(actor, settings):
 
 class SystemSettings(ndb.Expando):
     updated = ndb.DateTimeProperty(auto_now=True)
-    updated_by = ndb.UserProperty()
+    updated_by = ndb.KeyProperty(kind='User')
 
 

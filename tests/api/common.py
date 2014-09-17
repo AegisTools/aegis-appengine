@@ -24,7 +24,7 @@ class AegisTestCase(unittest.TestCase):
 
     def wipe(self):
         self.post("test_harness/wipe", auth=USER_ROOT)
-        self.put("users/root@test.com", auth=USER_ROOT)
+        # self.put("users/root@test.com", auth=USER_ROOT)
         self.put("users/a@test.com", auth=USER_ROOT)
         self.put("users/b@test.com", auth=USER_ROOT)
 
@@ -32,8 +32,7 @@ class AegisTestCase(unittest.TestCase):
         self.wipe()
 
     def tearDown(self):
-        # self.wipe()
-        pass
+        self.post("test_harness/wipe", auth=USER_ROOT)
 
     def get(self, fragment, auth=USER_ANONYMOUS):
         return auth.get(URL + fragment, headers=HEADERS)

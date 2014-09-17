@@ -18,7 +18,7 @@ import webapp2
 
 import modules
 from modules.common.errors import *
-from modules.users.users import user_load_raw
+from modules.users.users import user_load_raw, user_create
 
 log = logging.getLogger("engine")
 
@@ -117,6 +117,10 @@ class MainPage(webapp2.RequestHandler):
             except:
                 request.user_obj = users.get_current_user()
                 log.warn("User does not exist")
+                if users.is_current_user_admin():
+                    user_create(users.get_current_user(), user_id = users.get_current_user().email())
+                    request.user_obj = user_load_raw(users.get_current_user())
+                    log.warn("User created for admin")
 
             if "timezoneoffset" in self.request.cookies:
                 request.timezoneoffset = int(self.request.cookies.get("timezoneoffset"))

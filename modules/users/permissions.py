@@ -103,7 +103,8 @@ def permission_get(type, action, target, user, groups, keys_only=True):
             ndb.AND(Permission.type == type,
                     Permission.action == action,
                     Permission.target == target,
-                    ndb.OR(user_clause, group_clause))).get(keys_only=keys_only)
+                    ndb.OR(Permission.user == build_user_key(user),
+                           Permission.group.IN([build_group_key(group) for group in groups])))).get(keys_only=keys_only)
     elif user:
         return Permission.query(ancestor=build_user_key(user)).filter( \
             ndb.AND(Permission.type == type,
