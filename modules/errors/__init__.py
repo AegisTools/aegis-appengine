@@ -9,7 +9,7 @@ import system_settings
 log = logging.getLogger("issues")
 
 def error_report(viewer, url=None, request_code=None, description=None, stack=None, **ignored):
-    settings = settings or system_settings.get_system_settings()
+    settings = system_settings.get_system_settings()
 
     sender = viewer.email()
     if "email_admin" in settings:
