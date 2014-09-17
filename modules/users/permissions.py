@@ -4,43 +4,65 @@ import logging
 
 from google.appengine.ext import ndb
 from google.appengine.api import users
+from google.appengine.api import memcache
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
 
 log = logging.getLogger("permissions")
+log.setLevel(logging.DEBUG)
 
 
-def permission_key(user, type, action, key=None):
-    if not type:
-        type = key.kind()
+def permission_lookup(user, type, action, target=None, keys_only=True):
+    if not isinstance(user, ndb.Model):
+        user = build_user_key(user).get()
 
-    type_key = ndb.Key("Permission_Type", type, parent=build_user_key(user))
-    if key:
-        return ndb.Key("Permission", key.urlsafe(), 
-                       parent=ndb.Key("Permission_Action", action, parent=type_key))
+    if not user:
+        return None
+
+    return permission_get(type, action, target, user, user.groups, keys_only=keys_only)
+
+
+def permission_verify(user, type, action, target=None, root_ok=True):
+    original_user = user
+    user_key = build_user_key(user)
+    if not isinstance(user, ndb.Model):
+        user = user_key.get()
+
+    tuple = (type, action, target)
+    cached = memcache.get(user_key.id(), namespace="permissions") or []
+
+    if not user:
+        log.warn("User not recognized")
     else:
-        return ndb.Key("Permission", action, parent=type_key)
-
-
-def permission_verify(user, *permission_sets, **kwargs):
-    root_ok = not "root_ok" in kwargs or kwargs["root_ok"]
-
-    for permission_set in permission_sets:
-        if len(permission_set) == 2:
-            permission_set = permission_set + (None,)
-
-        type, action, key = permission_set
-        if permission_key(user, *permission_set).get():
+        if tuple in cached:
+            log.debug("Permission Allowed (Cache): %s - %s.%s (%s)" % (user.user.email(), type, action, target))
             return
 
-        if permission_set[2] and permission_key(user *permission_set[:2]).get():
+        if permission_lookup(user, type, action, target):
+            log.debug("Permission Allowed:         %s - %s.%s (%s)" % (user.user.email(), type, action, target))
+            cached.append(tuple)
+            memcache.set(user_key.id(), cached, namespace="permissions")
             return
+        else:
+            log.debug("Permission Not Allowed:     %s - %s.%s (%s)" % (user.user.email(), type, action, target))
 
-    if root_ok and permission_is_root(user):
+        if target:
+            if permission_lookup(user, type, action):
+                log.debug("Permission Allowed:         %s - %s.%s (%s)" % (user.user.email(), type, action, None))
+                cached.append(tuple)
+                memcache.set(user_key.id(), cached, namespace="permissions")
+                return
+            else: 
+                log.debug("Permission Not Allowed:     %s - %s.%s (%s)" % (user.user.email(), type, action, None))
+
+    if root_ok and permission_is_root(original_user):
+        cached.append(tuple)
+        memcache.set(user_key.id(), cached, namespace="permissions")
+        log.debug("Permission Allowed (Root):  %s" % user_key.id())
         return
 
-    log.error("Permission denied.  Requires one of %s", permission_sets)
+    log.error("Permission Denied:       %s" % user_key.id())
     raise NotAllowedError()
 
 
@@ -48,71 +70,107 @@ def permission_check(user, type, action, key=None):
     if not type:
         type = key.kind()
 
-    result = permission_key(user, type, action, key).get()
+    user_key = build_user_key(user)
+    result = permission_lookup(user_key, type, action, key)
 
     key_str = ""
     if key: key_str = ":" + key.urlsafe()
 
     if result:
-        log.debug("Permission: %s %s%s (%s) - Allowed" % (user, type, key_str, action))
+        log.debug("Permission: %s %s%s (%s) - Allowed" % (user_key, type, key_str, action))
     else:
-        log.debug("Permission: %s %s%s (%s) - Not Allowed" % (user, type, key_str, action))
+        log.debug("Permission: %s %s%s (%s) - Not Allowed" % (user_key, type, key_str, action))
         if key:
-            return permission_check(user, type, action, key.parent())
+            return permission_check(user_key, type, action, key.parent())
 
     return result
 
 
 def permission_is_root(user):
-    if user.email() == "cron":
+    if build_user_key(user).id() == "cron":
         return True
     if users.is_current_user_admin():
         return True
-    if permission_check(user, "root", "root"):
+    if permission_lookup(user, "root", "root"):
         return True
     else:
         return False
 
 
-def permission_grant(viewer, user, type, action, target=None):
-    if permission_check(viewer, "permissions", "grant") or permission_is_root(viewer):
-        if not permission_key(user, type, action, target).get():
-            permission = Permission(key=permission_key(user, type, action, target))
-            permission.user = build_user_key(user)
-            permission.type = type or target.kind()
-            permission.action = action
-            permission.target = target
-            permission.granted_by = build_user_key(viewer)
-            permission.put()
+def permission_get(type, action, target, user, groups, keys_only=True):
+    user_clause = None
+    group_clause = None
 
-            log.debug("Permission granted")
+    if user:
+        user_clause = Permission.user == build_user_key(user)
+        identity_clause = user_clause
+
+    if groups:
+        group_clause = Permission.group.IN([build_group_key(group) for group in groups])
+        identity_clause = group_clause
+
+    if user and groups:
+        identity_clause = ndb.OR(user_clause, group_clause)
+
+    return Permission.query().filter( \
+        ndb.AND(Permission.type == type,
+                Permission.action == action,
+                Permission.target == target,
+                identity_clause)).get(keys_only=keys_only)
+
+
+def permission_grant(viewer, type, action, target=None, user=None, group=None):
+    permission_verify(viewer, "permissions", "grant")
+
+    if not permission_get(type, action, target, user, [group] if group else None):
+        user = build_user_key(user)
+        group = build_group_key(group)
+
+        permission = Permission(parent=target)
+        permission.user = user
+        permission.group = group
+        permission.type = type or target.kind()
+        permission.action = action
+        permission.target = target
+        permission.granted_by = build_user_key(viewer)
+        permission.put()
+
+        log.debug("Permission Granted: %s - %s.%s (%s)" % (user or group, type, action, target))
+    else:
+        log.warn("Permission already granted")
+
+
+def permission_revoke(viewer, type, action, user=None, group=None, target=None):
+    permission_verify(viewer, "permissions", "revoke")
+
+    key = permission_get(type, action, target, user, [group] if group else None)
+    if key:
+        key.delete()
+        log.debug("Permission Revoked: %s - %s.%s (%s)" % (build_user_key(user) or build_group_key(group), type, action, target))
+        if user:
+            memcache.delete(build_user_key(user).id())
         else:
-            log.warn("Permission already granted")
+            memcache.flush_all()
     else:
-        raise NotAllowedError()
-
-
-def permission_revoke(viewer, user, type, action, target=None):
-    if permission_check(viewer, "permissions", "revoke") or permission_is_root(viewer):
-        permission_key(user, type, action, target).delete()
-        log.debug("Permission revoked")
-    else:
-        log.debug("Not allowed")
+        log.debug("Permission wasn't granted")
 
 
 def permission_list(viewer, user):
-    if permission_check(viewer, "permissions", "view") or permission_is_root(viewer):
-        result = []
-        for permission in Permission.query(ancestor=build_user_key(user)).fetch():
-            result.append({ 'user'   : permission.user.email(),
-                            'type'   : permission.type,
-                            'id'     : permission.id,
-                            'action' : permission.action })
-        return result
+    permission_verify(viewer, "permissions", "view")
+
+    result = []
+    for permission in Permission.query(ancestor=build_user_key(user)).fetch():
+        result.append({ 'user'   : permission.user.email(),
+                        'type'   : permission.type,
+                        'id'     : permission.id,
+                        'action' : permission.action,
+                        'target' : permission.target })
+    return result
 
 
 class Permission(ndb.Model):
     user = ndb.KeyProperty(kind='User')
+    group = ndb.KeyProperty(kind='Group')
     type = ndb.StringProperty()
     action = ndb.StringProperty()
     target = ndb.KeyProperty()
@@ -121,4 +179,6 @@ class Permission(ndb.Model):
 
 
 from users import build_user_key
+from groups import build_group_key
+
 

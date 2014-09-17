@@ -10,7 +10,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 import system_settings
 from modules.users.users import user_create_or_update, user_list_raw
 from modules.users.aliases import alias_create
-from modules.users.groups import group_create_or_update
+from modules.users.groups import group_create_or_update, build_group_key
 from modules.users.members import group_members_add, group_members_clear
 
 
@@ -22,7 +22,10 @@ cron_user = users.User("cron")
 
 
 def fetch(*args, **kwargs):
-    response = urlfetch.fetch(*args, **kwargs)
+    try:
+        response = urlfetch.fetch(*args, **kwargs)
+    except:
+        return {}
 
     if response.status_code >= 400:
         log.debug(response.status_code)
@@ -168,41 +171,42 @@ def refresh_groups(actor, force=False, **ignored):
 
         page_token = result["nextPageToken"]
 
-    all_users = user_list_raw(actor)
+    all_users = { user.user.email(): user for user in user_list_raw(actor) }
 
-    def add_group_members(group_id, members):
-        count = 0
+    def get_group_members(group_id, members):
+        result = []
         for member in members:
             if member["type"] == "GROUP":
                 if member["email"] in all_groups:
-                    count += add_group_members(group_id, all_groups[member["email"]]["members"])
+                    result.extend(get_group_members(group_id, all_groups[member["email"]]["members"]))
                 else:
                     log.warn("Could not find group: %s" % member["email"])
             elif member["type"] == "USER":
-                count += 1
-                group_members_add(actor, group_id=group_id, user_id=member["email"])
+                if member["email"] in all_users:
+                    result.append(all_users[member["email"]])
             elif member["type"] == "CUSTOMER":
-                count += len(all_users)
-                for user in all_users:
-                    group_members_add(actor, group_id=group_id, user=user)
+                result.extend(all_users.values())
             else:
                 log.debug("%s" % member)
-        return count
+        return result
 
     group_count += len(all_groups)
-    for group_name in all_groups:
+    for group_name in sorted(all_groups):
         log.debug("Creating or updating group %s" % group_name)
 
         group = all_groups[group_name]
         group_create_or_update(actor, group_id=group["email"], name=group["name"], active=True)
-        alias_create(actor, alias_id=group["email"], group_id=group["email"])
-        group_members_clear(actor, group_id=group["email"])
+        group_obj = build_group_key(group_name).get()
+        alias_create(actor, alias_id=group["email"], group=group_obj)
+        group_members_clear(actor, group=group_obj)
 
         alias_count += len(group["aliases"]) + 1
         for alias in group["aliases"]:
-            alias_create(actor, alias_id=alias, group_id=group["email"])
+            alias_create(actor, alias_id=alias, group=group_obj)
 
-        member_count += add_group_members(group["email"], group["members"])
+        for member in get_group_members(group["email"], group["members"]):
+            group_members_add(actor, group=group_obj, user=member)
+
 
     log.debug("Created or updated %s groups, %s aliases, %s members" % (group_count, alias_count, member_count))
 

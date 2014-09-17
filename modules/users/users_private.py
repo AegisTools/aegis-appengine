@@ -16,7 +16,7 @@ log = logging.getLogger("users")
 
 
 def create(actor, user_key=None, user_id=None, active=True, **kwargs):
-    permission_verify(actor, ("user", "create"))
+    permission_verify(actor, "user", "create")
 
     user_key = user_key or key(user_id)
     user = User(key=user_key)
@@ -27,12 +27,12 @@ def create(actor, user_key=None, user_id=None, active=True, **kwargs):
 
 
 def update(actor, user_id=None, user_key=None, user=None, **kwargs):
-    permission_verify(actor, ("user", "update"))
+    permission_verify(actor, "user", "update")
     return set(actor, get(actor, user_id, user_key, user), **kwargs)
 
 
 def deactivate(actor, user_id=None, user_key=None, user=None, **ignored):
-    permission_verify(actor, ("user", "update"))
+    permission_verify(actor, "user", "update")
     return set(actor, get(actor, user_id, user_key, user), active=False)
 
 
@@ -57,7 +57,8 @@ def set(actor, user, first_name=undefined, last_name=undefined, active=undefined
 
 
 def get(actor, user_id=None, user_key=None, user=None, silent=False):
-    permission_verify(actor, ("user", "read"))
+    if actor:
+        permission_verify(actor, "user", "read")
 
     if user:
         return user
@@ -75,14 +76,14 @@ def get(actor, user_id=None, user_key=None, user=None, silent=False):
 
 
 def list(actor):
-    permission_verify(actor, ("user", "read"))
+    permission_verify(actor, "user", "read")
     return User.query().filter(User.active == True).fetch()
 
 
 def key(user):
     if not user:
         return None
-    elif isinstance(user, User):
+    elif isinstance(user, ndb.Model):
         return user.key
     elif isinstance(user, users.User):
         return ndb.Key("User", user.email())

@@ -13,7 +13,7 @@ from google.appengine.api import app_identity
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.arguments import *
-from users.permissions import permission_check, permission_is_root, permission_verify
+from users.permissions import permission_verify, permission_is_root
 from users.users import build_user_key, user_load
 from projects.projects import Project
 from remarks.remarks import remark_create, remark_list
@@ -36,19 +36,16 @@ def issue_http_put(actor, issue_id, **kwargs):
     key = issue_key(issue_id)
     issue = key.get()
     if issue:
-        if permission_check(actor, "issue", "update") or permission_is_root(actor):
-            return issue_update(actor, issue=issue, **kwargs)
-        else:
-            raise NotAllowedError()
+        permission_verify(actor, "issue", "update")
+        return issue_update(actor, issue=issue, **kwargs)
     else:
         return issue_http_post(actor, key=key, issue_id=issue_id, **kwargs)
 
 
 def issue_http_post(actor, **kwargs):
-    if permission_check(actor, "issue", "create") or permission_is_root(actor):
-        return issue_create(actor, **kwargs)
-    else:
-        raise NotAllowedError()
+    permission_verify(actor, "issue", "create")
+
+    return issue_create(actor, **kwargs)
 
 
 def issue_create(actor, key=None, issue_id=None, name=undefined, active=True, **kwargs):
@@ -72,7 +69,7 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
                  blocking=undefined, privacy=undefined, due_date=undefined, body="", send_mail=True, 
                  **args):
     issue = issue or (key or issue_key(issue_id)).get()
-    header = "**" + actor.email() + "** on " + time.strftime("%c") + "\n\n"
+    header = "**" + actor.user.email() + "** on " + time.strftime("%c") + "\n\n"
 
     is_root = permission_is_root(actor)
 
@@ -216,18 +213,18 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
         html = "<div style='font-size: 0.8em'>%s</div><div>%s</div><div>%s</div>" % \
                     (lib.markdown.markdown(header), lib.markdown.markdown(body), url)
         if len(cc_recipients) > 0:
-            mail.send_mail(sender=actor.email(),
+            mail.send_mail(sender=actor.user.email(),
                            to=[user.id() for user in to_recipients],
                            cc=[user.id() for user in cc_recipients],
-                           reply_to=actor.email(),
+                           reply_to=actor.user.email(),
                            subject="[" + str(issue.key.id()) + "] " + issue.summary,
                            body=text,
                            html=html,
                            headers={"In-Reply-To": message_id, "References":  message_id })
         else:
-            mail.send_mail(sender=actor.email(),
+            mail.send_mail(sender=actor.user.email(),
                            to=[user.id() for user in to_recipients],
-                           reply_to=actor.email(),
+                           reply_to=actor.user.email(),
                            subject="[" + str(issue.key.id()) + "] " + issue.summary,
                            body=text,
                            html=html,
@@ -264,26 +261,22 @@ def issue_get(viewer, issue_id=None, key=None, issue=None, silent=False):
 
 
 def issue_load(viewer, issue_id):
-    if permission_check(viewer, "issue", "read") or permission_is_root(viewer):
-        return to_model(viewer, issue_get(viewer, issue_id))
-    else:
-        raise NotAllowedError()
+    permission_verify(viewer, "issue", "read")
+    return to_model(viewer, issue_get(viewer, issue_id))
 
 
 def issue_list(viewer):
-    if permission_check(viewer, "issue", "read") or permission_is_root(viewer):
-        result = []
-        for issue in Issue.query().filter():
-            issue.history = []
-            result.append(viewer, to_model(issue, get_related_issues=False))
+    permission_verify(viewer, "issue", "read")
+    result = []
+    for issue in Issue.query().filter():
+        issue.history = []
+        result.append(viewer, to_model(issue, get_related_issues=False))
 
-        return result
-    else:
-        raise NotAllowedError()
+    return result
 
 
 def issue_search(viewer, simple=None, query=None, complex=None):
-    permission_verify(viewer, ("issue", "read"))
+    permission_verify(viewer, "issue", "read")
 
     user_sort = None
     if not complex:

@@ -18,6 +18,7 @@ import webapp2
 
 import modules
 from modules.common.errors import *
+from modules.users.users import user_load_raw
 
 log = logging.getLogger("engine")
 
@@ -108,7 +109,7 @@ class MainPage(webapp2.RequestHandler):
         request_code = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(32))
         try:
             request = RequestData()
-            request.user = users.get_current_user()
+            request.user = user_load_raw(users.get_current_user())
             request.known_loaders = known_loaders
             if "timezoneoffset" in self.request.cookies:
                 request.timezoneoffset = int(self.request.cookies.get("timezoneoffset"))
@@ -262,7 +263,7 @@ class MainPage(webapp2.RequestHandler):
         if template:
             obj = {'query'        : self.request.GET,
                    'keys'         : keys,
-                   'user'         : request.user,
+                   'user'         : users.get_current_user(),
                    'sign_out_url' : users.create_logout_url(path),
                    'load'         : request.load,
                    'local_time'   : request.local_time,

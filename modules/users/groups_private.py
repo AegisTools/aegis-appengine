@@ -17,7 +17,7 @@ log = logging.getLogger("groups")
 
 
 def create(actor, group_id=None, group_key=None, active=True, **kwargs):
-    permission_verify(actor, ("group", "create"))
+    permission_verify(actor, "group", "create")
 
     group_key = group_key or key(group_id)
     group = Group(key=group_key)
@@ -28,12 +28,12 @@ def create(actor, group_id=None, group_key=None, active=True, **kwargs):
 
 
 def update(actor, group_id=None, group_key=None, group=None, **kwargs):
-    permission_verify(actor, ("group", "update"))
+    permission_verify(actor, "group", "update")
     return set(actor, get(actor, group_id, group_key, group), **kwargs)
 
 
 def deactivate(actor, group_id=None, group_key=None, group=None, **ignored):
-    permission_verify(actor, ("group", "update"))
+    permission_verify(actor, "group", "update")
     return set(actor, get(actor, group_id, group_key, group), active=False)
 
 
@@ -54,7 +54,7 @@ def set(actor, group, name=undefined, active=undefined, notes=undefined, **ignor
 
 
 def get(actor, group_id=None, group_key=None, group=None, silent=False):
-    permission_verify(actor, ("group", "read"))
+    permission_verify(actor, "group", "read")
 
     if group:
         return group
@@ -72,15 +72,15 @@ def get(actor, group_id=None, group_key=None, group=None, silent=False):
 
 
 def list(actor):
-    permission_verify(actor, ("group", "read"))
+    permission_verify(actor, "group", "read")
     return Group.query().filter(Group.active == True)
 
 
 def key(group):
     if not group:
         return None
-    elif isinstance(group, Group):
-        return ndb.Key('Group', group.key)
+    elif isinstance(group, ndb.Model):
+        return group.key
     elif isinstance(group, ndb.Key):
         return group
     else:

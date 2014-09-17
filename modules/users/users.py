@@ -26,6 +26,10 @@ def user_load(actor, user_id=None, user_key=None, silent=False):
     return user_to_model(actor, users_private.get(actor, user_id, user_key, silent=silent))
 
 
+def user_load_raw(user):
+    return users_private.get(None, user_id=user)
+
+
 def user_list(actor):
     return [user_to_model(actor, user) for user in users_private.list(actor)]
 

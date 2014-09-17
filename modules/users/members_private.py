@@ -18,7 +18,7 @@ log = logging.getLogger("members")
 
 
 def members_add(actor, group_id=None, group_key=None, group=None, user_id=None, user_key=None, user=None):
-    permission_verify(actor, ("member", "update"))
+    permission_verify(actor, "member", "update")
 
     user_key  = user_key  or build_user_key( user_id ) or user.key
     group_key = group_key or build_group_key(group_id) or group.key
@@ -47,7 +47,7 @@ def members_add(actor, group_id=None, group_key=None, group=None, user_id=None, 
 
 
 def members_remove(actor, group_id=None, group_key=None, group=None, user_id=None, user_key=None, user=None):
-    permission_verify(actor, ("member", "update"))
+    permission_verify(actor, "member", "update")
 
     user_key  = user_key  or build_user_key( user_id ) or user.key
     group_key = group_key or build_group_key(group_id) or group.key
@@ -64,7 +64,7 @@ def members_remove(actor, group_id=None, group_key=None, group=None, user_id=Non
 
 
 def members_clear(actor, group_id=None, group_key=None, group=None):
-    permission_verify(actor, ("member", "update"))
+    permission_verify(actor, "member", "update")
 
     group = group or (group_key or build_group_key(group_id)).get()
     for user_key in group.users:

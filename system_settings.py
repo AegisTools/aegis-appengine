@@ -14,7 +14,7 @@ def system_settings_key():
 
 
 def get_system_settings():
-    settings = memcache.get("system.settings")
+    settings = memcache.get("settings", namespace="aegis")
     if not settings:
         settings = system_settings_key().get()
         if settings:
@@ -23,7 +23,7 @@ def get_system_settings():
                        not isinstance(getattr(settings, key), types.FunctionType) }
         else:
             settings = {}
-        memcache.add("system.settings", settings)
+        memcache.add("settings", settings, namespace="aegis")
     return settings
 
 
@@ -39,7 +39,7 @@ def save_system_settings(actor, settings):
         old_settings.updated_by = actor
         old_settings.put()
 
-        memcache.delete("system.settings")
+        memcache.delete("settings", namespace="aegis")
     else:
         raise NotAllowedError()
 

@@ -19,7 +19,7 @@ log = logging.getLogger("aliases")
 
 def create(actor, alias_key=None, alias_id=None, user_id=None, user_key=None, user=None, 
            group_id=None, group_key=None, group=None, **kwargs):
-    permission_verify(actor, ("alias", "create"))
+    permission_verify(actor, "alias", "create")
 
     user_key = user_key or build_user_key(user or user_id)
     group_key = group_key or build_group_key(group or group_id)
@@ -41,12 +41,12 @@ def create(actor, alias_key=None, alias_id=None, user_id=None, user_key=None, us
 
 
 def delete(actor, alias_id=None, alias_key=None, alias=None, **ignored):
-    permission_verify(actor, ("alias", "delete"))
+    permission_verify(actor, "alias", "delete")
     return get(alias_id, alias_key, alias).delete()
 
 
 def get(alias_id=None, alias_key=None, alias=None):
-    permission_verify(actor, ("alias", "read"))
+    permission_verify(actor, "alias", "read")
 
     result = alias or (alias_key or key(alias_id)).get()
     if result:
@@ -56,7 +56,7 @@ def get(alias_id=None, alias_key=None, alias=None):
 
 
 def list(actor):
-    permission_verify(actor, ("alias", "read"))
+    permission_verify(actor, "alias", "read")
     return Alias.query().get()
 
 
