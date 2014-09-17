@@ -109,8 +109,15 @@ class MainPage(webapp2.RequestHandler):
         request_code = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(32))
         try:
             request = RequestData()
-            request.user = user_load_raw(users.get_current_user())
             request.known_loaders = known_loaders
+            request.user = users.get_current_user()
+
+            try:
+                request.user_obj = user_load_raw(users.get_current_user())
+            except:
+                request.user_obj = users.get_current_user()
+                log.warn("User does not exist")
+
             if "timezoneoffset" in self.request.cookies:
                 request.timezoneoffset = int(self.request.cookies.get("timezoneoffset"))
             else:
@@ -220,7 +227,7 @@ class MainPage(webapp2.RequestHandler):
 
             args = dict(keys.items() + data.items())
             log.debug("Performing action: %s(%s)" % (action, args))
-            result = action["method"](request.user, **args)
+            result = action["method"](request.user_obj, **args)
             if "redirect" in action:
                 try:
                     return action["redirect"] % result

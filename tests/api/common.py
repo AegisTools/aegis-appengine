@@ -24,6 +24,9 @@ class AegisTestCase(unittest.TestCase):
 
     def wipe(self):
         self.post("test_harness/wipe", auth=USER_ROOT)
+        self.put("users/root@test.com", auth=USER_ROOT)
+        self.put("users/a@test.com", auth=USER_ROOT)
+        self.put("users/b@test.com", auth=USER_ROOT)
 
     def setUp(self):
         self.wipe()
@@ -36,11 +39,14 @@ class AegisTestCase(unittest.TestCase):
         return auth.get(URL + fragment, headers=HEADERS)
 
     def put(self, fragment, payload=None, auth=USER_ANONYMOUS):
-        return auth.put(URL + fragment, data=payload, headers=HEADERS)
+        result = auth.put(URL + fragment, data=payload, headers=HEADERS)
+        return result
 
     def post(self, fragment, payload=None, auth=USER_ANONYMOUS):
-        return auth.post(URL + fragment, data=payload, headers=HEADERS)
+        result = auth.post(URL + fragment, data=payload, headers=HEADERS)
+        return result
 
     def delete(self, fragment, auth=USER_ANONYMOUS):
-        return auth.delete(URL + fragment, headers=HEADERS)
+        result = auth.delete(URL + fragment, headers=HEADERS)
+        return result
 

@@ -98,25 +98,23 @@ def permission_is_root(user):
 
 
 def permission_get(type, action, target, user, groups, keys_only=True):
-    user_clause = None
-    group_clause = None
-
-    if user:
-        user_clause = Permission.user == build_user_key(user)
-        identity_clause = user_clause
-
-    if groups:
-        group_clause = Permission.group.IN([build_group_key(group) for group in groups])
-        identity_clause = group_clause
-
     if user and groups:
-        identity_clause = ndb.OR(user_clause, group_clause)
-
-    return Permission.query().filter( \
-        ndb.AND(Permission.type == type,
-                Permission.action == action,
-                Permission.target == target,
-                identity_clause)).get(keys_only=keys_only)
+        return Permission.query().filter( \
+            ndb.AND(Permission.type == type,
+                    Permission.action == action,
+                    Permission.target == target,
+                    ndb.OR(user_clause, group_clause))).get(keys_only=keys_only)
+    elif user:
+        return Permission.query(ancestor=build_user_key(user)).filter( \
+            ndb.AND(Permission.type == type,
+                    Permission.action == action,
+                    Permission.target == target)).get(keys_only=keys_only)
+    elif groups:
+        return Permission.query().filter( \
+            ndb.AND(Permission.type == type,
+                    Permission.action == action,
+                    Permission.target == target,
+                    Permission.group.IN([build_group_key(group) for group in groups]))).get(keys_only=keys_only)
 
 
 def permission_grant(viewer, type, action, target=None, user=None, group=None):
@@ -126,7 +124,7 @@ def permission_grant(viewer, type, action, target=None, user=None, group=None):
         user = build_user_key(user)
         group = build_group_key(group)
 
-        permission = Permission(parent=target)
+        permission = Permission(parent=user or group)
         permission.user = user
         permission.group = group
         permission.type = type or target.kind()
@@ -140,7 +138,7 @@ def permission_grant(viewer, type, action, target=None, user=None, group=None):
         log.warn("Permission already granted")
 
 
-def permission_revoke(viewer, type, action, user=None, group=None, target=None):
+def permission_revoke(viewer, type, action, target=None, user=None, group=None):
     permission_verify(viewer, "permissions", "revoke")
 
     key = permission_get(type, action, target, user, [group] if group else None)

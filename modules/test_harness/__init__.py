@@ -6,6 +6,7 @@ import logging
 from google.appengine.ext import ndb
 from google.appengine.api import memcache
 
+from users.users import user_create
 from users.permissions import permission_check, permission_grant, permission_revoke
 from tags.tags import tag_apply, tag_remove, tag_list
 from remarks.remarks import remark_create, remark_list
@@ -18,7 +19,7 @@ log = logging.getLogger("test_harness")
 
 
 if not os.environ.get('SERVER_SOFTWARE','').startswith('Development'):
-    log.debug("Production environment detectedl test harness disabled")
+    log.debug("Production environment detected; test harness disabled")
 else:
     log.warn("Development environment detected; test harness enabled")
 
@@ -40,10 +41,10 @@ else:
     """
 
     def issue_permission(viewer, user=None, **ignored):
-        permission_grant(viewer, user or viewer, "issue", "read")
-        permission_grant(viewer, user or viewer, "issue", "create")
-        permission_grant(viewer, user or viewer, "issue", "update")
-        permission_grant(viewer, user or viewer, "user", "read")
+        permission_grant(viewer, "issue", "read", user=user or viewer)
+        permission_grant(viewer, "issue", "create", user=user or viewer)
+        permission_grant(viewer, "issue", "update", user=user or viewer)
+        permission_grant(viewer, "user", "read", user=user or viewer)
 
     """
     PERMISSION STUBS
@@ -51,12 +52,12 @@ else:
 
     def grant_permission(viewer, user, kind, action, thing=[], **ignored):
         key = build_thing_key(kind, thing)
-        permission_grant(viewer, user, kind, action, key)
+        permission_grant(viewer, kind, action, key, user=user)
 
 
     def revoke_permission(viewer, user, kind, action, thing=[], **ignored):
         key = build_thing_key(kind, thing)
-        permission_revoke(viewer, user, kind, action, key)
+        permission_revoke(viewer, kind, action, key, user=user)
 
 
     def check_permission(viewer, keys, **ignored):
