@@ -126,10 +126,6 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
                 else:
                     due_date = datetime.datetime(*parsed_time[0][:6]) + offset
 
-                log.debug("offset = %s" % offset)
-                log.debug("parsed_time = %s" % str(parsed_time))
-                log.debug("due_date = %s" % due_date)
-    
         # Update all fields
         if is_defined(summary) and summary != issue.summary:
             header = header + "**Summary:** " + summary + "  \n"
@@ -192,6 +188,8 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
             header = header + "**Due Date:** " + str(due_date) + " UTC  \n"
             issue.due_date = due_date
 
+    issue.score, issue.score_description = calculate_issue_score(issue)
+
     issue.text_index = set(issue.text_index) | \
                        set(issue.summary_index) | \
                        set(re.split("[^\\w\\d]+", body.lower()))
@@ -233,6 +231,16 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
         log.debug(text)
 
     return to_model(actor, issue)
+
+
+def calculate_issue_score(issue):
+    days_until_due = 30 if not issue.due_date else (issue.due_date - datetime.datetime.utcnow()).days
+
+    score_priority = (6 - issue.priority) * 10                      # Range: 10 - 50
+    score_due_date = 30 - max(min(30, days_until_due), -30)         # Range:  0 - 60
+
+    return score_priority + score_due_date, \
+            "= %s <sub>(Priority)</sub> + %s <sub>(Due Date)</sub>" % (score_priority, score_due_date)
 
 
 def issue_deactivate(actor, issue_id=None, key=None, issue=None, **ignored):
@@ -324,7 +332,7 @@ def issue_search(viewer, simple=None, query=None, complex=None):
     # if user_sort:
     #     dataset = dataset.order(user_sort)
 
-    # dataset = dataset.order(Issue.due_date, Issue.priority, -Issue.created)
+    dataset = dataset.order(-Issue.score, -Issue.created)
 
     for issue in dataset:
         issue.history = []
@@ -440,28 +448,30 @@ def to_model(viewer, issue, get_related_issues=True):
 
     cc = { key.id(): user_load(viewer, user_key=key, silent=True) for key in issue.cc }
 
-    return { 'id'             : issue.key.id(),
-             'summary'        : issue.summary,
-             'history'        : issue.history,
-             'project'        : issue.project,
-             'status'         : issue.status,
-             'priority'       : issue.priority,
-             'severity'       : issue.severity,
-             'reporter_email' : issue.reporter.id(),
-             'assignee_email' : issue.assignee.id(),
-             'verifier_email' : issue.verifier.id(),
-             'reporter'       : user_load(viewer, user_key=issue.reporter, silent=True),
-             'assignee'       : user_load(viewer, user_key=issue.assignee, silent=True),
-             'verifier'       : user_load(viewer, user_key=issue.verifier, silent=True),
-             'cc'             : sorted(cc),
-             'depends_on'     : sorted(depends_on),
-             'blocking'       : sorted(blocking),
-             'privacy'        : issue.privacy,
-             'due_date'       : issue.due_date,
-             'created_by'     : issue.created_by.id(),
-             'created'        : issue.created,
-             'updated_by'     : issue.updated_by.id(),
-             'updated'        : issue.updated }
+    return { 'id'                : issue.key.id(),
+             'summary'           : issue.summary,
+             'history'           : issue.history,
+             'project'           : issue.project,
+             'status'            : issue.status,
+             'priority'          : issue.priority,
+             'severity'          : issue.severity,
+             'reporter_email'    : issue.reporter.id(),
+             'assignee_email'    : issue.assignee.id(),
+             'verifier_email'    : issue.verifier.id(),
+             'reporter'          : user_load(viewer, user_key=issue.reporter, silent=True),
+             'assignee'          : user_load(viewer, user_key=issue.assignee, silent=True),
+             'verifier'          : user_load(viewer, user_key=issue.verifier, silent=True),
+             'cc'                : sorted(cc),
+             'depends_on'        : sorted(depends_on),
+             'blocking'          : sorted(blocking),
+             'privacy'           : issue.privacy,
+             'due_date'          : issue.due_date,
+             'score'             : issue.score or 0,
+             'score_description' : issue.score_description,
+             'created_by'        : issue.created_by.id(),
+             'created'           : issue.created,
+             'updated_by'        : issue.updated_by.id(),
+             'updated'           : issue.updated }
 
 
 class Issue(ndb.Model):
@@ -480,6 +490,8 @@ class Issue(ndb.Model):
     blocking = ndb.KeyProperty(kind='Issue', repeated=True)
     privacy = ndb.StringProperty(default="public", required=True, choices=["public", "private", "secure"])
     due_date = ndb.DateTimeProperty()
+    score = ndb.IntegerProperty(required=True)
+    score_description = ndb.StringProperty()
     created_by = ndb.KeyProperty(kind='User')
     created = ndb.DateTimeProperty(auto_now_add=True)
     updated_by = ndb.KeyProperty(kind='User')

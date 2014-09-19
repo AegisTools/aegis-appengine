@@ -3,42 +3,56 @@ indexes:
 - kind: Issue
   properties:
   - name: assignee
+  - name: score
+    direction: desc
   - name: created
     direction: desc
 
 - kind: Issue
   properties:
   - name: status
+  - name: score
+    direction: desc
   - name: created
     direction: desc
 
 - kind: Issue
   properties:
   - name: due_date
+  - name: score
+    direction: desc
   - name: created
     direction: desc
 
 - kind: Issue
   properties:
   - name: priority
+  - name: score
+    direction: desc
   - name: created
     direction: desc
 
 - kind: Issue
   properties:
   - name: status
+  - name: score
+    direction: desc
   - name: created
     direction: desc
 
 - kind: Issue
   properties:
   - name: reporter
+  - name: score
+    direction: desc
   - name: created
     direction: desc
 
 - kind: Issue
   properties:
   - name: verifier
+  - name: score
+    direction: desc
   - name: created
     direction: desc
 
@@ -51,11 +65,6 @@ indexes:
 # manually, move them above the marker line.  The index.yaml file is
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
-
-- kind: Issue
-  properties:
-  - name: severity
-  - name: priority
 
 - kind: Remark
   ancestor: yes
