@@ -332,7 +332,7 @@ def issue_search(viewer, simple=None, query=None, complex=None):
     # if user_sort:
     #     dataset = dataset.order(user_sort)
 
-    dataset = dataset.order(-Issue.score, -Issue.created)
+    # dataset = dataset.order(-Issue.score, -Issue.created)
 
     for issue in dataset:
         issue.history = []
@@ -490,7 +490,7 @@ class Issue(ndb.Model):
     blocking = ndb.KeyProperty(kind='Issue', repeated=True)
     privacy = ndb.StringProperty(default="public", required=True, choices=["public", "private", "secure"])
     due_date = ndb.DateTimeProperty()
-    score = ndb.IntegerProperty(required=True)
+    score = ndb.IntegerProperty()
     score_description = ndb.StringProperty()
     created_by = ndb.KeyProperty(kind='User')
     created = ndb.DateTimeProperty(auto_now_add=True)

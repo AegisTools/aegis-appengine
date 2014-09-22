@@ -401,6 +401,9 @@ def format_json(obj):
 
 
 def format_markdown(content):
+    if not content:
+        return ""
+
     return lib.markdown.markdown(content)
 
 
