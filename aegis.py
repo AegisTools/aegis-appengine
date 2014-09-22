@@ -145,6 +145,8 @@ class MainPage(webapp2.RequestHandler):
                 xsrf = self.refresh_xsrf_cookie(True)
                 if redirect:
                     return self.redirect(redirect)
+                else:
+                    return self.redirect(self.request.url)
             else:
                 xsrf = self.refresh_xsrf_cookie()
     
