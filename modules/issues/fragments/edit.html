@@ -1,8 +1,13 @@
 {% extends "modules/issues/fragments/page.html" %}
 
-{% block content %}
+{% block header %}
   <script language="javascript" src="/static/scripts/marked/marked.js"></script>
+  <script language="javascript" src="/static/scripts/markdown-editor.js"></script>
 
+  {{ super() }}
+{% endblock %}
+
+{% block content %}
   <form action="/issues{% if issue %}/{{ keys.issue_id }}{% endif %}" method="POST">
     {{ xsrf_input() }}
     {% if issue %}<input type="hidden" name="_method_" value="PUT">{% endif %}
@@ -23,13 +28,27 @@
             <hr>
           {% endfor %}
         {% endif %}
-        <div style="margin: 0 0 20px 0;"><textarea name="body" id="body" rows="15"></textarea></div>
+        <div style="margin: 0 0 20px 0;">
+          <textarea name="body" id="body" rows="15" class="markdown-editor" data-markdown-preview="#preview"></textarea>
+          <div align="right">
+            <a href="/markdown" target="_blank">
+              <i class="icon-info-sign tooltip-bottom" data-delay="0" data-content="#tip-markdown"></i>
+            </a>
+          </div>
+        </div>
+        <div class="tooltip-content" id="tip-markdown">
+          Click for more information about Markdown.
+        </div>
+
         <div class="preview" id="preview"></div>
       </div>
 
       <script language="javascript">
-        $("#body").on('change keyup paste', function() {
-          $("#preview").html(marked($(this).context.value))
+        $(".markdown-editor[data-markdown-preview]").each(function(index, element) {
+          var e = $(element);
+          e.on('change keyup paste', function() {
+            $(e.attr('data-markdown-preview')).html(marked(e.context.value));
+          }).trigger('change');
         });
       </script>
 

@@ -1,0 +1,277 @@
+{% extends "templates/fragments/page.html" %}
+
+{% block header %}
+  <script language="javascript" src="/static/scripts/marked/marked.js"></script>
+  <script language="javascript" src="/static/scripts/markdown-editor.js"></script>
+
+  {{ super() }}
+{% endblock %}
+
+{% block content %}
+<h1>Markdown</h1>
+
+<div class="col_12">
+<ul class="tabs left">
+<li><a href="#basic">Basic</a></li>
+<li><a href="#blocks">Blocks</a></li>
+<li><a href="#headers">Headers</a></li>
+<li><a href="#lists">Lists</a></li>
+<li><a href="#links">Links</a></li>
+</ul>
+
+<div id="basic" class="tab-content">
+  <h3>What is Markdown?</h3>
+  <p>
+    Markdown is a set of rules that let you format text without a lot of completely
+    meaningless symbols.  In general markdown looks... <i>ok</i> as text.  But once
+    the system formats it, it looks better.
+  </p>
+
+  <h3>Basic Formatting</h3>
+  <p>
+    There are a few basic things that you can do for emphasis.  Wrapping something
+    in single asterisks makes it <i>italic</i>; two asterisks makes it <b>bold</b>;
+    three makes it <b><i>bold and italic</i></b>.  If you really don't like
+    asterisks you can use underscores (<code>_</code>).  You can use backticks 
+    (<code>`</code>) for a different type of emphasis, but this is usually used for
+    code.
+  </p>
+
+  <div class="col_6"><h5>Example:</h5></div>
+  <div class="col_6"><h5>Result:</h5></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="2" class="markdown-editor" data-markdown-preview="#preview-basic-italics">Both *this* and _this_ are italicized</textarea>
+  </div>
+  <div id="preview-basic-italics" class="col_6"></div>
+  <div class="clear"></div>
+    
+  <div class="col_6"> 
+    <textarea rows="2" class="markdown-editor" data-markdown-preview="#preview-basic-bold">Both **this** and __this__ are bold</textarea>
+  </div>
+  <div id="preview-basic-bold" class="col_6"></div>
+  <div class="clear"></div>
+
+  <div class="col_6"> 
+    <textarea rows="2" class="markdown-editor" data-markdown-preview="#preview-basic-both">You ***can*** do both and *even **mix** them up*.</textarea>
+  </div>
+  <div id="preview-basic-both" class="col_6"></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="2" class="markdown-editor" data-markdown-preview="#preview-basic-code">This is what `code` looks like.</textarea>
+  </div>
+  <div id="preview-basic-code" class="col_6"></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="2" class="markdown-editor" data-markdown-preview="#preview-basic-escape">Ignore symbols with a \*backslash\*.</textarea>
+  </div>
+  <div id="preview-basic-escape" class="col_6"></div>
+  <div class="clear"></div>
+</div>
+
+<div id="headers" class="tab-content">
+  <h3>Headers</h3>
+  <p>
+    There are a few ways to do headers.  Underlining something with at least 3 
+    equals signs (<code>=</code>) makes it the largest header possible (called "header 1").
+    Underlining with dashes (<code>-</code>) will make it the next largest header ("header 2").
+  </p>
+
+  <p>
+    You can also make headers by putting pound symbols (<code>#</code>) at the beginning of the
+    line.  One symbol for header 1, two for header 2, and so on.  They go up to
+    header 6
+  </p>
+
+  <div class="col_6"><h5>Example:</h5></div>
+  <div class="col_6"><h5>Result:</h5></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="6" class="markdown-editor" data-markdown-preview="#preview-headers-lines">Header 1
+===
+
+Header 2
+---</textarea>
+  </div>
+  <div id="preview-headers-lines" class="col_6"></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="7" class="markdown-editor" data-markdown-preview="#preview-headers-hashes">#Header 1
+##Header 2
+###Header 3
+####Header 4
+#####Header 5
+######Header 6</textarea>
+  </div>
+  <div id="preview-headers-hashes" class="col_6"></div>
+  <div class="clear"></div>
+</div>
+
+<div id="lists" class="tab-content">
+  <h3>Lists</h3>
+  <p>
+    There are a few kinds of lists that you can do.  Bulleted lists are done by
+    putting a dash and a space (<code>- </code>) before the text you want to be a list.  You
+    can indent lists by putting two spaces.
+  </p>
+
+  <p>
+    You can do a numbered list by using a number followed by a period and a space
+    (<code>1. </code>).  The actual number is actually ignored, so don't worry about getting
+    the numbering correct.
+  </p>
+
+  <p>
+    You can also put one kind of list inside another, putting a bullet list inside
+    a numbered list, etc.  You can <b><i>not</i></b> mix styles within a list (e.g.
+    make a few things numbered, then a few bulleted).  Also, a single line break is
+    ignored.  If you want to stop your list and start a new one you need more than
+    one newline.
+  </p>
+
+  <div class="col_6"><h5>Example:</h5></div>
+  <div class="col_6"><h5>Result:</h5></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="5" class="markdown-editor" data-markdown-preview="#preview-list-bullets">- Item 1
+- Item 2
+  - Item 2.1
+  - Item 2.2
+- Item 3</textarea>
+  </div>
+  <div id="preview-list-bullets" class="col_6"></div>
+
+  <div class="col_6">
+    <textarea rows="5" class="markdown-editor" data-markdown-preview="#preview-list-numbers">1. Item 1
+2. Item 2
+  1. Item 2.1
+7. Item... 7?</textarea>
+  </div>
+  <div id="preview-list-numbers" class="col_6"></div>
+</div>
+
+<div id="blocks" class="tab-content">
+  <h3>Blocks</h3>
+  <p>
+    A single newline is generally ignored in a block of text, but two newlines
+    (leaving a space) will force the start of a new paragraph.  If you want a
+    little bit more space and emphasis between paragraphs you can put a line
+    all by itself with at least three dashes (<code>---</code>) to create a
+    horizontal line.
+  </p>
+
+  <p>
+    Indenting a whole paragraph with at least four spaces creates a block of
+    content, but this is intended for code formatting.  Indenting a paragraph
+    with a greater-than symbol (<code>&gt;</code>) creates a quoted block. This
+    indicates that you are directly quoting something somebdy said.  This is
+    particularly useful when you want to put answers directly after questions.
+  </p>
+
+
+  <div class="col_6"><h5>Example:</h5></div>
+  <div class="col_6"><h5>Result:</h5></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="5" class="markdown-editor" data-markdown-preview="#preview-blocks-lines">You can put lines
+wherever you like.
+
+But two lines will start a new paragraph</textarea>
+  </div>
+  <div id="preview-blocks-lines" class="col_6"></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="4" class="markdown-editor" data-markdown-preview="#preview-blocks-line-spaces">If you want extra lines but not  
+a paragraph, you can put at least  
+two spaces at the end of each line</textarea>
+  </div>
+  <div id="preview-blocks-line-spaces" class="col_6"></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="6" class="markdown-editor" data-markdown-preview="#preview-blocks-hr">You can separate sections.
+
+---
+
+At least three dashes to put a horizontal line.</textarea>
+  </div>
+  <div id="preview-blocks-hr" class="col_6"></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="5" class="markdown-editor" data-markdown-preview="#preview-blocks-code">    for (int years = 0; years < 4 * 20 + 7; years++) {
+        forefathers.bringForth(Nation.quality == "great");
+    }</textarea>
+  </div>
+  <div id="preview-blocks-code" class="col_6"></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="5" class="markdown-editor" data-markdown-preview="#preview-blocks-quote">&gt; The problem with quotes on the internet is
+&gt; that it's difficult to verify their authenticity.
+&gt;
+&gt; \- Abraham Lincoln</textarea>
+  </div>
+  <div id="preview-blocks-quote" class="col_6"></div>
+  
+</div>
+
+<div id="links" class="tab-content">
+  <h3>Links</h3>
+  <p>
+    URLs are auto-detected.  You don't need to do anything to make them show up properly,
+    but you can replace the text.  Put the text in brackets (<code>[]</code>) and the URL
+    in parentheses (<code>()</code>) right afterwards.  You can put the URL anywhere else,
+    but the syntax is hard to explain.  See the examples below.
+  </p>
+
+  <h3>Images</h3>
+  <p>
+    You can link to images as well.  The syntax is identical to links, but you put an
+    exclamation point (<code>!</code>) right before it.
+
+  <div class="col_6"><h5>Example:</h5></div>
+  <div class="col_6"><h5>Result:</h5></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="2" class="markdown-editor" data-markdown-preview="#preview-links-urls">Link to http://www.google.com.</textarea>
+  </div>
+  <div id="preview-links-urls" class="col_6"></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="2" class="markdown-editor" data-markdown-preview="#preview-links-url-with-name">Link to [Google](http://www.google.com).</textarea>
+  </div>
+  <div id="preview-links-url-with-name" class="col_6"></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="5" class="markdown-editor" data-markdown-preview="#preview-links-url-with-footnote">Link to [Google][link1] or [Yahoo][link2]
+
+[link1]: http://www.google.com
+[link2]: http://www.yahoo.com</textarea>
+  </div>
+  <div id="preview-links-url-with-footnote" class="col_6"></div>
+  <div class="clear"></div>
+
+  <div class="col_6">
+    <textarea rows="5" class="markdown-editor" data-markdown-preview="#preview-links-image">![Kitten][img]  
+Awwwwwwwww
+
+[img]: http://placekitten.com/g/300/60</textarea>
+  </div>
+  <div id="preview-links-image" class="col_6"></div>
+  <div class="clear"></div>
+</div>
+
+{% endblock %}
+
