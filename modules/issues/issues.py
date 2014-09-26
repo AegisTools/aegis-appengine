@@ -398,6 +398,7 @@ def complex_search_to_ndb_query(query):
                     phrases.append(ndb.OR(*subphrases))
 
             elif phrase["operator"] == "!=":
+                sort_order = field
                 for value in values:
                     subphrases.append(field != value)
                 if len(subphrases) > 0:
