@@ -302,10 +302,9 @@ def issue_list(viewer):
 def issue_search(viewer, simple=None, query=None, complex=None):
     permission_verify(viewer, "issue", "read")
 
-    user_sort = None
     if not complex:
         if query:
-            complex, user_sort = query_to_complex_search(query)
+            complex = query_to_complex_search(query)
         else:
             # Status is open and assigned to me, or closing and verified by me.
             complex = { "boolean" : "or",
@@ -342,13 +341,10 @@ def issue_search(viewer, simple=None, query=None, complex=None):
         else:
             dataset = Issue.query().filter(privacy_query)
 
-    # if first_sort:
-    #     dataset = dataset.order(first_sort)
-
-    # if user_sort:
-    #     dataset = dataset.order(user_sort)
-
-    # dataset = dataset.order(-Issue.score, -Issue.created)
+    if first_sort:
+        dataset = dataset.order(first_sort)
+    else:
+        dataset = dataset.order(-Issue.score, -Issue.created)
 
     for issue in dataset:
         issue.history = []
@@ -364,11 +360,7 @@ def query_to_complex_search(query):
                           "operator" : query["o" + str(i)],
                           "value"    : re.split("[\\s,;]+", query["v" + str(i)].strip()) })
 
-    sort = None
-    if "s" in query:
-        sort = getattr(Issue, query["s"])
-
-    return { "boolean" : query["b"], "sub" : segments }, sort
+    return { "boolean" : query["b"], "sub" : segments }
 
 
 def complex_search_to_ndb_query(query):
