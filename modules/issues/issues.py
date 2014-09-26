@@ -253,7 +253,8 @@ def issue_refresh(actor, **kwargs):
         score, score_description = calculate_issue_score(issue)
         if issue.score != score:
             count += 1
-            log.debug("Updating score from %s to %s (%s)" % (issue.score, score, re.sub('<[^<]+?>', '', score_description)))
+            log.debug("Updating score for %s from %s to %s (%s)" %
+                      (issue.key.id(), issue.score, score, re.sub('<[^<]+?>', '', score_description)))
             issue.score = score
             issue.score_description = score_description
             issue.put()
