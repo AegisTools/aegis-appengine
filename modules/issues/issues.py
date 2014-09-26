@@ -242,7 +242,7 @@ def calculate_issue_score(issue):
     score_due_date = 30 - max(min(30, days_until_due), -30)         # Range:  0 - 60
 
     return score_priority + score_due_date, \
-            "= %s <sub>(Priority)</sub> + %s <sub>(Due Date)</sub>" % (score_priority, score_due_date)
+            "= %s <sub>(Priority)</sub><br> + %s <sub>(Due Date)</sub>" % (score_priority, score_due_date)
 
 
 def issue_refresh(actor, **kwargs):
@@ -255,6 +255,7 @@ def issue_refresh(actor, **kwargs):
             count += 1
             log.debug("Updating score from %s to %s (%s)" % (issue.score, score, re.sub('<[^<]+?>', '', score_description)))
             issue.score = score
+            issue.score_description = score_description
             issue.put()
     log.debug("Updated %s scores" % count)
 
