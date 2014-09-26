@@ -2,6 +2,11 @@ indexes:
 
 - kind: Issue
   properties:
+  - name: status
+  - name: due_date
+
+- kind: Issue
+  properties:
   - name: assignee
   - name: score
     direction: desc

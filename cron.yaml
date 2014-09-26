@@ -7,3 +7,7 @@ cron:
   url: /cron/directory/refresh_groups
   schedule: every 1 hours
 
+- description: Refresh Issue scores
+  url: /cron/issues/refresh
+  schedule: daily at 1:00 am
+

@@ -142,7 +142,12 @@ class MainPage(webapp2.RequestHandler):
 
             if method != "GET":
                 redirect = self.action(method, path, request)
+
+                if method == "CRON":
+                    return
+
                 xsrf = self.refresh_xsrf_cookie(True)
+
                 if redirect:
                     return self.redirect(redirect)
                 else:
