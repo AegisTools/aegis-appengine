@@ -1,10 +1,48 @@
 indexes:
 
+# Issue Refresh Index
 - kind: Issue
   properties:
   - name: status
   - name: due_date
 
+# No Inequality Searches
+- kind: Issue
+  properties:
+  - name: score
+    direction: desc
+  - name: created
+    direction: desc
+
+# Search by Text
+- kind: Issue
+  properties:
+  - name: text_index
+  - name: score
+    direction: desc
+  - name: created
+    direction: desc
+
+# Search by Privacy
+- kind: Issue
+  properties:
+  - name: privacy
+  - name: score
+    direction: desc
+  - name: created
+    direction: desc
+
+# Search by Summary
+- kind: Issue
+  properties:
+  - name: summary_index
+  - name: score
+    direction: desc
+  - name: created
+    direction: desc
+
+
+# Search by Assignee
 - kind: Issue
   properties:
   - name: assignee
@@ -13,38 +51,7 @@ indexes:
   - name: created
     direction: desc
 
-- kind: Issue
-  properties:
-  - name: status
-  - name: score
-    direction: desc
-  - name: created
-    direction: desc
-
-- kind: Issue
-  properties:
-  - name: due_date
-  - name: score
-    direction: desc
-  - name: created
-    direction: desc
-
-- kind: Issue
-  properties:
-  - name: priority
-  - name: score
-    direction: desc
-  - name: created
-    direction: desc
-
-- kind: Issue
-  properties:
-  - name: status
-  - name: score
-    direction: desc
-  - name: created
-    direction: desc
-
+# Search by Reporter
 - kind: Issue
   properties:
   - name: reporter
@@ -53,9 +60,73 @@ indexes:
   - name: created
     direction: desc
 
+# Search by Verifier
 - kind: Issue
   properties:
   - name: verifier
+  - name: score
+    direction: desc
+  - name: created
+    direction: desc
+
+# Search by CC
+- kind: Issue
+  properties:
+  - name: cc
+  - name: score
+    direction: desc
+  - name: created
+    direction: desc
+
+# Search by Creator
+- kind: Issue
+  properties:
+  - name: created_by
+  - name: score
+    direction: desc
+  - name: created
+    direction: desc
+
+# Search by Modified By
+- kind: Issue
+  properties:
+  - name: modified_by
+  - name: score
+    direction: desc
+  - name: created
+    direction: desc
+
+# Search by Status
+- kind: Issue
+  properties:
+  - name: status
+  - name: score
+    direction: desc
+  - name: created
+    direction: desc
+
+# Search by Due Date
+- kind: Issue
+  properties:
+  - name: due_date
+  - name: score
+    direction: desc
+  - name: created
+    direction: desc
+
+# Search by Priority
+- kind: Issue
+  properties:
+  - name: priority
+  - name: score
+    direction: desc
+  - name: created
+    direction: desc
+
+# Search by Severity
+- kind: Issue
+  properties:
+  - name: severity
   - name: score
     direction: desc
   - name: created
@@ -76,3 +147,4 @@ indexes:
   properties:
   - name: target
   - name: created
+
