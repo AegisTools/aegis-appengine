@@ -28,7 +28,7 @@ jinja = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file
 
 known_modules = {}
 known_loaders = {}
-
+custom_handlers = []
 
 dependencies = set()
 
@@ -48,6 +48,11 @@ for importer, modname, ispkg in pkgutil.iter_modules(modules.__path__):
             known_loaders[modname + "/" + loader_type] = module.types[loader_type]
     else:
         log.debug("    No types")
+
+    if hasattr(module, "handlers"):
+        for handler in module.handlers:
+            log.debug("    Custom Handler: %s" % handler[0])
+            custom_handlers.append(handler)
 
     known_modules[modname] = module
 
@@ -438,5 +443,7 @@ jinja.globals['json']       = format_json
 jinja.globals['markdown']   = format_markdown
 jinja.globals['build_date'] = build_date
 
-app = webapp2.WSGIApplication([('/.*', MainPage)], debug=True)
+custom_handlers.append(('/.*', MainPage))
+
+app = webapp2.WSGIApplication(custom_handlers, debug=True)
 
