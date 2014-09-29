@@ -133,8 +133,8 @@ class MainPage(webapp2.RequestHandler):
                 request.timezoneoffset = 0
     
             method = self.request.method
-            if "_method_" in self.request.POST:
-                method = self.request.POST["_method_"]
+            if "_method_" in self.request.params:
+                method = self.request.params["_method_"]
 
             path = self.request.path.strip("/")
             if path.startswith("cron/"):
@@ -172,16 +172,16 @@ class MainPage(webapp2.RequestHandler):
                       'request_code': e.request_code })
 
     def validate_xsrf_cookie(self):
-        if not "_xsrf_" in self.request.POST:
+        if not "_xsrf_" in self.request.params:
             raise NotAllowedError()
 
         if not "xsrf" in self.request.cookies:
             raise NotAllowedError()
 
-        if self.request.cookies["xsrf"] != self.request.POST["_xsrf_"]:
+        if self.request.cookies["xsrf"] != self.request.params["_xsrf_"]:
             raise NotAllowedError()
 
-        log.debug("XSRF Token Matched: %s" % self.request.POST["_xsrf_"])
+        log.debug("XSRF Token Matched: %s" % self.request.params["_xsrf_"])
 
 
     def refresh_xsrf_cookie(self, force_replace=False):
@@ -374,7 +374,7 @@ def interpret_pattern(segments, pattern, template=None):
             return None
         elif key.startswith("{") and key.endswith("}"):
             last_key = key[1:-1]
-            keys[last_key] = segments[i]
+            keys[last_key] = urllib.unquote(segments[i])
         elif key == segments[i]:
             path.append(key)
         else:
