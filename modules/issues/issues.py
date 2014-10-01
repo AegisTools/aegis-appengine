@@ -69,7 +69,7 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
                  blocking=undefined, privacy=undefined, due_date=undefined, body="", send_mail=True, 
                  **args):
     issue = issue or (key or issue_key(issue_id)).get()
-    header = "**" + actor.user.email() + "** on " + time.strftime("%c") + "\n\n"
+    header = ""
 
     is_root = permission_is_root(actor)
 

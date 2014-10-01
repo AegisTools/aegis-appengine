@@ -23,6 +23,7 @@
       <div class="col_8">
         {% if issue %}
           {% for remark in issue.history %}
+            <div class="header"><b>{{ remark.created_by }}</b> at {{ local_time(remark.created) }}</div>
             <div class="header">{{ markdown(remark.subtext) }}</div>
             <div class="body">{{ markdown(remark.text) }}</div>
             <hr>
