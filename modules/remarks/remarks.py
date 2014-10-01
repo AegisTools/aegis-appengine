@@ -8,6 +8,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
 from common.arguments import *
 from users.users import build_user_key
+from blob.blob import build_blob_key, blob_claim
 
 
 log = logging.getLogger("remarks")
@@ -17,13 +18,17 @@ def remark_key(target_key, remark_id):
     return ndb.Key("Remark", remark_id, parent=target_key)
 
 
-def remark_create(actor, target_key, text, subtext=None):
+def remark_create(actor, target_key, text, subtext=None, blobs=[]):
     remark = Remark(parent=target_key)
     remark.target = target_key
     remark.text = text
     remark.subtext = subtext
+    remark.blobs = [build_blob_key(blob) for blob in blobs]
     remark.created_by = build_user_key(actor)
     remark.put()
+
+    for blob in blobs:
+        blob_claim(actor, blob, remark.key)
 
     return to_model(remark)
 
@@ -60,6 +65,7 @@ class Remark(ndb.Model):
     target = ndb.KeyProperty(required=True)
     text = ndb.TextProperty()
     subtext = ndb.TextProperty()
+    blobs = ndb.KeyProperty(kind='Blob', repeated=True)
     created_by = ndb.KeyProperty(kind='User')
     created = ndb.DateTimeProperty(auto_now_add=True)
 

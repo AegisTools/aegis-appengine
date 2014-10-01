@@ -29,15 +29,16 @@
           {% endfor %}
         {% endif %}
         <div style="margin: 0 0 20px 0;">
-          <textarea name="body" id="body" rows="15" class="markdown-editor" data-markdown-preview="#preview"></textarea>
-          <div align="right">
+          <div class="right">
             <a href="/markdown" target="_blank">
               <i class="icon-info-sign tooltip-bottom" data-delay="0" data-content="#tip-markdown"></i>
             </a>
           </div>
-        </div>
-        <div class="tooltip-content" id="tip-markdown">
-          Click for more information about Markdown.
+          <textarea name="body" id="body" rows="15" class="markdown-editor" data-markdown-preview="#preview"></textarea>
+          <div style="padding: 5px 0 0 0;">
+            <div class="property">Attach Files:</div>
+            {% include "modules/blob/fragments/upload_inline.html" %}
+          </div>
         </div>
 
         <div class="preview" id="preview" style="min-height: 200px;"></div>

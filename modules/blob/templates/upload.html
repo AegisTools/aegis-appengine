@@ -1,0 +1,10 @@
+<html>
+    <body>
+        <form action="{{ load("blob/create") }}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="_xsrf_" value="{{ xsrf }}"></input>
+            Upload File: <input type="file" name="file"><br>
+            <input type="submit" name="submit" value="Submit">
+        </form>
+    </body>
+</html>
+
