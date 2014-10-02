@@ -67,7 +67,7 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
                  status=undefined, priority=undefined, severity=undefined, reporter=undefined, 
                  assignee=undefined, verifier=undefined, cc=undefined, depends_on=undefined, 
                  blocking=undefined, privacy=undefined, due_date=undefined, body="", send_mail=True, 
-                 **args):
+                 blobs=undefined, **args):
     issue = issue or (key or issue_key(issue_id)).get()
     header = ""
 
@@ -77,6 +77,7 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
             build_user_key(actor) not in issue.cc + [ issue.assignee, issue.reporter, issue.verifier ]:
         raise NotAllowedError()
 
+    blob_list = []
     to_recipients = set([])
     if issue.assignee:
         to_recipients.add(issue.assignee)
@@ -192,6 +193,11 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
             header = header + "**Due Date:** " + str(due_date) + " UTC  \n"
             issue.due_date = due_date
 
+        if is_defined(blobs):
+            blob_list = blobs.strip().split(" ")
+            header = header + "**Attachments:** %s File(s)  \n" % len(blob_list)
+            log.debug("Found Blobs: %s" % blob_list)
+
     issue.text_index = set(issue.text_index) | \
                        set(issue.summary_index) | \
                        set(re.split("[^\\w\\d]+", body.lower()))
@@ -199,7 +205,7 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
     issue.updated_by = build_user_key(actor)
     issue.put()
 
-    issue.history = [ remark_create(actor, issue.key, body.strip(), header.strip()) ]
+    issue.history = [ remark_create(actor, issue.key, body.strip(), header.strip(), blobs=blob_list) ]
 
     if send_mail:
         settings = get_system_settings()

@@ -32,6 +32,14 @@
         <div class="header"><b>{{ remark.created_by }}</b> at {{ local_time(remark.created) }}</div>
         <div class="header">{{ markdown(remark.subtext) }}</div>
         <div class="body">{{ markdown(remark.text) }}</div>
+        {% if remark.blobs %}
+          <div class="attachments">
+            <b>Attachments:</b><br>
+            {% for blob in remark.blobs %}
+              <a href="{{ blob.path }}">{{ blob.filename }}</a><br>
+            {% endfor %}
+          </div>
+        {% endif %}
       {% endfor %}
     </div>
 

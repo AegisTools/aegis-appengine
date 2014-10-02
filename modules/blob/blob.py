@@ -10,8 +10,8 @@ def build_blob_key(blob_id):
     return blob_private.key(blob_id)
 
 
-def blob_create(actor, *args, **kwargs):
-    return blob_private.create(actor, *args, **kwargs)
+def blob_create(actor, filename, *args, **kwargs):
+    return blob_private.create(actor, filename, *args, **kwargs)
 
 
 def blob_claim(actor, blob_id, target):
@@ -29,6 +29,7 @@ def blob_load(actor, blob_id=None, blob_key=None):
 def blob_to_model(viewer, blob):
     return { 'id'            : blob.key.id(),
              'path'          : "/blob/download/%s" % blob.key.id(),
+             'filename'      : blob.filename,
              'creator_email' : blob.created_by.id(),
              'creator'       : user_load(viewer, user_key=blob.created_by, silent=True) }
 

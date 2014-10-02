@@ -148,10 +148,12 @@ class MainPage(webapp2.RequestHandler):
             if method != "GET":
                 redirect = self.action(method, path, request)
                 xsrf = self.refresh_xsrf_cookie(True)
-                if redirect:
+                if method == "CRON":
+                    return
+                elif redirect:
                     return self.redirect(redirect)
                 else:
-                    return self.redirect(self.request.url)
+                    return
             else:
                 xsrf = self.refresh_xsrf_cookie()
     
@@ -173,12 +175,15 @@ class MainPage(webapp2.RequestHandler):
 
     def validate_xsrf_cookie(self):
         if not "_xsrf_" in self.request.params:
+            log.warn("XSRF Failure")
             raise NotAllowedError()
 
         if not "xsrf" in self.request.cookies:
+            log.warn("XSRF Failure")
             raise NotAllowedError()
 
         if self.request.cookies["xsrf"] != self.request.params["_xsrf_"]:
+            log.warn("XSRF Failure")
             raise NotAllowedError()
 
         log.debug("XSRF Token Matched: %s" % self.request.params["_xsrf_"])
@@ -212,12 +217,12 @@ class MainPage(webapp2.RequestHandler):
             else:
                 log.debug(self.request.body)
                 data = json.loads(self.request.body)
-        elif format == "html":
+        else:
             if method != "CRON":
                 self.validate_xsrf_cookie()
             data = dict(dict(self.request.GET).items() + dict(self.request.POST).items())
-        else:
-            data = {}
+            log.debug("GET:  %s" % dict(self.request.GET))
+            log.debug("POST: %s" % dict(self.request.POST))
 
         data = dict(data.items() + self.request.cookies.items())
 
@@ -240,12 +245,16 @@ class MainPage(webapp2.RequestHandler):
             log.debug("Performing action: %s(%s)" % (action, args))
             result = action["method"](request.user_obj, **args)
             if "redirect" in action:
-                try:
-                    return action["redirect"] % result
-                except:
-                    return action["redirect"]
+                if action["redirect"]:
+                    try:
+                        return action["redirect"] % result
+                    except:
+                        return action["redirect"]
+                else:
+                    self.response.write(result)
+                    return None
             else:
-                return None
+                return self.request.url
 
         raise Exception("action not found")
 

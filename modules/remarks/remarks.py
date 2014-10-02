@@ -8,7 +8,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
 from common.arguments import *
 from users.users import build_user_key
-from blob.blob import build_blob_key, blob_claim
+from blob.blob import build_blob_key, blob_claim, blob_load
 
 
 log = logging.getLogger("remarks")
@@ -30,7 +30,7 @@ def remark_create(actor, target_key, text, subtext=None, blobs=[]):
     for blob in blobs:
         blob_claim(actor, blob, remark.key)
 
-    return to_model(remark)
+    return to_model(actor, remark)
 
 
 def remark_get(target_key, remark_id):
@@ -44,12 +44,12 @@ def remark_get(target_key, remark_id):
 def remark_list(viewer, target_key):
     result = []
     for remark in Remark.query(ancestor=target_key).filter(Remark.target == target_key).order(Remark.created):
-        result.append(to_model(remark))
+        result.append(to_model(viewer, remark))
 
     return result
 
 
-def to_model(remark):
+def to_model(viewer, remark):
     if not remark:
         return None
 
@@ -57,6 +57,7 @@ def to_model(remark):
              'target'     : remark.target,
              'text'       : remark.text,
              'subtext'    : remark.subtext,
+             'blobs'      : [blob_load(viewer, blob_key=key) for key in remark.blobs],
              'created_by' : remark.created_by.id(),
              'created'    : remark.created }
 

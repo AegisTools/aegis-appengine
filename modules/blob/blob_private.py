@@ -1,6 +1,9 @@
 import sys
 import os
 import logging
+import urllib
+
+from datetime import datetime, timedelta
 
 from google.appengine.ext import ndb
 from google.appengine.api import users
@@ -16,17 +19,18 @@ from common.errors import *
 log = logging.getLogger("blob")
 
 
-def create(actor, *args, **kwargs):
+def create(actor, filename, *args, **kwargs):
     permission_verify(actor, "blob", "create")
 
-    upload_url = blobstore.create_upload_url('/blob/uploaded')
+    upload_url = blobstore.create_upload_url('/blob/uploaded?' + urllib.urlencode({'filename': filename}))
     log.debug("Created Upload URL: %s" % upload_url)
     return upload_url
 
 
-def uploaded(blob_id):
-    log.debug("Creating blob %s" % blob_id)
+def uploaded(blob_id, filename=None):
+    log.debug("Creating blob %s (%s)" % (blob_id, filename))
     blob = Blob(key=key(blob_id))
+    blob.filename = filename
     blob.put()
     return blob
 
@@ -53,7 +57,7 @@ def delete(actor, blob_id=None, blob_key=None, blob=None, **ignored):
     blob.delete()
 
 
-def get(blob_id=None, blob_key=None, blob=None):
+def get(actor, blob_id=None, blob_key=None, blob=None):
     permission_verify(actor, "blob", "read")
 
     result = blob or (blob_key or key(blob_id)).get()
@@ -67,8 +71,19 @@ def key(blob_id):
     return ndb.Key(Blob, blob_id)
 
 
+def scrub():
+    query = Blob.query().filter(ndb.AND(Blob.created_by == None,
+                                        Blob.created < datetime.now() - timedelta(days=1)))
+
+    for blob in query.fetch(keys_only=True):
+        log.debug("Expiring blob %s" % blob.id())
+        blob.delete()
+
+
+
 class Blob(ndb.Model):
     target = ndb.KeyProperty()
+    filename = ndb.StringProperty()
     created_by = ndb.KeyProperty(kind='User')
     created = ndb.DateTimeProperty(auto_now_add=True)
 
