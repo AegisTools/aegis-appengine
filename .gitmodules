@@ -16,3 +16,6 @@
 [submodule "submodules/jquery-cookie"]
 	path = submodules/jquery-cookie
 	url = git@github.com:carhartl/jquery-cookie.git
+[submodule "submodules/font-awesome"]
+	path = submodules/font-awesome
+	url = https://github.com/FortAwesome/Font-Awesome.git

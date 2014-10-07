@@ -86,11 +86,17 @@ textarea {
 }
 
 .issues .header {
-    font-size: 10px;
+    font-size: 12px;
+}
+
+.issues .attachments {
+    font-size: 12px;
+    line-height: 1.5em;
 }
 
 .issues .body {
-    font-size: 14px;
+    font-size: 15px;
+    line-height: 1.5em;
 }
 
 .issues hr {
