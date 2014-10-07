@@ -29,6 +29,8 @@ import lib.parsedatetime
 log = logging.getLogger("issues")
 
 
+open_statuses = [ "triage", "assigned", "working", "rejected", "deferred", "fixed" ]
+
 def issue_key(issue_id):
     return ndb.Key("Issue", int(issue_id))
 
@@ -128,10 +130,6 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
                 else:
                     due_date = datetime.datetime(*parsed_time[0][:6]) + offset
 
-                log.debug("offset = %s" % offset)
-                log.debug("parsed_time = %s" % str(parsed_time))
-                log.debug("due_date = %s" % due_date)
-    
         # Update all fields
         if is_defined(summary) and summary != issue.summary:
             header = header + "**Summary:** " + summary + "  \n"
@@ -198,6 +196,8 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
             blob_list = build_blob_keys(blobs)
             header = header + "**Attachments:** %s File(s)  \n" % len(blob_list)
 
+    issue.score, issue.score_description = calculate_issue_score(issue)
+
     issue.text_index = set(issue.text_index) | \
                        set(issue.summary_index) | \
                        set(re.split("[^\\w\\d]+", body.lower()))
@@ -239,6 +239,32 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
         log.debug(text)
 
     return to_model(actor, issue)
+
+
+def calculate_issue_score(issue):
+    days_until_due = 30 if not issue.due_date else (issue.due_date - datetime.datetime.utcnow()).days
+
+    score_priority = (6 - issue.priority) * 10                      # Range: 10 - 50
+    score_due_date = 30 - max(min(30, days_until_due), -30)         # Range:  0 - 60
+
+    return score_priority + score_due_date, \
+            "= %s <sub>(Priority)</sub><br> + %s <sub>(Due Date)</sub>" % (score_priority, score_due_date)
+
+
+def issue_refresh(actor, **kwargs):
+    count = 0
+    log.debug("Updating issue scores")
+    for issue in Issue.query().filter(ndb.AND(Issue.due_date != None,
+                                              Issue.status.IN(open_statuses))):
+        score, score_description = calculate_issue_score(issue)
+        if issue.score != score:
+            count += 1
+            log.debug("Updating score for %s from %s to %s (%s)" %
+                      (issue.key.id(), issue.score, score, re.sub('<[^<]+?>', '', score_description)))
+            issue.score = score
+            issue.score_description = score_description
+            issue.put()
+    log.debug("Updated %s scores" % count)
 
 
 def issue_deactivate(actor, issue_id=None, key=None, issue=None, **ignored):
@@ -284,10 +310,9 @@ def issue_list(viewer):
 def issue_search(viewer, simple=None, query=None, complex=None):
     permission_verify(viewer, "issue", "read")
 
-    user_sort = None
     if not complex:
         if query:
-            complex, user_sort = query_to_complex_search(query)
+            complex = query_to_complex_search(query)
         else:
             # Status is open and assigned to me, or closing and verified by me.
             complex = { "boolean" : "or",
@@ -324,13 +349,10 @@ def issue_search(viewer, simple=None, query=None, complex=None):
         else:
             dataset = Issue.query().filter(privacy_query)
 
-    # if first_sort:
-    #     dataset = dataset.order(first_sort)
-
-    # if user_sort:
-    #     dataset = dataset.order(user_sort)
-
-    # dataset = dataset.order(Issue.due_date, Issue.priority, -Issue.created)
+    if first_sort:
+        dataset = dataset.order(first_sort)
+    else:
+        dataset = dataset.order(-Issue.score, -Issue.created)
 
     for issue in dataset:
         issue.history = []
@@ -346,11 +368,7 @@ def query_to_complex_search(query):
                           "operator" : query["o" + str(i)],
                           "value"    : re.split("[\\s,;]+", query["v" + str(i)].strip()) })
 
-    sort = None
-    if "s" in query:
-        sort = getattr(Issue, query["s"])
-
-    return { "boolean" : query["b"], "sub" : segments }, sort
+    return { "boolean" : query["b"], "sub" : segments }
 
 
 def complex_search_to_ndb_query(query):
@@ -388,6 +406,7 @@ def complex_search_to_ndb_query(query):
                     phrases.append(ndb.OR(*subphrases))
 
             elif phrase["operator"] == "!=":
+                sort_order = field
                 for value in values:
                     subphrases.append(field != value)
                 if len(subphrases) > 0:
@@ -446,28 +465,30 @@ def to_model(viewer, issue, get_related_issues=True):
 
     cc = { key.id(): user_load(viewer, user_key=key, silent=True) for key in issue.cc }
 
-    return { 'id'             : issue.key.id(),
-             'summary'        : issue.summary,
-             'history'        : issue.history,
-             'project'        : issue.project,
-             'status'         : issue.status,
-             'priority'       : issue.priority,
-             'severity'       : issue.severity,
-             'reporter_email' : issue.reporter.id(),
-             'assignee_email' : issue.assignee.id(),
-             'verifier_email' : issue.verifier.id(),
-             'reporter'       : user_load(viewer, user_key=issue.reporter, silent=True),
-             'assignee'       : user_load(viewer, user_key=issue.assignee, silent=True),
-             'verifier'       : user_load(viewer, user_key=issue.verifier, silent=True),
-             'cc'             : sorted(cc),
-             'depends_on'     : sorted(depends_on),
-             'blocking'       : sorted(blocking),
-             'privacy'        : issue.privacy,
-             'due_date'       : issue.due_date,
-             'created_by'     : issue.created_by.id(),
-             'created'        : issue.created,
-             'updated_by'     : issue.updated_by.id(),
-             'updated'        : issue.updated }
+    return { 'id'                : issue.key.id(),
+             'summary'           : issue.summary,
+             'history'           : issue.history,
+             'project'           : issue.project,
+             'status'            : issue.status,
+             'priority'          : issue.priority,
+             'severity'          : issue.severity,
+             'reporter_email'    : issue.reporter.id(),
+             'assignee_email'    : issue.assignee.id(),
+             'verifier_email'    : issue.verifier.id(),
+             'reporter'          : user_load(viewer, user_key=issue.reporter, silent=True),
+             'assignee'          : user_load(viewer, user_key=issue.assignee, silent=True),
+             'verifier'          : user_load(viewer, user_key=issue.verifier, silent=True),
+             'cc'                : sorted(cc),
+             'depends_on'        : sorted(depends_on),
+             'blocking'          : sorted(blocking),
+             'privacy'           : issue.privacy,
+             'due_date'          : issue.due_date,
+             'score'             : issue.score or 0,
+             'score_description' : issue.score_description,
+             'created_by'        : issue.created_by.id(),
+             'created'           : issue.created,
+             'updated_by'        : issue.updated_by.id(),
+             'updated'           : issue.updated }
 
 
 class Issue(ndb.Model):
@@ -486,6 +507,8 @@ class Issue(ndb.Model):
     blocking = ndb.KeyProperty(kind='Issue', repeated=True)
     privacy = ndb.StringProperty(default="public", required=True, choices=["public", "private", "secure"])
     due_date = ndb.DateTimeProperty()
+    score = ndb.IntegerProperty()
+    score_description = ndb.StringProperty()
     created_by = ndb.KeyProperty(kind='User')
     created = ndb.DateTimeProperty(auto_now_add=True)
     updated_by = ndb.KeyProperty(kind='User')

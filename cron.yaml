@@ -10,3 +10,8 @@ cron:
 - description: Clean out uploaded files that haven't been claimed
   url: /cron/blob/scrub?age=1d
   schedule: every day 03:00
+
+- description: Refresh Issue scores
+  url: /cron/issues/refresh
+  schedule: every day 01:00
+

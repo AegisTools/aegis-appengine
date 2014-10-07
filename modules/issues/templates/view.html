@@ -80,6 +80,10 @@
           <tr><td nowrap class="property">Privacy:</td><td class="value">
             {{ issue.privacy|capitalize }}
           </td></tr>
+          <tr><td nowrap class="property">Sort Score:</td><td class="value">
+            {{ issue.score }}<br>
+            {{ markdown(issue.score_description) }}
+          </td></tr>
         </tbody></table>
       </div>
       <div class="right">

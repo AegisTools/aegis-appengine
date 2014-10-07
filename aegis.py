@@ -147,6 +147,10 @@ class MainPage(webapp2.RequestHandler):
 
             if method != "GET":
                 redirect = self.action(method, path, request)
+
+                if method == "CRON":
+                    return
+
                 xsrf = self.refresh_xsrf_cookie(True)
                 if method == "CRON":
                     return
@@ -417,6 +421,9 @@ def format_json(obj):
 
 
 def format_markdown(content):
+    if not content:
+        return ""
+
     return lib.markdown.markdown(content)
 
 
