@@ -80,6 +80,7 @@ def scrub(age=timedelta(days=1)):
     count = 0
     for blob in query.fetch(keys_only=True):
         log.debug("Expiring blob %s" % blob.id())
+        blobstore.delete(blob.id())
         blob.delete()
         count += 1
 
