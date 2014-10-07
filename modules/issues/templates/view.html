@@ -80,10 +80,12 @@
           <tr><td nowrap class="property">Privacy:</td><td class="value">
             {{ issue.privacy|capitalize }}
           </td></tr>
-          <tr><td nowrap class="property">Sort Score:</td><td class="value">
-            {{ issue.score }}<br>
-            {{ markdown(issue.score_description) }}
-          </td></tr>
+          {% if is_admin %}
+            <tr><td nowrap class="property">Sort Score:</td><td class="value">
+              {{ issue.score }}<br>
+              {{ markdown(issue.score_description) }}
+            </td></tr>
+          {% endif %}
         </tbody></table>
       </div>
       <div class="right">

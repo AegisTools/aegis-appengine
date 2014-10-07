@@ -295,6 +295,7 @@ class MainPage(webapp2.RequestHandler):
             obj = {'query'        : self.request.GET,
                    'keys'         : keys,
                    'user'         : users.get_current_user(),
+                   'is_admin'     : users.is_current_user_admin(),
                    'sign_out_url' : users.create_logout_url(path),
                    'load'         : request.load,
                    'local_time'   : request.local_time,
