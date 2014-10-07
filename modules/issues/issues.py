@@ -17,6 +17,7 @@ from users.permissions import permission_verify, permission_is_root
 from users.users import build_user_key, user_load
 from projects.projects import Project
 from remarks.remarks import remark_create, remark_list
+from blob.blob import build_blob_keys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from modules.common.errors import *
@@ -77,7 +78,7 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
             build_user_key(actor) not in issue.cc + [ issue.assignee, issue.reporter, issue.verifier ]:
         raise NotAllowedError()
 
-    blob_list = []
+    blob_list = None
     to_recipients = set([])
     if issue.assignee:
         to_recipients.add(issue.assignee)
@@ -193,10 +194,9 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
             header = header + "**Due Date:** " + str(due_date) + " UTC  \n"
             issue.due_date = due_date
 
-        if is_defined(blobs):
-            blob_list = blobs.strip().split(" ")
+        if is_defined(blobs) and blobs:
+            blob_list = build_blob_keys(blobs)
             header = header + "**Attachments:** %s File(s)  \n" % len(blob_list)
-            log.debug("Found Blobs: %s" % blob_list)
 
     issue.text_index = set(issue.text_index) | \
                        set(issue.summary_index) | \

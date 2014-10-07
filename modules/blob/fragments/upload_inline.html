@@ -1,69 +1,118 @@
 <script src="/static/scripts/jquery.form.js"></script>
 
-<input type="text" name="blobs" id="blobs" value="">
+<input type="hidden" name="blobs" id="blobs" value="" style="width: 100%">
 <div id="blob-file-list"></div>
 
-<button type="button" id="blob-add-file"><i class="icon-plus"></i> Add file</button>
+<div class="right" style="padding-top: 10px;">
+  <button type="button" id="blob-add-file" class="small green"><i class="icon-plus"></i> Add file</button>
+</div>
+
+<div class="hide" id="blob-template-upload">
+  <div class='blob-upload'>
+    <div class='progress'>
+      <div class='bar'></div>
+      <div class='percent'>0%</div>
+    </div>
+  </div>
+</div>
+
+<div class="hide" style="padding: 5px 0;" id="blob-template-file">
+  <div class='cancel pull-right' style="text-align: right;">
+    <a href="" id="cancel"><i class="fa fa-times-circle fa-lg red"></i></a>
+  </div>
+  <div class='filename' id='blob-filename' style="text-align: left;"></div>
+  <div class="clear"></div>
+</div>
 
 <style>
-.progress { position:relative; width:400px; border: 1px solid #ddd; padding: 1px; border-radius: 3px; }
+.blob-upload { display: table; width: 100% }
+.blob-upload>div { display: table-cell; vertical-align: middle }
+.progress { position:relative; width:150px; border: 1px solid #ddd; padding: 1px; border-radius: 3px; }
 .bar { background-color: #B4F5B4; width:0%; height:20px; border-radius: 3px; }
 .percent { position:absolute; display:inline-block; top:3px; left:48%; }
 </style>
 
 <script language="javascript">
 
-  var blob_list = $("#blobs");
+  var blob_list = [];
+  var blob_list_input = $("#blobs");
 
   $("#blob-add-file").click(function() {
-      var ui = $($.parseHTML("<div><div class='progress'>" +
-        "<div class='bar'></div><div class='percent'>0%</div></div>" +
-        "<div class='filename' id='blob-filename'></div></div>")).appendTo('#blob-file-list');
-
-      var form = $($.parseHTML("<form method='POST' enctype='multipart/form-data'>" +
+      var form = $($.parseHTML("<form method='POST' enctype='multipart/form-data' class='hide'>" +
               "<input type='hidden' name='_xsrf_' value='{{ xsrf }}'>" +
-              "<input type='file' name='file' id='blob-file'></form>")).appendTo('body');
+              "<input type='file' name='file' id='blob-file' multiple></form>")).appendTo('body');
 
-      var bar = ui.find('.bar');
-      var percent = ui.find('.percent');
       var fileButton = $(form.find("#blob-file"));
 
       fileButton.change(function() {
-          var filename = fileButton[0].value.replace(/^.*[\\\/]/, '');
-          ui.find('#blob-filename').html(fileButton[0].value.replace(/^.*[\\\/]/, ''));
-          $.get("/blob/create", { filename: filename }, 
+          var upload = $('#blob-template-upload')
+            .clone()
+            .removeClass('hide')
+            .appendTo('#blob-file-list');
+
+          var bar = upload.find('.bar');
+          var percent = upload.find('.percent');
+
+          var buildFileUI = function(blob_id, filename) {
+            blob_list.push(blob_id);
+
+            var ui = $('#blob-template-file')
+                .clone()
+                .removeClass('hide')
+                .appendTo('#blob-file-list');
+
+            ui.find('#blob-filename').html(filename);
+
+            $(ui.find('#cancel'))
+                .click(function() {
+                console.log("Removing " + blob_id);
+                blob_list.splice(blob_list.indexOf(blob_id), 1);
+                blob_list_input.val(blob_list.join(" "));
+                ui.remove();
+                return false;
+                });
+            };
+
+          form.ajaxForm({
+              beforeSend: function() {
+                var percentVal = '0%';
+                bar.width(percentVal)
+                percent.html(percentVal);
+              },
+              uploadProgress: function(event, position, total, percentComplete) {
+                var percentVal = percentComplete + '%';
+                bar.width(percentVal)
+                percent.html(percentVal);
+              },
+              success: function() {
+                var percentVal = '100%';
+                bar.width(percentVal)
+                percent.html(percentVal);
+              },
+              complete: function(xhr) {
+                upload.remove();
+                if (xhr.status == 200) {
+                  var blob_data = $.parseJSON(xhr.responseText);
+                  console.log(blob_data);
+
+                  for (var key in blob_data) {
+                    buildFileUI(key, blob_data[key]);
+                  }
+
+                  blob_list_input.val(blob_list.join(" "));
+                } else {
+                  console.log(xhr.responseText);
+                }
+              }
+            });
+
+          $.get("/blob/create",
             function(upload_url) {
               console.log("Uploading to " + upload_url);
               form.attr('action', upload_url);
               form.submit();
             });
         }).click();
-
-
-      form.ajaxForm({
-          beforeSend: function() {
-            var percentVal = '0%';
-            bar.width(percentVal)
-            percent.html(percentVal);
-          },
-          uploadProgress: function(event, position, total, percentComplete) {
-            var percentVal = percentComplete + '%';
-            bar.width(percentVal)
-            percent.html(percentVal);
-          },
-          success: function() {
-            var percentVal = '100%';
-            bar.width(percentVal)
-            percent.html(percentVal);
-          },
-          complete: function(xhr) {
-            if (xhr.status == 200) {
-              blob_list.val(blob_list.val() + " " + xhr.responseText);
-            } else {
-              console.log(xhr.responseText);
-            }
-          }
-        });
     });
 
 </script>

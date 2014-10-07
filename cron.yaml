@@ -8,5 +8,5 @@ cron:
   schedule: every 1 hours
 
 - description: Clean out uploaded files that haven't been claimed
-  url: /cron/blob/scrub
+  url: /cron/blob/scrub?age=1d
   schedule: every day 03:00

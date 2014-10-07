@@ -35,9 +35,11 @@ def uploaded(blob_id, filename=None):
     return blob
 
 
-def claim(actor, blob_id, target):
-    log.debug("Claiming blob %s for %s (%s)" % (blob_id, actor.key.id(), target))
-    blob = key(blob_id).get()
+def claim(actor, blob_id=None, blob_key=None, target=None):
+    blob_key = blob_key or key(blob_id)
+    log.debug("Claiming blob %s for %s (%s)" % (blob_key.id(), actor.key.id(), target))
+
+    blob = blob_key.get()
     if not blob:
         raise NotFoundError()
 
@@ -71,14 +73,17 @@ def key(blob_id):
     return ndb.Key(Blob, blob_id)
 
 
-def scrub():
+def scrub(age=timedelta(days=1)):
     query = Blob.query().filter(ndb.AND(Blob.created_by == None,
-                                        Blob.created < datetime.now() - timedelta(days=1)))
+                                        Blob.created < datetime.now() - age))
 
+    count = 0
     for blob in query.fetch(keys_only=True):
         log.debug("Expiring blob %s" % blob.id())
         blob.delete()
+        count += 1
 
+    log.debug("Expired %s blobs" % count)
 
 
 class Blob(ndb.Model):

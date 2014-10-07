@@ -36,7 +36,8 @@
           <div class="attachments">
             <b>Attachments:</b><br>
             {% for blob in remark.blobs %}
-              <a href="{{ blob.path }}">{{ blob.filename }}</a><br>
+              <a href="{{ blob.view_path }}">{{ blob.filename }}</a>
+              <span style="font-size: 0.8em;">(<a href="{{ blob.download_path }}">Download</a>)</span><br>
             {% endfor %}
           </div>
         {% endif %}

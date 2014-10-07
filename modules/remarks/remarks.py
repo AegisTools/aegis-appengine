@@ -8,7 +8,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from common.errors import *
 from common.arguments import *
 from users.users import build_user_key
-from blob.blob import build_blob_key, blob_claim, blob_load
+from blob.blob import blob_claim, blob_load
 
 
 log = logging.getLogger("remarks")
@@ -23,12 +23,12 @@ def remark_create(actor, target_key, text, subtext=None, blobs=[]):
     remark.target = target_key
     remark.text = text
     remark.subtext = subtext
-    remark.blobs = [build_blob_key(blob) for blob in blobs]
+    remark.blobs = blobs or []
     remark.created_by = build_user_key(actor)
     remark.put()
 
-    for blob in blobs:
-        blob_claim(actor, blob, remark.key)
+    for blob in remark.blobs:
+        blob_claim(actor, blob_key=blob, target=remark.key)
 
     return to_model(actor, remark)
 

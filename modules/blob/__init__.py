@@ -1,4 +1,9 @@
+import re
 import urllib
+import logging
+import json
+
+from datetime import timedelta
 
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
@@ -6,14 +11,21 @@ from google.appengine.ext.webapp import blobstore_handlers
 import blob_private
 
 
+log = logging.getLogger("blob")
+
+
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
   def post(self):
-    blob_info = self.get_uploads('file')[0]
-    blob_private.uploaded(str(blob_info.key()), self.request.GET["filename"])
-    self.response.out.write(blob_info.key())
+    result = {}
+    for blob_info in self.get_uploads('file'):
+      log.debug(blob_info.filename)
+      blob_private.uploaded(str(blob_info.key()), blob_info.filename)
+      result[str(blob_info.key())] = blob_info.filename
+
+    self.response.out.write(json.dumps(result))
 
 
-class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
+class DownloadHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
     blob = blob_private.key(urllib.unquote(resource)).get()
 
@@ -23,8 +35,18 @@ class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
     self.send_blob(blob_info)
 
 
-def blob_create_url(viewer, filename=None, *args, **kwargs):
-    return blobstore.create_upload_url('/blob/uploaded?' + urllib.urlencode({'filename': filename}))
+class ViewHandler(blobstore_handlers.BlobstoreDownloadHandler):
+  def get(self, resource):
+    blob = blob_private.key(urllib.unquote(resource)).get()
+
+    blob_info = blobstore.BlobInfo.get(blob.key.id())
+
+    self.response.headers["Content-Disposition"] = str("inline; filename=\"%s\"" % blob.filename)
+    self.send_blob(blob_info)
+
+
+def blob_create_url(viewer, *args, **kwargs):
+    return blobstore.create_upload_url('/blob/uploaded')
 
 
 def blob_claim(actor, blob_id, *args, **kwargs):
@@ -32,7 +54,20 @@ def blob_claim(actor, blob_id, *args, **kwargs):
     return { 'blob_id' : blob_id }
 
 
-def blob_scrub(*args, **kwargs):
+blob_scrub_regex = re.compile(r'((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?')
+
+def blob_scrub(actor, age=None, *args, **kwargs):
+    if age:
+        parts = blob_scrub_regex.match(age)
+        if parts:
+            parts = parts.groupdict()
+            time_params = {}
+            for (name, param) in parts.iteritems():
+                if param:
+                    time_params[name] = int(param)
+            blob_private.scrub(timedelta(**time_params))
+            return
+
     blob_private.scrub()
 
 
@@ -40,7 +75,8 @@ types = { "create" : blob_create_url }
 
 
 handlers = [('/blob/uploaded', UploadHandler),
-            ('/blob/download/([^/]+)?', ServeHandler)]
+            ('/blob/download/([^/]+)?', DownloadHandler),
+            ('/blob/view/([^/]+)?', ViewHandler)]
 
 
 actions = { "claim/{blob_id}" : { "POST"   : { "method"   : blob_claim,
