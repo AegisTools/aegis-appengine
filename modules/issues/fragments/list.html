@@ -1,10 +1,7 @@
 {% extends "modules/issues/fragments/page.html" %}
 
 {% macro user_link(email, obj=None) %}
-  <a href="/users/{{ email }}">
-    {% if obj %}{{ obj.display_name }}
-    {% else %}{{ email }}{% endif %}
-  </a>
+  <a href="/users/{{ email }}">{% if obj %}{{ obj.display_name }}{% else %}{{ email }}{% endif %}</a>
 {% endmacro %}
 
 {% block content %}
@@ -15,7 +12,7 @@
         <td nowrap>P</td>
         <td nowrap>S</td>
         <td nowrap>Status</id>
-        <td nowrap>Assignee</td>
+        <td nowrap>Assignees</td>
         <td nowrap>Due
         <td nowrap>Summary</td>
       </tr></thead>
@@ -26,7 +23,7 @@
             <td nowrap>{{ issue.priority }}</td>
             <td nowrap>{{ issue.severity }}</td>
             <td nowrap>{{ issue.status|capitalize }}</td>
-            <td nowrap>{{ user_link(issue.assignee_email, issue.assignee) }}</td>
+            <td nowrap>{% for assignee in issue.assignees %}{{ user_link(assignee, issue.assignees[assignee]) }}{% endfor %}</td>
             <td nowrap>{% if issue.due_date %}{{ local_time(issue.due_date) }}{% endif %}</td>
             <td>{{ issue.summary }}</td>
           </tr>

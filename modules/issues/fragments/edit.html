@@ -127,25 +127,22 @@
             <tr>
               <td nowrap class="property">Assigned To:</td>
               <td class="value">
-                <input type="text" class="full-width" name="assignee" 
-                    placeholder="{% if issue %}{{ issue.assignee_email|e }}{% else %}{{ user.email()|e }}{% endif %}"
-                    value="{% if issue %}{{ issue.assignee_email|e }}{% endif %}">
+                <textarea name="assignees" rows="2">{% if issue %}{% for assignee in issue.assignees %}{{ assignee|e }}
+{% endfor %}{% endif %}</textarea>
               </td>
             </tr>
             <tr>
               <td nowrap class="property">Reported By:</td>
               <td class="value">
-                <input type="text" class="full-width" name="reporter"
-                    placeholder="{% if issue %}{{ issue.reporter_email|e }}{% else %}{{ user.email()|e }}{% endif %}"
-                    value="{% if issue %}{{ issue.reporter_email|e }}{% endif %}">
+                <textarea name="reporters" rows="2">{% if issue %}{% for reporter in issue.reporters %}{{ reporter|e }}
+{% endfor %}{% endif %}</textarea>
               </td>
             </tr>
             <tr>
               <td nowrap class="property">Verified By:</td>
               <td class="value">
-                <input type="text" class="full-width" name="verifier"
-                    placeholder="{% if issue %}{{ issue.verifier_email|e }}{% else %}{{ user.email()|e }}{% endif %}"
-                    value="{% if issue %}{{ issue.verifier_email|e }}{% endif %}">
+                <textarea name="verifiers" rows="2">{% if issue %}{% for verifier in issue.verifiers %}{{ verifier|e }}
+{% endfor %}{% endif %}</textarea>
               </td>
             </tr>
             <tr>

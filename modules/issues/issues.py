@@ -52,9 +52,9 @@ def issue_http_post(actor, **kwargs):
 
 
 def issue_create(actor, key=None, issue_id=None, name=undefined, active=True, **kwargs):
-    if "reporter" not in kwargs or kwargs["reporter"] == "": kwargs["reporter"] = actor
-    if "assignee" not in kwargs or kwargs["assignee"] == "": kwargs["assignee"] = actor
-    if "verifier" not in kwargs or kwargs["verifier"] == "": kwargs["verifier"] = actor
+    if "reporters" not in kwargs or kwargs["reporters"] == "": kwargs["reporters"] = actor
+    if "assignees" not in kwargs or kwargs["assignees"] == "": kwargs["assignees"] = actor
+    if "verifiers" not in kwargs or kwargs["verifiers"] == "": kwargs["verifiers"] = actor
 
     if "status"   not in kwargs: kwargs["status"]   = "triage"
     if "priority" not in kwargs: kwargs["priority"] = 2
@@ -67,8 +67,8 @@ def issue_create(actor, key=None, issue_id=None, name=undefined, active=True, **
 
 
 def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, project=undefined, 
-                 status=undefined, priority=undefined, severity=undefined, reporter=undefined, 
-                 assignee=undefined, verifier=undefined, cc=undefined, depends_on=undefined, 
+                 status=undefined, priority=undefined, severity=undefined, reporters=undefined, 
+                 assignees=undefined, verifiers=undefined, cc=undefined, depends_on=undefined, 
                  blocking=undefined, privacy=undefined, due_date=undefined, body="", send_mail=True, 
                  blobs=undefined, **args):
     issue = issue or (key or issue_key(issue_id)).get()
@@ -77,35 +77,34 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
     is_root = permission_is_root(actor)
 
     if not is_root and issue.privacy != "public" and \
-            build_user_key(actor) not in issue.cc + [ issue.assignee, issue.reporter, issue.verifier ]:
+            build_user_key(actor) not in issue.cc + issue.assignees + issue.reporters + issue.verifiers:
         raise NotAllowedError()
 
     blob_list = None
     to_recipients = set([])
-    if issue.assignee:
-        to_recipients.add(issue.assignee)
-    if issue.reporter:
-        to_recipients.add(issue.reporter)
-    if issue.verifier:
-        to_recipients.add(issue.verifier)
+    if issue.assignees:
+        to_recipients.update(issue.assignees)
+    if issue.reporters:
+        to_recipients.update(issue.reporters)
+    if issue.verifiers:
+        to_recipients.update(issue.verifiers)
+
     cc_recipients = set(issue.cc)
 
     if is_root or issue.privacy != "secure" or build_user_key(actor) in [ issue.assignee, issue.verifier ]:
         # Rewrite input types if necessary
-        def fix_user(field):
+        def fix_users(field):
             if is_undefined(field):
                 return undefined
             if field == "":
                 return undefined
-            return build_user_key(field)
+            return set([build_user_key(id) for id in re.split("[\\s,;]+", field) if len(id) > 0])
     
-        reporter = fix_user(reporter)
-        assignee = fix_user(assignee)
-        verifier = fix_user(verifier)
-    
-        if is_defined(cc):
-            cc = set([build_user_key(id) for id in re.split("[\\s,;]+", cc) if len(id) > 0])
-    
+        reporters = fix_users(reporters)
+        assignees = fix_users(assignees)
+        verifiers = fix_users(verifiers)
+        cc = fix_users(cc)
+
         if is_defined(depends_on):
             depends_on = set([issue_key(id) for id in re.split("[\\s,;]+", depends_on) if len(id) > 0])
     
@@ -156,20 +155,21 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
             header = header + "**Severity:** " + str(severity) + "  \n"
             issue.severity = int(severity)
     
-        if is_defined(reporter) and reporter != issue.reporter:
-            header = header + "**Reporter:** " + reporter.id() + "  \n"
-            issue.reporter = reporter
-            to_recipients.add(reporter)
+        if is_defined(reporters) and reporters != issue.reporters:
+            log.debug("Reporters: %s" % reporters)
+            header = header + "**Reporters:** " + ", ".join([user.id() for user in reporters]) + "  \n"
+            issue.reporters = reporters
+            to_recipients.update(reporters)
     
-        if is_defined(assignee) and assignee != issue.assignee:
-            header = header + "**Assignee:** " + assignee.id() + "  \n"
-            issue.assignee = assignee
-            to_recipients.add(assignee)
+        if is_defined(assignees) and assignees != issue.assignees:
+            header = header + "**Assignees:** " + ", ".join([user.id() for user in assignees]) + "  \n"
+            issue.assignees = assignees
+            to_recipients.update(assignees)
     
-        if is_defined(verifier) and verifier != issue.verifier:
-            header = header + "**Verifier:** " + verifier.id() + "  \n"
-            issue.verifier = verifier
-            to_recipients.add(verifier)
+        if is_defined(verifiers) and verifiers != issue.verifiers:
+            header = header + "**Verifiers:** " + ", ".join([user.id() for user in verifiers]) + "  \n"
+            issue.verifiers = verifiers
+            to_recipients.update(verifiers)
     
         if is_defined(cc) and cc != set(issue.cc):
             header = header + "**CC:** " + ", ".join([user.id() for user in cc]) + "  \n"
@@ -278,7 +278,7 @@ def issue_get(viewer, issue_id=None, key=None, issue=None, silent=False):
     result = issue or (key or issue_key(issue_id)).get()
     if result:
         if result.privacy == "public" or \
-                build_user_key(viewer) in set(result.cc) | set([ result.assignee, result.reporter, result.verifier ]) or \
+                build_user_key(viewer) in result.cc + result.assignees + result.reporters + result.verifiers or \
                 permission_is_root(viewer):
             result.history = remark_list(viewer, result.key)
             return result
@@ -340,9 +340,9 @@ def issue_search(viewer, simple=None, query=None, complex=None):
             dataset = Issue.query().filter()
     else:
         privacy_query = ndb.OR(Issue.privacy == "public",
-                               Issue.assignee == build_user_key(viewer),
-                               Issue.reporter == build_user_key(viewer),
-                               Issue.verifier == build_user_key(viewer),
+                               Issue.assignee == [ build_user_key(viewer) ],
+                               Issue.reporter == [ build_user_key(viewer) ],
+                               Issue.verifier == [ build_user_key(viewer) ],
                                Issue.cc == build_user_key(viewer))
         if ndb_query:
             dataset = Issue.query().filter(ndb.AND(ndb_query, privacy_query))
@@ -472,13 +472,10 @@ def to_model(viewer, issue, get_related_issues=True):
              'status'            : issue.status,
              'priority'          : issue.priority,
              'severity'          : issue.severity,
-             'reporter_email'    : issue.reporter.id(),
-             'assignee_email'    : issue.assignee.id(),
-             'verifier_email'    : issue.verifier.id(),
-             'reporter'          : user_load(viewer, user_key=issue.reporter, silent=True),
-             'assignee'          : user_load(viewer, user_key=issue.assignee, silent=True),
-             'verifier'          : user_load(viewer, user_key=issue.verifier, silent=True),
-             'cc'                : sorted(cc),
+             'reporters'         : sorted({ key.id(): user_load(viewer, user_key=key, silent=True) for key in issue.reporters }),
+             'assignees'         : sorted({ key.id(): user_load(viewer, user_key=key, silent=True) for key in issue.assignees }),
+             'verifiers'         : sorted({ key.id(): user_load(viewer, user_key=key, silent=True) for key in issue.verifiers }),
+             'cc'                : sorted({ key.id(): user_load(viewer, user_key=key, silent=True) for key in issue.cc }),
              'depends_on'        : sorted(depends_on),
              'blocking'          : sorted(blocking),
              'privacy'           : issue.privacy,
@@ -499,9 +496,9 @@ class Issue(ndb.Model):
     status = ndb.StringProperty(required=True, choices=issue_transitions.keys())
     priority = ndb.IntegerProperty(required=True)
     severity = ndb.IntegerProperty(required=True)
-    reporter = ndb.KeyProperty(kind='User', required=True)
-    assignee = ndb.KeyProperty(kind='User', required=True)
-    verifier = ndb.KeyProperty(kind='User', required=True)
+    reporters = ndb.KeyProperty(kind='User', repeated=True)
+    assignees = ndb.KeyProperty(kind='User', repeated=True)
+    verifiers = ndb.KeyProperty(kind='User', repeated=True)
     cc = ndb.KeyProperty(kind='User', repeated=True)
     depends_on = ndb.KeyProperty(kind='Issue', repeated=True)
     blocking = ndb.KeyProperty(kind='Issue', repeated=True)
@@ -513,6 +510,24 @@ class Issue(ndb.Model):
     created = ndb.DateTimeProperty(auto_now_add=True)
     updated_by = ndb.KeyProperty(kind='User')
     updated = ndb.DateTimeProperty(auto_now=True)
+
+    # Legacy fields
+
+    reporter = ndb.KeyProperty(kind='User')
+    assignee = ndb.KeyProperty(kind='User')
+    verifier = ndb.KeyProperty(kind='User')
+
+
+def migrate(*args, **kwargs):
+    for issue in Issue.query().filter():
+        issue.reporters = []
+        issue.verifiers = []
+        issue.assignees = []
+
+        if issue.reporter: issue.reporters = [ issue.reporter ]
+        if issue.verifier: issue.verifiers = [ issue.verifier ]
+        if issue.assignee: issue.assignees = [ issue.assignee ]
+        issue.put()
 
 
 
