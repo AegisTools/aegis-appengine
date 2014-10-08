@@ -45,7 +45,7 @@ indexes:
 # Search by Assignee
 - kind: Issue
   properties:
-  - name: assignee
+  - name: assignees
   - name: score
     direction: desc
   - name: created
@@ -54,7 +54,7 @@ indexes:
 # Search by Reporter
 - kind: Issue
   properties:
-  - name: reporter
+  - name: reporters
   - name: score
     direction: desc
   - name: created
@@ -63,7 +63,7 @@ indexes:
 # Search by Verifier
 - kind: Issue
   properties:
-  - name: verifier
+  - name: verifiers
   - name: score
     direction: desc
   - name: created

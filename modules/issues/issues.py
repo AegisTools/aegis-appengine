@@ -52,13 +52,13 @@ def issue_http_post(actor, **kwargs):
 
 
 def issue_create(actor, key=None, issue_id=None, name=undefined, active=True, **kwargs):
-    if "reporters" not in kwargs or kwargs["reporters"] == "": kwargs["reporters"] = actor
-    if "assignees" not in kwargs or kwargs["assignees"] == "": kwargs["assignees"] = actor
-    if "verifiers" not in kwargs or kwargs["verifiers"] == "": kwargs["verifiers"] = actor
-
     if "status"   not in kwargs: kwargs["status"]   = "triage"
     if "priority" not in kwargs: kwargs["priority"] = 2
     if "severity" not in kwargs: kwargs["severity"] = 2
+
+    if "reporters" not in kwargs or not kwargs["reporters"]: kwargs["reporters"] = [ actor ]
+    if "assignees" not in kwargs or not kwargs["assignees"]: kwargs["assignees"] = [ actor ]
+    if "verifiers" not in kwargs or not kwargs["verifiers"]: kwargs["verifiers"] = [ actor ]
 
     issue = Issue()
     issue.created_by = build_user_key(actor)
@@ -91,14 +91,17 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
 
     cc_recipients = set(issue.cc)
 
-    if is_root or issue.privacy != "secure" or build_user_key(actor) in [ issue.assignee, issue.verifier ]:
+    if is_root or issue.privacy != "secure" or build_user_key(actor) in issue.assignees + issue.verifiers:
         # Rewrite input types if necessary
         def fix_users(field):
+            log.debug(field)
             if is_undefined(field):
                 return undefined
-            if field == "":
+            if not field:
                 return undefined
-            return set([build_user_key(id) for id in re.split("[\\s,;]+", field) if len(id) > 0])
+            if isinstance(field, basestring):
+                return set([build_user_key(id) for id in re.split("[\\s,;]+", field) if len(id) > 0])
+            return [build_user_key(user) for user in field]
     
         reporters = fix_users(reporters)
         assignees = fix_users(assignees)
@@ -155,26 +158,22 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
             header = header + "**Severity:** " + str(severity) + "  \n"
             issue.severity = int(severity)
     
-        if is_defined(reporters) and reporters != issue.reporters:
+        if is_defined(reporters) and reporters != set(issue.reporters):
             log.debug("Reporters: %s" % reporters)
             header = header + "**Reporters:** " + ", ".join([user.id() for user in reporters]) + "  \n"
             issue.reporters = reporters
-            to_recipients.update(reporters)
     
-        if is_defined(assignees) and assignees != issue.assignees:
+        if is_defined(assignees) and assignees != set(issue.assignees):
             header = header + "**Assignees:** " + ", ".join([user.id() for user in assignees]) + "  \n"
             issue.assignees = assignees
-            to_recipients.update(assignees)
     
-        if is_defined(verifiers) and verifiers != issue.verifiers:
+        if is_defined(verifiers) and verifiers != set(issue.verifiers):
             header = header + "**Verifiers:** " + ", ".join([user.id() for user in verifiers]) + "  \n"
             issue.verifiers = verifiers
-            to_recipients.update(verifiers)
     
         if is_defined(cc) and cc != set(issue.cc):
             header = header + "**CC:** " + ", ".join([user.id() for user in cc]) + "  \n"
             issue.cc = list(cc)
-            cc_recipients.update(cc)
     
         if is_defined(depends_on) and depends_on != set(issue.depends_on):
             header = header + "**Depends On:** " + ", ".join([str(iss.id()) for iss in depends_on]) + "  \n"
@@ -195,6 +194,17 @@ def issue_update(actor, issue_id=None, key=None, issue=None, summary=undefined, 
         if is_defined(blobs) and blobs:
             blob_list = build_blob_keys(blobs)
             header = header + "**Attachments:** %s File(s)  \n" % len(blob_list)
+
+        # Fix up missing stuff
+
+        if not issue.reporters: issue.reporters = [ build_user_key(actor) ]
+        if not issue.verifiers: issue.verifiers = [ build_user_key(actor) ]
+        if not issue.assignees: issue.assignees = [ build_user_key(actor) ]
+
+        to_recipients.update(issue.assignees)
+        to_recipients.update(issue.reporters)
+        to_recipients.update(issue.verifiers)
+        cc_recipients.update(issue.cc)
 
     issue.score, issue.score_description = calculate_issue_score(issue)
 
@@ -320,14 +330,14 @@ def issue_search(viewer, simple=None, query=None, complex=None):
                                         "sub"     : [ { "field"    : "status",
                                                         "operator" : "in",
                                                         "value"    : [ "triage", "assigned", "working" ] },
-                                                      { "field"    : "assignee",
+                                                      { "field"    : "assignees",
                                                         "operator" : "==",
                                                         "value"    : [ viewer ] } ] },
                                       { "boolean" : "and",
                                         "sub"     : [ { "field"    : "status",
                                                         "operator" : "in",
                                                         "value"    : [ "fixed", "rejected" ] },
-                                                      { "field"    : "verifier",
+                                                      { "field"    : "verifiers",
                                                         "operator" : "==",
                                                         "value"    : [ viewer ] } ] } ] }
 
@@ -340,9 +350,9 @@ def issue_search(viewer, simple=None, query=None, complex=None):
             dataset = Issue.query().filter()
     else:
         privacy_query = ndb.OR(Issue.privacy == "public",
-                               Issue.assignee == [ build_user_key(viewer) ],
-                               Issue.reporter == [ build_user_key(viewer) ],
-                               Issue.verifier == [ build_user_key(viewer) ],
+                               Issue.assignees == build_user_key(viewer),
+                               Issue.reporters == build_user_key(viewer),
+                               Issue.verifiers == build_user_key(viewer),
                                Issue.cc == build_user_key(viewer))
         if ndb_query:
             dataset = Issue.query().filter(ndb.AND(ndb_query, privacy_query))
@@ -390,7 +400,7 @@ def complex_search_to_ndb_query(query):
                 values = [ int(value) for value in phrase["value"] ]
             elif phrase["field"] in [ "created", "updated" ]:
                 values = []
-            elif phrase["field"] in [ "updated_by", "created_by", "assignee", "reporter", "verifier", "cc" ]:
+            elif phrase["field"] in [ "updated_by", "created_by", "assignees", "reporters", "verifiers", "cc" ]:
                 values = [ build_user_key(value) for value in phrase["value"] ]
             elif phrase["field"] in [ "summary_index", "text_index" ]:
                 values = [ value.lower() for value in phrase["value"] ]
