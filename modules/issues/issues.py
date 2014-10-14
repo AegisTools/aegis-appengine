@@ -528,16 +528,3 @@ class Issue(ndb.Model):
     verifier = ndb.KeyProperty(kind='User')
 
 
-def migrate(*args, **kwargs):
-    for issue in Issue.query().filter():
-        issue.reporters = []
-        issue.verifiers = []
-        issue.assignees = []
-
-        if issue.reporter: issue.reporters = [ issue.reporter ]
-        if issue.verifier: issue.verifiers = [ issue.verifier ]
-        if issue.assignee: issue.assignees = [ issue.assignee ]
-        issue.put()
-
-
-
