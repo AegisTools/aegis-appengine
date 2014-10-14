@@ -1,0 +1,59 @@
+{% extends "modules/assets/fragments/page.html" %}
+
+{% macro check_out(asset) %}
+  <form action="/assets/{{ asset.id }}/out" method="POST">
+    <button class="green">Check Out</button>
+  </form>
+{% endmacro %}
+
+{% macro check_in(asset) %}
+  <form action="/assets/{{ asset.id }}/in" method="POST">
+    <button class="green">Check In</button>
+  </form>
+{% endmacro %}
+
+{% block content %}
+  <div class="col_12 assets">
+    <table cellspacing="0" cellpadding="0" class="striped asset-list">
+      <thead><tr>
+        <td nowrap>#</td>
+        <td nowrap>Name</td>
+        <td nowrap>Condition</td>
+        <td nowrap>Out To</id>
+        <td nowrap>Expected</td>
+      </tr></thead>
+      <tbody>
+        {% for asset in asset_list %}
+          <tr class="clickable-row" data-href="/assets/{{ asset.id }}">
+            <td nowrap><a href="/assets/{{ asset.id }}">{{ asset.id }}</a></td>
+            <td nowrap>{{ asset.name|e }}</td>
+            <td nowrap>{{ asset.condition|capitalize }}</td>
+            <td nowrap>
+              {% if asset.checkout %}
+                {{ user_link(asset.checkout.checked_out_to_email, asset.checkout.checked_out_to) }}
+              {% endif %}
+            </td>
+            <td nowrap>
+              {% if asset.checkout and asset.checkout.expected %}
+                {{ local_time(asset.checkout.expected) }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col_12 right">
+    <a class="button large blue" href="/assets/create">New Asset</a>
+  </div>
+
+  <script>
+    jQuery(document).ready(function($) {
+      $(".clickable-row").click(function() {
+            window.document.location = $(this).attr("data-href");
+      });
+    });
+  </script>
+{% endblock %}
+

@@ -76,6 +76,54 @@ textarea {
     width: 100%;
 }
 
+.assets .data {
+    vertical-align: middle;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    float: left;
+    height: 30px;
+    line-height: 30px;
+}
+
+.assets .property {
+    font-weight: bold;
+}
+
+.assets .value {
+    text-align: right;
+}
+
+.assets table.asset-list thead {
+    font-weight: bold;
+}
+
+.assets table.asset-list td {
+    vertical-align: top;
+}
+
+.assets .alt, .assets .alt div {
+    background:#f5f5f5;
+}
+
+.assets .table {
+    display: table;
+    font-size: 0.9em;
+}
+
+.assets .tr {
+    display: table-row;
+}
+
+.assets .td, .assets .th {
+    display: table-column;
+}
+
+.assets .th {
+    font-weight: bold;
+}
+
+.assets 
+
 .issues .property {
     vertical-align: top;
     font-weight: bold;

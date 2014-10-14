@@ -2,6 +2,11 @@
   <input type="hidden" name="_xsrf_" value="{{ xsrf }}"></input>
 {% endmacro %}
 
+{% macro user_link(email, obj=None) %}
+  {% if email.id %}{% set email = email.id() %}{% endif %}
+  <a href="/users/{{ email|e }}">{% if obj %}{{ obj.display_name|e }}{% else %}{{ email|e }}{% endif %}</a>
+{% endmacro %}
+
 <!DOCTYPE html>
 <html>
   <head>
@@ -35,6 +40,9 @@
         -->
         <li class="{% if section_site == "issues" %}current{% endif %}">
           <a href="/issues"><i class="icon-bullhorn icon-large"></i> Issues</a>
+        </li>
+        <li class="{% if section_site == "assets" %}current{% endif %}">
+          <a href="/assets"><i class="icon-tags icon-large"></i> Assets</a>
         </li>
         <li class="{% if section_site == "settings" %}current{% endif %}">
           <a href="/settings"><i class="icon-cogs icon-large"></i> Settings</a>

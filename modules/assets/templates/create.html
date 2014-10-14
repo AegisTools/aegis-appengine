@@ -1,0 +1,46 @@
+{% extends "modules/assets/fragments/page.html" %}
+
+{% macro select_option(value, selection) %}
+  <option value="{{ value }}" {% if selection == value %}selected{% endif %}>{{ value|capitalize }}</option>
+{% endmacro %}
+
+{% macro asset_field(id, type, required) %}
+  {% if type == "id" or type == "text" or type == "url" %}
+    <input type="text" name="{{ id }}" class="full-width {% if required %}required{% endif %}">
+  {% elif type == "dollar" %}
+    <span style="position: absolute; left: 10px; top: 1.5px;">$</span>
+    <input type="text" name="{{ id }}" class="full-width number" style="padding-left:15px;">
+  {% elif type == "condition" %}
+    <select name="{{ id }}" class="full-width" style="font-size: 14px;">
+      {{ select_option("new", None) }}
+      {{ select_option("excellent", None) }}
+      {{ select_option("good", None) }}
+      {{ select_option("poor", None) }}
+      {{ select_option("unusable", None) }}
+      {{ select_option("lost", None) }}
+    </select>
+  {% elif type == "markdown" %}
+    <div style="position:absolute; right: 0px; top: -18px;">
+      <a href="/markdown" target="_blank">
+        <i class="icon-info-sign tooltip-bottom" data-delay="0" data-content="#tip-markdown"></i>
+      </a>
+    </div>
+
+    <textarea rows="15" name="description"></textarea>
+  {% else %}
+    Unknown type: {{ type }}
+  {% endif %}
+{% endmacro %}
+
+{% block content %}
+  <form action="/assets" method="POST">
+    {{ xsrf_input() }}
+    <!-- Asset: {{ asset_field("id", "id", True) }} -->
+    <div class="assets">
+      {% include "modules/assets/fragments/asset.html" %}
+      <div class="col_12 right">
+        <button class="large blue">Save</button>
+      </div>
+    </div>
+{% endblock %}
+

@@ -1,0 +1,81 @@
+<script language="javascript" src="/static/scripts/marked/marked.js"></script>
+<script language="javascript" src="/static/scripts/markdown-editor.js"></script>
+
+<div class="col_2 property data"><label for="name">Asset Number:</label></div>
+<div class="col_4 data">
+  {{ asset_field("asset_id", "id", True) }}
+</div>
+
+<div class="clear"></div>
+
+<div class="col_2 data property"><label for="asset_id">Name:</label></div>
+<div class="col_10 data">
+  {{ asset_field("name", "text", True) }}
+</div>
+
+<div class="clear"></div>
+
+<div class="col_6">
+  <div class="data property" style="width: 34.333%"><label for="serial">Serial Number:</label></div>
+  <div class="data" style="width: 65%">
+    {{ asset_field("serial", "text", False) }}
+  </div>
+  <div class="clear"></div>
+
+  <div class="data property" style="width: 34.333%;"><label for="condition">Condition:</label></div>
+  <div class="data" style="width: 65%;">
+    {{ asset_field("condition", "condition", False) }}
+  </div>
+</div>
+<div class="col_1"></div>
+<div class="col_5">
+  <div class="col_3 data property"><label for="cost">Cost:</label></div>
+  <div class="col_9 data" style="position: relative">
+    {{ asset_field("cost", "dollar", False) }}
+  </div>
+
+  <div class="clear"></div>
+
+  <div class="col_3 data property"><label for="value">Value:</label></div>
+  <div class="col_9 data" style="position: relative">
+    {{ asset_field("value", "dollar", False) }}
+  </div>
+</div>
+
+<div class="clear"></div>
+
+<div class="col_2 data property"><label for="url">Url:</label></div>
+<div class="col_10 data">
+  {{ asset_field("url", "url", False) }}
+</div>
+
+<div class="clear"></div>
+
+<div class="col_2 property data"><label for="description">Description:</label></div>
+<div class="clear"></div>
+<div class="col_12" style="position:relative">
+  {{ asset_field("description", "markdown", False) }}
+</div>
+
+<script language="javascript">
+  $('.required').on('change keyup paste', function() {
+    if ($(this).context.value == "") {
+      $(this).addClass("error");
+    } else {
+      $(this).removeClass("error");
+    }
+  });
+
+  $('.required').change();
+
+  $('input.number').on('change', function() {
+    var value = $(this).context.value;
+    if (value == "" || $.isNumeric(value)) {
+      $(this).removeClass("error");
+      $(this).context.value = parseFloat(value).toFixed(2)
+    } else {
+      $(this).addClass("error");
+    }
+  });
+</script>
+

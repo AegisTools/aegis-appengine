@@ -1,0 +1,61 @@
+{% extends "modules/assets/fragments/page.html" %}
+{% set asset = load("assets/asset", keys.asset_id) %}
+
+{% macro select_option(value, selection) %}
+  <option value="{{ value }}" {% if selection == value %}selected{% endif %}>{{ value|capitalize }}</option>
+{% endmacro %}
+
+{% block header %}
+  <script language="javascript" src="/static/scripts/marked/marked.js"></script>
+  <script language="javascript" src="/static/scripts/markdown-editor.js"></script>
+
+  {{ super() }}
+{% endblock %}
+
+{% macro asset_field(id, type, required) %}
+  {% if type == "id" %}
+    {{ asset[id] }}
+  {% elif type == "text" or type == "url" %}
+    <input type="text" name="{{ id }}" class="full-width {% if required %}required{% endif %}"
+        value="{% if asset[id] %}{{ asset[id]|e }}{% endif %}">
+  {% elif type == "dollar" %}
+    <span style="position: absolute; left: 10px; top: 1.5px;">$</span>
+    <input type="text" name="{{ id }}" class="full-width number" style="padding-left:15px;"
+        value="{% if asset[id] %}{{ "%.2f"|format(asset[id]) }}{% endif %}">
+  {% elif type == "condition" %}
+    <select name="{{ id }}" class="full-width" style="font-size: 14px;">
+      {{ select_option("new", asset[id]) }}
+      {{ select_option("excellent", asset[id]) }}
+      {{ select_option("good", asset[id]) }}
+      {{ select_option("poor", asset[id]) }}
+      {{ select_option("unusable", asset[id]) }}
+      {{ select_option("lost", asset[id]) }}
+    </select>
+  {% elif type == "markdown" %}
+    <div style="position:absolute; right: 0px; top: -18px;">
+      <a href="/markdown" target="_blank">
+        <i class="icon-info-sign tooltip-bottom" data-delay="0" data-content="#tip-markdown"></i>
+      </a>
+    </div>
+
+    <textarea class="markdown-editor" rows="15" name="description"
+        data-markdown-preview="#preview-description">{{ asset[id]|e }}</textarea>
+
+    <div style="width:100%" id="preview-description"></div>
+  {% else %}
+    Unknown type: {{ type }}
+  {% endif %}
+{% endmacro %}
+
+{% block content %}
+  <form action="/assets/{{ asset.id }}" method="POST">
+    {{ xsrf_input() }}
+    <!-- Asset: {{ asset_field("id", "id", True) }} -->
+    <div class="assets">
+      {% include "modules/assets/fragments/asset.html" %}
+      <div class="col_12 right">
+        <button class="large blue">Save</button>
+      </div>
+    </div>
+{% endblock %}
+

@@ -1,0 +1,116 @@
+{% extends "modules/assets/fragments/page.html" %}
+{% set asset = load("assets/asset", keys.asset_id) %}
+
+{% macro select_option(value, selection) %}
+  <option value="{{ value }}" {% if selection == value %}selected{% endif %}>{{ value|capitalize }}</option>
+{% endmacro %}
+
+{% macro asset_field(id, type, required) %}
+  {% if asset[id] %}
+    {% if type == "dollar" %}
+      {{ "$ %.2f"|format(asset[id]) }}
+    {% elif type == "url" %}
+      <a href="{{ asset[id]|e }}">{{ asset[id]|e }}</a>
+    {% elif id == "condition" %}
+      {{ asset[id]|capitalize }}
+    {% elif type == "markdown" %}
+      {{ markdown(asset[id]) }}
+    {% else %}
+      {{ asset[id]|e }}
+    {% endif %}
+  {% endif %}
+{% endmacro %}
+
+{% block content %}
+  <!-- Asset: {{ asset_field("id", "id", True) }} -->
+  <div class="assets">
+    {% include "modules/assets/fragments/asset.html" %}
+    <div class="right">
+      <a class="large blue button" href="/assets/{{ asset.id }}/edit">Update</a>
+    </div>
+
+    {% if not asset.checkout %}
+      <form action="/assets/{{ asset.id }}/out" method="POST">
+        {{ xsrf_input() }}
+
+        <div class="col_1 data property">Out To:</div>
+        <div class="col_3 data"><input type="text" name="checked_out_to" class="full-width"></div>
+        <div class="clear"></div>
+
+        <div class="col_1 data property">Expected:</div>
+        <div class="col_3 data"><input type="text" name="expected" class="full-width"></div>
+        <div class="clear"></div>
+
+        <div class="col_4 right">
+          <button class="small green">Check Out</button>
+        </div>
+      </form>
+    {% else %}
+      <form action="/assets/{{ asset.id }}/in" method="POST">
+        {{ xsrf_input() }}
+        <div class="col_1 data property">Out To:</div>
+        <div class="col_3 data">{{ user_link(asset.checkout.checked_out_to_email, asset.checkout.checked_out_to) }}</div>
+        <div class="col_1 data property">Expected:</div>
+        <div class="col_3 data">{% if asset.checkout.expected %}{{ local_time(asset.checkout.expected) }}{% endif %}</div>
+        <div class="clear"></div>
+
+        <div class="col_1 data property">Out:</div>
+        <div class="col_7 data">{{ local_time(asset.checkout.checked_out) }}</div>
+        <div class="clear"></div>
+
+        <div class="col_1 data property">Out By:</div>
+        <div class="col_7 data">{{ user_link(asset.checkout.checked_out_by_email, asset.checkout.checked_out_by) }}</div>
+        <div class="clear"></div>
+
+        <div class="col_1 data property">Condition:</div>
+        <div class="col_3 data">{{ asset.checkout.condition_out|capitalize }}</div>
+        <div class="col_1 data property">Condition:</div>
+        <div class="col_3 data">
+          <select name="condition" class="full-width" style="font-size: 14px;">
+            {{ select_option("new", asset["condition"]) }}
+            {{ select_option("excellent", asset["condition"]) }}
+            {{ select_option("good", asset["condition"]) }}
+            {{ select_option("poor", asset["condition"]) }}
+            {{ select_option("unusable", asset["condition"]) }}
+            {{ select_option("lost", asset["condition"]) }}
+          </select>
+        </div>
+        <div class="clear"></div>
+
+        <div class="col_8 right">
+          <button class="small green">Check In</button>
+        </div>
+      </form>
+    {% endif %}
+
+    {% for checkout in asset.history %}
+      {% if checkout.checked_in %}
+        <hr>
+        <div class="col_1 data property">Out To:</div>
+        <div class="col_3 data">{{ user_link(checkout.checked_out_to_email, checkout.checked_out_to) }}</div>
+        <div class="col_1 data property">Expected:</div>
+        <div class="col_3 data">{% if checkout.expected %}{{ local_time(checkout.expected) }}{% endif %}</div>
+        <div class="clear"></div>
+
+        <div class="col_1 data property">Out:</div>
+        <div class="col_3 data">{{ local_time(checkout.checked_out) }}</div>
+        <div class="col_1 data property">In:</div>
+        <div class="col_3 data">{{ local_time(checkout.checked_in) }}</div>
+        <div class="clear"></div>
+
+        <div class="col_1 data property">Out By:</div>
+        <div class="col_3 data">{{ user_link(checkout.checked_out_by_email, checkout.checked_out_by) }}</div>
+        <div class="col_1 data property">In By:</div>
+        <div class="col_3 data">{{ user_link(checkout.checked_in_by_email, checkout.checked_in_by) }}</div>
+        <div class="clear"></div>
+
+        <div class="col_1 data property">Condition:</div>
+        <div class="col_3 data">{{ checkout.condition_out|capitalize }}</div>
+        <div class="col_1 data property">Condition:</div>
+        <div class="col_3 data">{{ checkout.condition_in|capitalize }}</div>
+        <div class="clear"></div>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endblock %}
+
