@@ -1,5 +1,5 @@
 {% macro xsrf_input() %}
-  <input type="hidden" name="_xsrf_" value="{{ xsrf }}"></input>
+  <input type="hidden" name="_xsrf_" id="_xsrf_" value=""></input>
 {% endmacro %}
 
 {% macro user_link(email, obj=None) %}
@@ -22,6 +22,7 @@
     <script type="text/javascript" src="/static/scripts/jquery-cookie/jquery.cookie.js"></script>
     <script type="text/javascript" src="/static/scripts/kickstart/kickstart.js"></script>
     <script type="text/javascript" src="/static/scripts/timezone.js"></script>
+    <script type="text/javascript" src="/static/scripts/xsrf.js"></script>
 
     {% block header %}{% endblock %}
 

@@ -187,7 +187,8 @@ class MainPage(webapp2.RequestHandler):
             raise NotAllowedError()
 
         if self.request.cookies["xsrf"] != self.request.params["_xsrf_"]:
-            log.warn("XSRF Failure")
+            log.warn("XSRF Failure - Cookie: %s Request: %s" % \
+                    (self.request.cookies["xsrf"], self.request.params["_xsrf_"]))
             raise NotAllowedError()
 
         log.debug("XSRF Token Matched: %s" % self.request.params["_xsrf_"])
@@ -202,7 +203,7 @@ class MainPage(webapp2.RequestHandler):
             log.debug("XSRF Token: %s" % xsrf)
 
         expires = datetime.datetime.now() + datetime.timedelta(hours=3)
-        self.response.set_cookie("xsrf", xsrf, expires=expires, path="/", httponly=True, overwrite=True)
+        self.response.set_cookie("xsrf", xsrf, expires=expires, path="/", overwrite=True)
         return xsrf
 
 
