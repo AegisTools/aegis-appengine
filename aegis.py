@@ -89,7 +89,7 @@ class RequestData:
             raise
 
     def local_time(self, target):
-        return target - datetime.timedelta(minutes=self.timezoneoffset)
+        return (target - datetime.timedelta(minutes=self.timezoneoffset)).strftime("%a, %b %d, %Y %I:%M%p")
 
     def redirect(self, url):
         self.redirection = url
