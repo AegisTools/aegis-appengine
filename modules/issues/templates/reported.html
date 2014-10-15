@@ -1,7 +1,7 @@
 {% set section_module = "reported" %}
 {% set issue_list = load("issues/issue_search", complex={
     'boolean' : 'and',
-    'sub'     : [{ 'field'    : 'reporter',
+    'sub'     : [{ 'field'    : 'reporters',
                    'operator' : '==',
                    'value'    : [ user ] },
                  { 'field'    : 'status',
