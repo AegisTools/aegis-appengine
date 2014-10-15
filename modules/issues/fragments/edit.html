@@ -122,7 +122,8 @@
             </td></tr>
             <tr><td nowrap class="property">Due Date:</td><td class="value">
               <input type="text" class="full-width" name="due_date"
-                    value="{% if issue and issue.due_date %}{{ local_time(issue.due_date) }}{% endif %}"></input>
+                    value="{% if issue and issue.due_date 
+                        %}{{ local_time(issue.due_date, "%m/%d/%Y %Y %I:%M %p") }}{% endif %}"></input>
             </td></tr>
             <tr>
               <td nowrap class="property">Assigned To:</td>

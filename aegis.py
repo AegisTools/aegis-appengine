@@ -88,8 +88,8 @@ class RequestData:
             logging.exception("Loader Failed")
             raise
 
-    def local_time(self, target):
-        return (target - datetime.timedelta(minutes=self.timezoneoffset)).strftime("%a, %b %d, %Y %I:%M%p")
+    def local_time(self, target, format="%a, %b %d, %Y %I:%M%p"):
+        return (target - datetime.timedelta(minutes=self.timezoneoffset)).strftime(format)
 
     def redirect(self, url):
         self.redirection = url
