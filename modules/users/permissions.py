@@ -33,7 +33,8 @@ def permission_verify(user, type, action, target=None, root_ok=True):
     cached = memcache.get(user_key.id(), namespace="permissions") or []
 
     if not user:
-        log.warn("User not recognized")
+        if str(original_user) != 'cron':
+            log.warn("User '%s' not recognized", original_user)
     else:
         if tuple in cached:
             log.debug("Permission Allowed (Cache): %s - %s.%s (%s)" % (user.user.email(), type, action, target))

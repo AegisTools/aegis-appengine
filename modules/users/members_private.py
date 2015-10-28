@@ -69,7 +69,7 @@ def members_clear(actor, group_id=None, group_key=None, group=None):
     group = group or (group_key or build_group_key(group_id)).get()
     for user_key in group.users:
         user = user_key.get()
-        if user and user.groups:
+        if user and user.groups and group.key in user.groups:
             user.groups.remove(group.key)
             user.put()
 
