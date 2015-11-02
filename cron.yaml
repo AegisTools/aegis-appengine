@@ -1,11 +1,11 @@
 cron:
 - description: Refresh users from domain directory
   url: /cron/directory/refresh_users
-  schedule: every 1 hours
+  schedule: every day 23:00
 
 - description: Refresh groups from domain directory
   url: /cron/directory/refresh_groups
-  schedule: every 1 hours
+  schedule: every day 23:30
 
 - description: Clean out uploaded files that haven't been claimed
   url: /cron/blob/scrub?age=1d
